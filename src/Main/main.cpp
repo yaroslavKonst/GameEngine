@@ -1,14 +1,11 @@
 #include <unistd.h>
 
-#include "../VideoEngine/window.h"
-#include "../VideoEngine/VkInstanceHandler.h"
+#include "../VideoEngine/video.h"
 
 int main(int argc, char** argv)
 {
-	Window window(500, 200, "Welcome");
-	VkInstanceHandler::IncRef();
+	Video window(500, 200, "Welcome", "Application");
 	sleep(5);
-	VkInstanceHandler::DecRef();
 
 	return 0;
 }

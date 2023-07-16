@@ -11,6 +11,11 @@ public:
 	Window(int width, int height, std::string title);
 	~Window();
 
+	GLFWwindow* GetWindow()
+	{
+		return _window;
+	}
+
 private:
 	GLFWwindow* _window;
 };
