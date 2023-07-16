@@ -20,6 +20,10 @@ private:
 	int _height;
 
 	Window _window;
+
+	VkSurfaceKHR _surface;
+	void CreateSurface();
+	void DestroySurface();
 };
 
 #endif
