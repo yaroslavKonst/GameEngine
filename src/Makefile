@@ -2,7 +2,7 @@ CC=g++
 CC_OPTS=-Wall
 CC_OBJ=-c
 OUTPUT=game
-LIBS=-lglfw -lpthread -lX11 -lXrandr
+LIBS=-lglfw -lvulkan -ldl -lpthread -lX11 -lXrandr
 
 .PHONY: all clean
 
