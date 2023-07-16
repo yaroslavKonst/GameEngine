@@ -50,6 +50,12 @@ private:
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 	SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device);
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+
+	VkDevice _device;
+	VkQueue _graphicsQueue;
+	VkQueue _presentQueue;
+	void CreateDevice();
+	void DestroyDevice();
 };
 
 #endif

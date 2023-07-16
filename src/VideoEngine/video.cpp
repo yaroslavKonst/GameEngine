@@ -3,6 +3,7 @@
 #include <vector>
 #include <string.h>
 #include <iostream>
+#include <set>
 
 Video::Video(
 	int width,
@@ -18,10 +19,12 @@ Video::Video(
 
 	CreateSurface();
 	SelectPhysicalDevice();
+	CreateDevice();
 }
 
 Video::~Video()
 {
+	DestroyDevice();
 	DestroySurface();
 
 	VkInstanceHandler::DecRef();
@@ -267,4 +270,71 @@ Video::QueueFamilyIndices Video::FindQueueFamilies(VkPhysicalDevice device)
 	}
 
 	return indices;
+}
+
+void Video::CreateDevice()
+{
+	QueueFamilyIndices indices = FindQueueFamilies(_physicalDevice);
+
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+
+	std::set<uint32_t> uniqueQueueFamilies = {
+		indices.graphicsFamily.value(),
+		indices.presentFamily.value()
+	};
+
+	float queuePriority = 1.0f;
+
+	for (uint32_t queueFamily : uniqueQueueFamilies) {
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType =
+			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+
+		queueCreateInfos.push_back(queueCreateInfo);
+	}
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.sampleRateShading = VK_TRUE;
+
+	VkDeviceCreateInfo deviceInfo{};
+	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceInfo.queueCreateInfoCount =
+		static_cast<uint32_t>(queueCreateInfos.size());
+	deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
+	deviceInfo.pEnabledFeatures = &deviceFeatures;
+	deviceInfo.enabledExtensionCount =
+		static_cast<uint32_t>(_deviceExtensions.size());
+	deviceInfo.ppEnabledExtensionNames = _deviceExtensions.data();
+	deviceInfo.enabledLayerCount = 0;
+
+	VkResult res = vkCreateDevice(
+		_physicalDevice,
+		&deviceInfo,
+		nullptr,
+		&_device);
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create device.");
+	}
+
+	vkGetDeviceQueue(
+		_device,
+		indices.graphicsFamily.value(),
+		0,
+		&_graphicsQueue);
+
+	vkGetDeviceQueue(
+		_device,
+		indices.presentFamily.value(),
+		0,
+		&_presentQueue);
+}
+
+void Video::DestroyDevice()
+{
+	vkDestroyDevice(_device, nullptr);
 }
