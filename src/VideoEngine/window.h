@@ -1,0 +1,18 @@
+#ifndef _WINDOW_H
+#define _WINDOW_H
+
+#include <string>
+#include <stdexcept>
+#include <GLFW/glfw3.h>
+
+class Window
+{
+public:
+	Window(int width, int height, std::string title);
+	~Window();
+
+private:
+	GLFWwindow* _window;
+};
+
+#endif
