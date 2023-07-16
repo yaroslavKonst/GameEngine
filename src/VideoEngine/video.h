@@ -1,6 +1,9 @@
 #ifndef _VIDEO_H
 #define _VIDEO_H
 
+#include <vector>
+#include <optional>
+
 #include "window.h"
 #include "VkInstanceHandler.h"
 
@@ -16,6 +19,19 @@ public:
 	~Video();
 
 private:
+	struct QueueFamilyIndices
+	{
+		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
+	};
+
+	struct SwapchainSupportDetails
+	{
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
+
 	int _width;
 	int _height;
 
@@ -24,6 +40,16 @@ private:
 	VkSurfaceKHR _surface;
 	void CreateSurface();
 	void DestroySurface();
+
+	VkPhysicalDevice _physicalDevice;
+	VkSampleCountFlagBits _msaaSamples;
+	std::vector<const char*> _deviceExtensions;
+	void SelectPhysicalDevice();
+	bool IsDeviceSuitable(VkPhysicalDevice device);
+	VkSampleCountFlagBits GetMaxSampleCount();
+	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+	SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device);
+	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 };
 
 #endif
