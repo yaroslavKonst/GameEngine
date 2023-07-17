@@ -7,6 +7,7 @@
 #include "window.h"
 #include "VkInstanceHandler.h"
 #include "CommandPool.h"
+#include "swapchain.h"
 
 class Video
 {
@@ -33,6 +34,9 @@ private:
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
+	QueueFamilyIndices _queueFamilyIndices;
+	SwapchainSupportDetails _swapchainSupportDetails;
+
 	int _width;
 	int _height;
 
@@ -58,10 +62,13 @@ private:
 	void CreateDevice();
 	void DestroyDevice();
 
-	CommandPool* _mainCommandPool;
 	CommandPool* _transferCommandPool;
 	void CreateCommandPools();
 	void DestroyCommandPools();
+
+	Swapchain* _swapchain;
+	void CreateSwapchain();
+	void DestroySwapchain();
 };
 
 #endif

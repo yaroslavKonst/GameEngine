@@ -21,10 +21,14 @@ Video::Video(
 	SelectPhysicalDevice();
 	CreateDevice();
 	CreateCommandPools();
+
+	CreateSwapchain();
 }
 
 Video::~Video()
 {
+	DestroySwapchain();
+
 	DestroyCommandPools();
 	DestroyDevice();
 	DestroySurface();
@@ -276,13 +280,14 @@ Video::QueueFamilyIndices Video::FindQueueFamilies(VkPhysicalDevice device)
 
 void Video::CreateDevice()
 {
-	QueueFamilyIndices indices = FindQueueFamilies(_physicalDevice);
+	_queueFamilyIndices = FindQueueFamilies(_physicalDevice);
+	_swapchainSupportDetails = QuerySwapchainSupport(_physicalDevice);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
 	std::set<uint32_t> uniqueQueueFamilies = {
-		indices.graphicsFamily.value(),
-		indices.presentFamily.value()
+		_queueFamilyIndices.graphicsFamily.value(),
+		_queueFamilyIndices.presentFamily.value()
 	};
 
 	float queuePriority = 1.0f;
@@ -325,13 +330,13 @@ void Video::CreateDevice()
 
 	vkGetDeviceQueue(
 		_device,
-		indices.graphicsFamily.value(),
+		_queueFamilyIndices.graphicsFamily.value(),
 		0,
 		&_graphicsQueue);
 
 	vkGetDeviceQueue(
 		_device,
-		indices.presentFamily.value(),
+		_queueFamilyIndices.presentFamily.value(),
 		0,
 		&_presentQueue);
 }
@@ -343,22 +348,34 @@ void Video::DestroyDevice()
 
 void Video::CreateCommandPools()
 {
-	QueueFamilyIndices queueFamilyIndices =
-		FindQueueFamilies(_physicalDevice);
-
-	_mainCommandPool = new CommandPool(
-		_device,
-		queueFamilyIndices.graphicsFamily.value(),
-		0);
-
 	_transferCommandPool = new CommandPool(
 		_device,
-		queueFamilyIndices.graphicsFamily.value(),
+		_queueFamilyIndices.graphicsFamily.value(),
 		VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 }
 
 void Video::DestroyCommandPools()
 {
-	delete _mainCommandPool;
 	delete _transferCommandPool;
+}
+
+void Video::CreateSwapchain()
+{
+	_swapchain = new Swapchain(
+		_device,
+		_surface,
+		_window.GetWindow(),
+		_swapchainSupportDetails.capabilities,
+		_swapchainSupportDetails.formats,
+		_swapchainSupportDetails.presentModes,
+		_queueFamilyIndices.graphicsFamily.value(),
+		_queueFamilyIndices.presentFamily.value());
+
+	_swapchain->Create();
+}
+
+void Video::DestroySwapchain()
+{
+	_swapchain->Destroy();
+	delete _swapchain;
 }
