@@ -1,7 +1,8 @@
 #include "swapchain.h"
 
 #include <algorithm>
-#include <iostream>
+
+#include "../Logger/logger.h"
 
 using namespace PhysicalDeviceSupport;
 
@@ -14,7 +15,7 @@ Swapchain::Swapchain(
 	_surface = surface;
 	_window = window;
 
-	std::cout << "Swapchain created" << std::endl;
+	Logger::Verbose("Swapchain constructor called.");
 
 	_initialized = false;
 }
@@ -84,7 +85,8 @@ VkExtent2D Swapchain::ChooseExtent(VkSurfaceCapabilitiesKHR capabilities)
 
 void Swapchain::Create()
 {
-	std::cout << "Create swapchain called" << std::endl;
+	Logger::Verbose("Create swapchain called.");
+
 	if (_initialized) {
 		Destroy();
 	}
@@ -99,8 +101,9 @@ void Swapchain::Create()
 
 	_extent = ChooseExtent(supportDetails.capabilities);
 
-	std::cout << "Extent: " << _extent.width << "x" <<
-		_extent.height << std::endl;
+	Logger::Verbose(
+		std::string("Extent: ") + std::to_string(_extent.width) +
+		"x" + std::to_string(_extent.height));
 
 
 	uint32_t imageCount = supportDetails.capabilities.minImageCount + 7;
@@ -183,5 +186,5 @@ void Swapchain::Destroy()
 {
 	vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 	_initialized = false;
-	std::cout << "Swapchain destroyed" << std::endl;
+	Logger::Verbose("Swapchain destroyed.");
 }

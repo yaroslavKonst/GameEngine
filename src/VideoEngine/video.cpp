@@ -2,8 +2,9 @@
 
 #include <vector>
 #include <string.h>
-#include <iostream>
 #include <set>
+
+#include "../Logger/logger.h"
 
 using namespace PhysicalDeviceSupport;
 
@@ -105,7 +106,7 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-	std::cout << deviceProperties.deviceName << std::endl;
+	Logger::Verbose(deviceProperties.deviceName);
 
 	bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
