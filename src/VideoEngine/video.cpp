@@ -20,10 +20,12 @@ Video::Video(
 	CreateSurface();
 	SelectPhysicalDevice();
 	CreateDevice();
+	CreateCommandPools();
 }
 
 Video::~Video()
 {
+	DestroyCommandPools();
 	DestroyDevice();
 	DestroySurface();
 
@@ -337,4 +339,26 @@ void Video::CreateDevice()
 void Video::DestroyDevice()
 {
 	vkDestroyDevice(_device, nullptr);
+}
+
+void Video::CreateCommandPools()
+{
+	QueueFamilyIndices queueFamilyIndices =
+		FindQueueFamilies(_physicalDevice);
+
+	_mainCommandPool = new CommandPool(
+		_device,
+		queueFamilyIndices.graphicsFamily.value(),
+		0);
+
+	_transferCommandPool = new CommandPool(
+		_device,
+		queueFamilyIndices.graphicsFamily.value(),
+		VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+}
+
+void Video::DestroyCommandPools()
+{
+	delete _mainCommandPool;
+	delete _transferCommandPool;
 }

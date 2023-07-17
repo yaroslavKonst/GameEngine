@@ -6,6 +6,7 @@
 
 #include "window.h"
 #include "VkInstanceHandler.h"
+#include "CommandPool.h"
 
 class Video
 {
@@ -56,6 +57,11 @@ private:
 	VkQueue _presentQueue;
 	void CreateDevice();
 	void DestroyDevice();
+
+	CommandPool* _mainCommandPool;
+	CommandPool* _transferCommandPool;
+	void CreateCommandPools();
+	void DestroyCommandPools();
 };
 
 #endif
