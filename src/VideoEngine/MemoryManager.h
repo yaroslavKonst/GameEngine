@@ -3,6 +3,7 @@
 
 #include <list>
 #include <vector>
+#include <mutex>
 #include <vulkan/vulkan.h>
 
 class MemoryManager
@@ -38,6 +39,8 @@ private:
 	uint32_t _alignment;
 	uint32_t _memoryTypeIndex;
 	uint32_t _sectorCount;
+
+	std::mutex _mutex;
 
 	void AddPage();
 };
