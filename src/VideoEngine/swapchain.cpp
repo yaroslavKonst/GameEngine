@@ -3,24 +3,16 @@
 #include <algorithm>
 #include <iostream>
 
+using namespace PhysicalDeviceSupport;
+
 Swapchain::Swapchain(
 	VkDevice device,
 	VkSurfaceKHR surface,
-	GLFWwindow* window,
-	VkSurfaceCapabilitiesKHR capabilities,
-	std::vector<VkSurfaceFormatKHR> formats,
-	std::vector<VkPresentModeKHR> presentModes,
-	uint32_t graphicsQueueFamilyIndex,
-	uint32_t presentQueueFamilyIndex)
+	GLFWwindow* window)
 {
 	_device = device;
 	_surface = surface;
 	_window = window;
-	_capabilities = capabilities;
-	_graphicsQueueFamilyIndex = graphicsQueueFamilyIndex;
-	_presentQueueFamilyIndex = presentQueueFamilyIndex;
-	_surfaceFormat = ChooseSurfaceFormat(formats);
-	_presentMode = ChoosePresentMode(presentModes);
 
 	std::cout << "Swapchain created" << std::endl;
 
@@ -97,19 +89,27 @@ void Swapchain::Create()
 		Destroy();
 	}
 
-	_extent = ChooseExtent(_capabilities);
+	SwapchainSupportDetails supportDetails = QuerySwapchainSupport();
+	QueueFamilyIndices indices = FindQueueFamilies();
+
+	VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(
+		supportDetails.formats);
+	VkPresentModeKHR presentMode = ChoosePresentMode(
+		supportDetails.presentModes);
+
+	_extent = ChooseExtent(supportDetails.capabilities);
 
 	std::cout << "Extent: " << _extent.width << "x" <<
 		_extent.height << std::endl;
 
 
-	uint32_t imageCount = _capabilities.minImageCount + 7;
+	uint32_t imageCount = supportDetails.capabilities.minImageCount + 7;
 
-	if (_capabilities.maxImageCount > 0) {
+	if (supportDetails.capabilities.maxImageCount > 0) {
 		imageCount = std::clamp(
 			imageCount,
-			_capabilities.minImageCount,
-			_capabilities.maxImageCount);
+			supportDetails.capabilities.minImageCount,
+			supportDetails.capabilities.maxImageCount);
 	}
 
 	VkSwapchainCreateInfoKHR createInfo{};
@@ -117,18 +117,18 @@ void Swapchain::Create()
 	createInfo.surface = _surface;
 
 	createInfo.minImageCount = imageCount;
-	createInfo.imageFormat = _surfaceFormat.format;
-	createInfo.imageColorSpace = _surfaceFormat.colorSpace;
+	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = _extent;
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	std::vector<uint32_t> queueFamilyIndices = {
-		_graphicsQueueFamilyIndex,
-		_presentQueueFamilyIndex
+		indices.graphicsFamily.value(),
+		indices.presentFamily.value()
 	};
 
-	if (_graphicsQueueFamilyIndex != _presentQueueFamilyIndex) {
+	if (indices.graphicsFamily.value() != indices.presentFamily.value()) {
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		createInfo.queueFamilyIndexCount =
 			static_cast<uint32_t>(queueFamilyIndices.size());
@@ -139,11 +139,11 @@ void Swapchain::Create()
 		createInfo.pQueueFamilyIndices = nullptr;
 	}
 
-	createInfo.preTransform = _capabilities.currentTransform;
+	createInfo.preTransform = supportDetails.capabilities.currentTransform;
 
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 
-	createInfo.presentMode = _presentMode;
+	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
 
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
@@ -166,7 +166,7 @@ void Swapchain::Create()
 		&imageCount,
 		_images.data());
 
-	_imageFormat = _surfaceFormat.format;
+	_imageFormat = surfaceFormat.format;
 
 	if (_images.size() > 3) {
 		_framesInFlight = _images.size() - 3;

@@ -7,18 +7,16 @@
 #include <vulkan/vulkan.h>
 #include <stdexcept>
 
+#include "PhysicalDeviceSupport.h"
+#include "CommandPool.h"
+
 class Swapchain
 {
 public:
 	Swapchain(
 		VkDevice device,
 		VkSurfaceKHR surface,
-		GLFWwindow* window,
-		VkSurfaceCapabilitiesKHR capabilities,
-		std::vector<VkSurfaceFormatKHR> formats,
-		std::vector<VkPresentModeKHR> presentModes,
-		uint32_t graphicsQueueFamilyIndex,
-		uint32_t presentQueueFamilyIndex);
+		GLFWwindow* window);
 	~Swapchain();
 
 	void Create();
@@ -26,14 +24,9 @@ public:
 
 private:
 	VkDevice _device;
-	VkSurfaceCapabilitiesKHR _capabilities;
-	VkSurfaceFormatKHR _surfaceFormat;
-	VkPresentModeKHR _presentMode;
 	VkExtent2D _extent;
 	VkSurfaceKHR _surface;
 	GLFWwindow* _window;
-	uint32_t _graphicsQueueFamilyIndex;
-	uint32_t _presentQueueFamilyIndex;
 
 	bool _initialized;
 

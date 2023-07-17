@@ -5,6 +5,8 @@
 #include <iostream>
 #include <set>
 
+using namespace PhysicalDeviceSupport;
+
 Video::Video(
 	int width,
 	int height,
@@ -47,6 +49,8 @@ void Video::CreateSurface()
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create window surface.");
 	}
+
+	SetSurface(_surface);
 }
 
 void Video::DestroySurface()
@@ -93,6 +97,8 @@ void Video::SelectPhysicalDevice()
 
 bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 {
+	SetPhysicalDevice(device);
+
 	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
 
@@ -107,7 +113,7 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 
 	if (extensionsSupported) {
 		SwapchainSupportDetails swapchainSupport =
-			QuerySwapchainSupport(device);
+			QuerySwapchainSupport();
 
 		swapchainAdequate = !swapchainSupport.formats.empty() &&
 			!swapchainSupport.presentModes.empty();
@@ -120,8 +126,8 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 		deviceFeatures.geometryShader &&
 		deviceFeatures.samplerAnisotropy &&
 		deviceFeatures.shaderUniformBufferArrayDynamicIndexing &&
-		FindQueueFamilies(device).graphicsFamily.has_value() &&
-		FindQueueFamilies(device).presentFamily.has_value();
+		FindQueueFamilies().graphicsFamily.has_value() &&
+		FindQueueFamilies().presentFamily.has_value();
 
 	return res;
 }
@@ -193,101 +199,17 @@ bool Video::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 	return true;
 }
 
-Video::SwapchainSupportDetails Video::QuerySwapchainSupport(
-	VkPhysicalDevice device)
-{
-	SwapchainSupportDetails details;
-
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-		device,
-		_surface,
-		&details.capabilities);
-
-	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(
-		device,
-		_surface,
-		&formatCount,
-		nullptr);
-
-	if (formatCount > 0) {
-		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(
-			device,
-			_surface,
-			&formatCount,
-			details.formats.data());
-	}
-
-	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(
-		device,
-		_surface,
-		&presentModeCount,
-		nullptr);
-
-	if (presentModeCount > 0) {
-		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(
-			device,
-			_surface,
-			&presentModeCount,
-			details.presentModes.data());
-	}
-
-	return details;
-}
-
-Video::QueueFamilyIndices Video::FindQueueFamilies(VkPhysicalDevice device)
-{
-	QueueFamilyIndices indices;
-
-	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(
-		device,
-		&queueFamilyCount,
-		nullptr);
-
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(
-		device,
-		&queueFamilyCount,
-		queueFamilies.data());
-
-	int i = 0;
-
-	for (const auto& queueFamily : queueFamilies) {
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			indices.graphicsFamily = i;
-		}
-
-		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(
-			device,
-			i,
-			_surface,
-			&presentSupport);
-
-		if (presentSupport) {
-			indices.presentFamily = i;
-		}
-
-		++i;
-	}
-
-	return indices;
-}
-
 void Video::CreateDevice()
 {
-	_queueFamilyIndices = FindQueueFamilies(_physicalDevice);
-	_swapchainSupportDetails = QuerySwapchainSupport(_physicalDevice);
+	SetPhysicalDevice(_physicalDevice);
+
+	QueueFamilyIndices indices = FindQueueFamilies();
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
 	std::set<uint32_t> uniqueQueueFamilies = {
-		_queueFamilyIndices.graphicsFamily.value(),
-		_queueFamilyIndices.presentFamily.value()
+		indices.graphicsFamily.value(),
+		indices.presentFamily.value()
 	};
 
 	float queuePriority = 1.0f;
@@ -330,13 +252,13 @@ void Video::CreateDevice()
 
 	vkGetDeviceQueue(
 		_device,
-		_queueFamilyIndices.graphicsFamily.value(),
+		indices.graphicsFamily.value(),
 		0,
 		&_graphicsQueue);
 
 	vkGetDeviceQueue(
 		_device,
-		_queueFamilyIndices.presentFamily.value(),
+		indices.presentFamily.value(),
 		0,
 		&_presentQueue);
 }
@@ -348,9 +270,11 @@ void Video::DestroyDevice()
 
 void Video::CreateCommandPools()
 {
+	QueueFamilyIndices indices = FindQueueFamilies();
+
 	_transferCommandPool = new CommandPool(
 		_device,
-		_queueFamilyIndices.graphicsFamily.value(),
+		indices.graphicsFamily.value(),
 		VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 }
 
@@ -364,12 +288,7 @@ void Video::CreateSwapchain()
 	_swapchain = new Swapchain(
 		_device,
 		_surface,
-		_window.GetWindow(),
-		_swapchainSupportDetails.capabilities,
-		_swapchainSupportDetails.formats,
-		_swapchainSupportDetails.presentModes,
-		_queueFamilyIndices.graphicsFamily.value(),
-		_queueFamilyIndices.presentFamily.value());
+		_window.GetWindow());
 
 	_swapchain->Create();
 }

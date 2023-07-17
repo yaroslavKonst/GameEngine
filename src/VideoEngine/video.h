@@ -8,6 +8,7 @@
 #include "VkInstanceHandler.h"
 #include "CommandPool.h"
 #include "swapchain.h"
+#include "PhysicalDeviceSupport.h"
 
 class Video
 {
@@ -21,25 +22,6 @@ public:
 	~Video();
 
 private:
-	struct QueueFamilyIndices
-	{
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
-	};
-
-	struct SwapchainSupportDetails
-	{
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
-
-	QueueFamilyIndices _queueFamilyIndices;
-	SwapchainSupportDetails _swapchainSupportDetails;
-
-	int _width;
-	int _height;
-
 	Window _window;
 
 	VkSurfaceKHR _surface;
@@ -53,8 +35,6 @@ private:
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	VkSampleCountFlagBits GetMaxSampleCount();
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-	SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device);
-	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 
 	VkDevice _device;
 	VkQueue _graphicsQueue;
