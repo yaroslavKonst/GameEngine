@@ -96,3 +96,49 @@ PhysicalDeviceSupport::FindQueueFamilies()
 
 	return indices;
 }
+
+uint32_t PhysicalDeviceSupport::FindMemoryType(
+	uint32_t typeFilter,
+	VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(_device, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
+		bool accept = (typeFilter & (1 << i)) &&
+			(memProperties.memoryTypes[i].propertyFlags &
+			properties) == properties;
+
+		if (accept) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("failed to find suitable memory type");
+}
+
+VkFormat PhysicalDeviceSupport::FindSupportedFormat(
+	const std::vector<VkFormat>& candidates,
+	VkImageTiling tiling,
+	VkFormatFeatureFlags features)
+{
+	for (VkFormat format : candidates) {
+		VkFormatProperties props;
+		vkGetPhysicalDeviceFormatProperties(
+			_device,
+			format,
+			&props);
+
+		bool success =
+			(tiling == VK_IMAGE_TILING_LINEAR &&
+			(props.linearTilingFeatures & features) == features) ||
+			(tiling == VK_IMAGE_TILING_OPTIMAL &&
+			(props.optimalTilingFeatures & features) == features);
+
+		if (success) {
+			return format;
+		}
+	}
+
+	throw std::runtime_error("failed to find supported format");
+}

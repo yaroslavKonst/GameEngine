@@ -2,18 +2,27 @@
 
 #include <stdexcept>
 
+#include "../Logger/logger.h"
+
 MemoryManager::MemoryManager(
 	VkDevice device,
 	uint32_t pageSize,
 	uint32_t memoryTypeIndex,
 	uint32_t alignment)
 {
+
 	_device = device;
 	_pageSize = (pageSize / alignment + 1) * alignment;
 	_alignment = alignment;
 	_sectorCount = _pageSize / _alignment;
+	_memoryTypeIndex = memoryTypeIndex;
 
 	AddPage();
+
+	Logger::Verbose(
+		std::string("Created memory manager for index ") +
+		std::to_string(_memoryTypeIndex) + ", alignment " +
+		std::to_string(_alignment));
 }
 
 MemoryManager::~MemoryManager()
@@ -21,6 +30,11 @@ MemoryManager::~MemoryManager()
 	for (auto& page : _pages) {
 		vkFreeMemory(_device, page.memory, nullptr);
 	}
+
+	Logger::Verbose(
+		std::string("Destroyed memory manager for index ") +
+		std::to_string(_memoryTypeIndex) + ", alignment " +
+		std::to_string(_alignment));
 }
 
 void MemoryManager::AddPage()
@@ -44,6 +58,11 @@ void MemoryManager::AddPage()
 	}
 
 	_pages.push_back(page);
+
+	Logger::Verbose(
+		std::string("New page for memory manager with index ") +
+		std::to_string(_memoryTypeIndex) + ", alignment " +
+		std::to_string(_alignment));
 }
 
 MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)

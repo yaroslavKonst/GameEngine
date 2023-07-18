@@ -9,6 +9,7 @@
 #include "CommandPool.h"
 #include "swapchain.h"
 #include "PhysicalDeviceSupport.h"
+#include "MemorySystem.h"
 
 class Video
 {
@@ -40,6 +41,7 @@ private:
 	VkDevice _device;
 	VkQueue _graphicsQueue;
 	VkQueue _presentQueue;
+	MemorySystem* _memorySystem;
 	void CreateDevice();
 	void DestroyDevice();
 

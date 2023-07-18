@@ -262,10 +262,13 @@ void Video::CreateDevice()
 		indices.presentFamily.value(),
 		0,
 		&_presentQueue);
+
+	_memorySystem = new MemorySystem(_device);
 }
 
 void Video::DestroyDevice()
 {
+	delete _memorySystem;
 	vkDestroyDevice(_device, nullptr);
 }
 
@@ -291,7 +294,9 @@ void Video::CreateSwapchain()
 		_device,
 		_surface,
 		_window.GetWindow(),
-		&_deviceSupport);
+		&_deviceSupport,
+		_memorySystem,
+		_msaaSamples);
 
 	_swapchain->Create();
 }

@@ -9,6 +9,8 @@
 
 #include "PhysicalDeviceSupport.h"
 #include "CommandPool.h"
+#include "MemorySystem.h"
+#include "ImageHelper.h"
 
 class Swapchain
 {
@@ -17,7 +19,9 @@ public:
 		VkDevice device,
 		VkSurfaceKHR surface,
 		GLFWwindow* window,
-		PhysicalDeviceSupport* deviceSupport);
+		PhysicalDeviceSupport* deviceSupport,
+		MemorySystem* memorySystem,
+		VkSampleCountFlagBits msaaSamples);
 	~Swapchain();
 
 	void Create();
@@ -28,8 +32,10 @@ private:
 	VkExtent2D _extent;
 	VkSurfaceKHR _surface;
 	GLFWwindow* _window;
+	VkSampleCountFlagBits _msaaSamples;
 
 	PhysicalDeviceSupport* _deviceSupport;
+	MemorySystem* _memorySystem;
 
 	bool _initialized;
 
@@ -46,6 +52,11 @@ private:
 
 	uint32_t _framesInFlight;
 	uint32_t _currentFrame;
+
+	ImageHelper::Image _colorImage;
+	ImageHelper::Image _depthImage;
+	void CreateImages();
+	void DestroyImages();
 };
 
 #endif

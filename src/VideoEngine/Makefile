@@ -7,7 +7,9 @@ all: \
 	../../build/MemoryManager.o \
 	../../build/CommandPool.o \
 	../../build/swapchain.o \
-	../../build/PhysicalDeviceSupport.o
+	../../build/PhysicalDeviceSupport.o \
+	../../build/MemorySystem.o \
+	../../build/ImageHelper.o
 
 ../../build/%.o: %.cpp %.h
 	$(CC) $(CC_OPTS) $(CC_OBJ) -o $@ $<

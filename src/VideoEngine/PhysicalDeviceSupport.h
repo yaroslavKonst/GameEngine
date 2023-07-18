@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <vector>
+#include <stdexcept>
 #include <vulkan/vulkan.h>
 
 class PhysicalDeviceSupport
@@ -26,6 +27,15 @@ public:
 
 	SwapchainSupportDetails QuerySwapchainSupport();
 	QueueFamilyIndices FindQueueFamilies();
+
+	uint32_t FindMemoryType(
+		uint32_t typeFilter,
+		VkMemoryPropertyFlags properties);
+
+	VkFormat FindSupportedFormat(
+		const std::vector<VkFormat>& candidates,
+		VkImageTiling tiling,
+		VkFormatFeatureFlags features);
 
 private:
 	VkPhysicalDevice _device;

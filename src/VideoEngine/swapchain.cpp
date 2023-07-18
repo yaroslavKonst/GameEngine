@@ -8,12 +8,16 @@ Swapchain::Swapchain(
 	VkDevice device,
 	VkSurfaceKHR surface,
 	GLFWwindow* window,
-	PhysicalDeviceSupport* deviceSupport)
+	PhysicalDeviceSupport* deviceSupport,
+	MemorySystem* memorySystem,
+	VkSampleCountFlagBits msaaSamples)
 {
 	_device = device;
 	_surface = surface;
 	_window = window;
 	_deviceSupport = deviceSupport;
+	_memorySystem = memorySystem;
+	_msaaSamples = msaaSamples;
 
 	Logger::Verbose("Swapchain constructor called.");
 
@@ -181,12 +185,69 @@ void Swapchain::Create()
 
 	_currentFrame = 0;
 
+	CreateImages();
+
 	_initialized = true;
 }
 
 void Swapchain::Destroy()
 {
+	DestroyImages();
+
 	vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 	_initialized = false;
 	Logger::Verbose("Swapchain destroyed.");
+}
+
+void Swapchain::CreateImages()
+{
+	_colorImage = ImageHelper::CreateImage(
+		_device,
+		_extent.width,
+                _extent.height,
+                1,
+                _msaaSamples,
+                _imageFormat,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                _memorySystem,
+                _deviceSupport);
+
+	VkFormat depthFormat = _deviceSupport->FindSupportedFormat(
+		{
+			VK_FORMAT_D32_SFLOAT,
+			VK_FORMAT_D32_SFLOAT_S8_UINT,
+			VK_FORMAT_D24_UNORM_S8_UINT
+		},
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
+		VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
+
+	_depthImage = ImageHelper::CreateImage(
+		_device,
+		_extent.width,
+                _extent.height,
+                1,
+                _msaaSamples,
+                depthFormat,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                _memorySystem,
+                _deviceSupport);
+}
+
+void Swapchain::DestroyImages()
+{
+	ImageHelper::DestroyImage(
+		_device,
+		_colorImage,
+		_memorySystem);
+
+	ImageHelper::DestroyImage(
+		_device,
+		_depthImage,
+		_memorySystem);
 }
