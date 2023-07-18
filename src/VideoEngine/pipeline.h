@@ -18,6 +18,10 @@ public:
 	void CreateFramebuffers(const std::vector<VkImageView>& imageViews);
 	void DestroyFramebuffers();
 
+	void RecordCommandBuffer(
+		VkCommandBuffer commandBuffer,
+		uint32_t imageIndex);
+
 private:
 	VkDevice _device;
 	VkExtent2D _extent;

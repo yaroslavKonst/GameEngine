@@ -22,13 +22,20 @@ public:
 		GLFWwindow* window,
 		PhysicalDeviceSupport* deviceSupport,
 		MemorySystem* memorySystem,
-		VkSampleCountFlagBits msaaSamples);
+		VkSampleCountFlagBits msaaSamples,
+		VkQueue graphicsQueue,
+		VkQueue presentQueue);
+
 	~Swapchain();
 
 	void Create();
 	void Destroy();
 
+	void MainLoop();
+
 private:
+	const uint32_t _maxFramesInFlight = 2;
+
 	VkDevice _device;
 	VkExtent2D _extent;
 	VkSurfaceKHR _surface;
@@ -37,6 +44,9 @@ private:
 
 	PhysicalDeviceSupport* _deviceSupport;
 	MemorySystem* _memorySystem;
+
+	VkQueue _graphicsQueue;
+	VkQueue _presentQueue;
 
 	bool _initialized;
 
@@ -63,6 +73,22 @@ private:
 	Pipeline* _pipeline;
 	void CreatePipelines();
 	void DestroyPipelines();
+
+	CommandPool* _commandPool;
+	std::vector<VkCommandBuffer> _commandBuffers;
+
+	void RecordCommandBuffer(
+		VkCommandBuffer commandBuffer,
+		uint32_t imageIndex);
+
+	void DrawFrame();
+	uint32_t _currentFrame;
+
+	std::vector<VkSemaphore> _imageAvailableSemaphores;
+	std::vector<VkSemaphore> _renderFinishedSemaphores;
+	std::vector<VkFence> _inFlightFences;
+	void CreateSyncObjects();
+	void DestroySyncObjects();
 };
 
 #endif

@@ -296,7 +296,9 @@ void Video::CreateSwapchain()
 		_window.GetWindow(),
 		&_deviceSupport,
 		_memorySystem,
-		_msaaSamples);
+		_msaaSamples,
+		_graphicsQueue,
+		_presentQueue);
 
 	_swapchain->Create();
 }
@@ -305,4 +307,9 @@ void Video::DestroySwapchain()
 {
 	_swapchain->Destroy();
 	delete _swapchain;
+}
+
+void Video::MainLoop()
+{
+	_swapchain->MainLoop();
 }

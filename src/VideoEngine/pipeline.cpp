@@ -250,12 +250,22 @@ void Pipeline::CreateRenderPass()
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = 1;
 	renderPassInfo.pAttachments = &colorAttachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
 
 	VkResult res = vkCreateRenderPass(
 		_device,
@@ -309,4 +319,30 @@ void Pipeline::DestroyFramebuffers()
 	for (auto framebuffer : _framebuffers) {
 		vkDestroyFramebuffer(_device, framebuffer, nullptr);
 	}
+}
+
+void Pipeline::RecordCommandBuffer(
+	VkCommandBuffer commandBuffer,
+	uint32_t imageIndex)
+{
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = _renderPass;
+	renderPassInfo.framebuffer = _framebuffers[imageIndex];
+	renderPassInfo.renderArea.offset = {0, 0};
+	renderPassInfo.renderArea.extent = _extent;
+
+	VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(
+		commandBuffer,
+		&renderPassInfo,
+		VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(
+		commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		_pipeline);
 }

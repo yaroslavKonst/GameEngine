@@ -13,6 +13,8 @@ public:
 		VkCommandPoolCreateFlags flags);
 	~CommandPool();
 
+	VkCommandBuffer CreateCommandBuffer();
+
 private:
 	VkDevice _device;
 	VkCommandPool _commandPool;

@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 	Logger::SetLevel(Logger::Level::Verbose);
 
 	Video window(500, 200, "Welcome", "Application");
-	sleep(5);
+	window.MainLoop();
 
 	return 0;
 }

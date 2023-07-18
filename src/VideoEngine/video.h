@@ -22,6 +22,8 @@ public:
 
 	~Video();
 
+	void MainLoop();
+
 private:
 	Window _window;
 
