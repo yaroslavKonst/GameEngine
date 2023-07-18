@@ -6,8 +6,6 @@
 
 #include "../Logger/logger.h"
 
-using namespace PhysicalDeviceSupport;
-
 Video::Video(
 	int width,
 	int height,
@@ -51,7 +49,7 @@ void Video::CreateSurface()
 		throw std::runtime_error("Failed to create window surface.");
 	}
 
-	SetSurface(_surface);
+	_deviceSupport.SetSurface(_surface);
 }
 
 void Video::DestroySurface()
@@ -98,7 +96,7 @@ void Video::SelectPhysicalDevice()
 
 bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 {
-	SetPhysicalDevice(device);
+	_deviceSupport.SetPhysicalDevice(device);
 
 	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
@@ -113,8 +111,9 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 	bool swapchainAdequate = false;
 
 	if (extensionsSupported) {
-		SwapchainSupportDetails swapchainSupport =
-			QuerySwapchainSupport();
+		PhysicalDeviceSupport::SwapchainSupportDetails
+			swapchainSupport =
+			_deviceSupport.QuerySwapchainSupport();
 
 		swapchainAdequate = !swapchainSupport.formats.empty() &&
 			!swapchainSupport.presentModes.empty();
@@ -127,8 +126,8 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 		deviceFeatures.geometryShader &&
 		deviceFeatures.samplerAnisotropy &&
 		deviceFeatures.shaderUniformBufferArrayDynamicIndexing &&
-		FindQueueFamilies().graphicsFamily.has_value() &&
-		FindQueueFamilies().presentFamily.has_value();
+		_deviceSupport.FindQueueFamilies().graphicsFamily.has_value() &&
+		_deviceSupport.FindQueueFamilies().presentFamily.has_value();
 
 	return res;
 }
@@ -202,9 +201,10 @@ bool Video::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 
 void Video::CreateDevice()
 {
-	SetPhysicalDevice(_physicalDevice);
+	_deviceSupport.SetPhysicalDevice(_physicalDevice);
 
-	QueueFamilyIndices indices = FindQueueFamilies();
+	PhysicalDeviceSupport::QueueFamilyIndices indices =
+		_deviceSupport.FindQueueFamilies();
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
@@ -271,7 +271,8 @@ void Video::DestroyDevice()
 
 void Video::CreateCommandPools()
 {
-	QueueFamilyIndices indices = FindQueueFamilies();
+	PhysicalDeviceSupport::QueueFamilyIndices indices =
+		_deviceSupport.FindQueueFamilies();
 
 	_transferCommandPool = new CommandPool(
 		_device,
@@ -289,7 +290,8 @@ void Video::CreateSwapchain()
 	_swapchain = new Swapchain(
 		_device,
 		_surface,
-		_window.GetWindow());
+		_window.GetWindow(),
+		&_deviceSupport);
 
 	_swapchain->Create();
 }

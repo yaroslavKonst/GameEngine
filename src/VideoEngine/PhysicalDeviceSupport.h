@@ -5,8 +5,9 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-namespace PhysicalDeviceSupport
+class PhysicalDeviceSupport
 {
+public:
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> graphicsFamily;
@@ -25,6 +26,10 @@ namespace PhysicalDeviceSupport
 
 	SwapchainSupportDetails QuerySwapchainSupport();
 	QueueFamilyIndices FindQueueFamilies();
-}
+
+private:
+	VkPhysicalDevice _device;
+	VkSurfaceKHR _surface;
+};
 
 #endif

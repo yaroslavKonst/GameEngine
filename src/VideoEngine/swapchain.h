@@ -16,7 +16,8 @@ public:
 	Swapchain(
 		VkDevice device,
 		VkSurfaceKHR surface,
-		GLFWwindow* window);
+		GLFWwindow* window,
+		PhysicalDeviceSupport* deviceSupport);
 	~Swapchain();
 
 	void Create();
@@ -27,6 +28,8 @@ private:
 	VkExtent2D _extent;
 	VkSurfaceKHR _surface;
 	GLFWwindow* _window;
+
+	PhysicalDeviceSupport* _deviceSupport;
 
 	bool _initialized;
 

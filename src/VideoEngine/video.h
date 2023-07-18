@@ -35,6 +35,7 @@ private:
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	VkSampleCountFlagBits GetMaxSampleCount();
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+	PhysicalDeviceSupport _deviceSupport;
 
 	VkDevice _device;
 	VkQueue _graphicsQueue;

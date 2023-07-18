@@ -4,16 +4,16 @@
 
 #include "../Logger/logger.h"
 
-using namespace PhysicalDeviceSupport;
-
 Swapchain::Swapchain(
 	VkDevice device,
 	VkSurfaceKHR surface,
-	GLFWwindow* window)
+	GLFWwindow* window,
+	PhysicalDeviceSupport* deviceSupport)
 {
 	_device = device;
 	_surface = surface;
 	_window = window;
+	_deviceSupport = deviceSupport;
 
 	Logger::Verbose("Swapchain constructor called.");
 
@@ -91,8 +91,10 @@ void Swapchain::Create()
 		Destroy();
 	}
 
-	SwapchainSupportDetails supportDetails = QuerySwapchainSupport();
-	QueueFamilyIndices indices = FindQueueFamilies();
+	PhysicalDeviceSupport::SwapchainSupportDetails supportDetails =
+		_deviceSupport->QuerySwapchainSupport();
+	PhysicalDeviceSupport::QueueFamilyIndices indices =
+		_deviceSupport->FindQueueFamilies();
 
 	VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(
 		supportDetails.formats);
