@@ -50,13 +50,14 @@ private:
 	std::vector<VkImage> _images;
 	VkFormat _imageFormat;
 
-	uint32_t _framesInFlight;
-	uint32_t _currentFrame;
-
 	ImageHelper::Image _colorImage;
 	ImageHelper::Image _depthImage;
 	void CreateImages();
 	void DestroyImages();
+
+	std::vector<VkImageView> _imageViews;
+	void CreateImageViews();
+	void DestroyImageViews();
 };
 
 #endif

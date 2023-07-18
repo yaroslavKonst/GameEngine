@@ -177,21 +177,15 @@ void Swapchain::Create()
 
 	_imageFormat = surfaceFormat.format;
 
-	if (_images.size() > 3) {
-		_framesInFlight = _images.size() - 3;
-	} else {
-		_framesInFlight = 2;
-	}
-
-	_currentFrame = 0;
-
 	CreateImages();
+	CreateImageViews();
 
 	_initialized = true;
 }
 
 void Swapchain::Destroy()
 {
+	DestroyImageViews();
 	DestroyImages();
 
 	vkDestroySwapchainKHR(_device, _swapchain, nullptr);
@@ -250,4 +244,27 @@ void Swapchain::DestroyImages()
 		_device,
 		_depthImage,
 		_memorySystem);
+}
+
+void Swapchain::CreateImageViews()
+{
+	_imageViews.resize(_images.size());
+
+	for (size_t i = 0; i < _images.size(); ++i) {
+		_imageViews[i] = ImageHelper::CreateImageView(
+			_device,
+			_images[i],
+			_imageFormat,
+			VK_IMAGE_ASPECT_COLOR_BIT,
+			1);
+	}
+}
+
+void Swapchain::DestroyImageViews()
+{
+	for (size_t i = 0; i < _images.size(); ++i) {
+		ImageHelper::DestroyImageView(
+			_device,
+			_imageViews[i]);
+	}
 }

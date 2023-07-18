@@ -30,6 +30,16 @@ namespace ImageHelper
 		VkDevice device,
 		Image image,
 		MemorySystem* memorySystem);
+
+	VkImageView CreateImageView(
+		VkDevice device,
+		VkImage image,
+		VkFormat format,
+		VkImageAspectFlags aspectFlags,
+		uint32_t mipLevels);
+	void DestroyImageView(
+		VkDevice device,
+		VkImageView imageView);
 }
 
 #endif

@@ -1,6 +1,7 @@
-.PHONY: all
+.PHONY: all shaders
 
 all: \
+	shaders \
 	../../build/window.o \
 	../../build/VkInstanceHandler.o \
 	../../build/video.o \
@@ -9,7 +10,11 @@ all: \
 	../../build/swapchain.o \
 	../../build/PhysicalDeviceSupport.o \
 	../../build/MemorySystem.o \
-	../../build/ImageHelper.o
+	../../build/ImageHelper.o \
+	../../build/pipeline.o
+
+shaders:
+	cd shaders ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 
 ../../build/%.o: %.cpp %.h
 	$(CC) $(CC_OPTS) $(CC_OBJ) -o $@ $<
