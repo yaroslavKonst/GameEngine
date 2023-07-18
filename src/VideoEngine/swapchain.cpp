@@ -179,12 +179,14 @@ void Swapchain::Create()
 
 	CreateImages();
 	CreateImageViews();
+	CreatePipelines();
 
 	_initialized = true;
 }
 
 void Swapchain::Destroy()
 {
+	DestroyPipelines();
 	DestroyImageViews();
 	DestroyImages();
 
@@ -200,7 +202,7 @@ void Swapchain::CreateImages()
 		_extent.width,
                 _extent.height,
                 1,
-                _msaaSamples,
+                VK_SAMPLE_COUNT_1_BIT, // _msaaSamples,
                 _imageFormat,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
@@ -224,7 +226,7 @@ void Swapchain::CreateImages()
 		_extent.width,
                 _extent.height,
                 1,
-                _msaaSamples,
+                VK_SAMPLE_COUNT_1_BIT, // _msaaSamples,
                 depthFormat,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -267,4 +269,17 @@ void Swapchain::DestroyImageViews()
 			_device,
 			_imageViews[i]);
 	}
+}
+
+void Swapchain::CreatePipelines()
+{
+	_pipeline = new Pipeline(
+		_device,
+		_extent,
+		_imageFormat);
+}
+
+void Swapchain::DestroyPipelines()
+{
+	delete _pipeline;
 }

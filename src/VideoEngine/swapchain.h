@@ -11,6 +11,7 @@
 #include "CommandPool.h"
 #include "MemorySystem.h"
 #include "ImageHelper.h"
+#include "pipeline.h"
 
 class Swapchain
 {
@@ -58,6 +59,10 @@ private:
 	std::vector<VkImageView> _imageViews;
 	void CreateImageViews();
 	void DestroyImageViews();
+
+	Pipeline* _pipeline;
+	void CreatePipelines();
+	void DestroyPipelines();
 };
 
 #endif
