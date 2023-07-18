@@ -313,3 +313,8 @@ void Video::MainLoop()
 {
 	_swapchain->MainLoop();
 }
+
+void Video::Stop()
+{
+	_swapchain->Stop();
+}

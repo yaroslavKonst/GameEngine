@@ -23,6 +23,7 @@ public:
 	~Video();
 
 	void MainLoop();
+	void Stop();
 
 private:
 	Window _window;

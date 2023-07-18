@@ -32,6 +32,7 @@ public:
 	void Destroy();
 
 	void MainLoop();
+	void Stop();
 
 private:
 	const uint32_t _maxFramesInFlight = 2;
@@ -80,6 +81,8 @@ private:
 	void RecordCommandBuffer(
 		VkCommandBuffer commandBuffer,
 		uint32_t imageIndex);
+
+	bool _work;
 
 	void DrawFrame();
 	uint32_t _currentFrame;

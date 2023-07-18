@@ -353,12 +353,19 @@ void Swapchain::RecordCommandBuffer(
 }
 
 void Swapchain::MainLoop() {
-	while (!glfwWindowShouldClose(_window)) {
+	_work = true;
+
+	while (!glfwWindowShouldClose(_window) && _work) {
 		glfwPollEvents();
 		DrawFrame();
 	}
 
 	vkDeviceWaitIdle(_device);
+}
+
+void Swapchain::Stop()
+{
+	_work = false;
 }
 
 void Swapchain::DrawFrame()
