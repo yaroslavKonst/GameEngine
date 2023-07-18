@@ -15,6 +15,9 @@ public:
 
 	~Pipeline();
 
+	void CreateFramebuffers(const std::vector<VkImageView>& imageViews);
+	void DestroyFramebuffers();
+
 private:
 	VkDevice _device;
 	VkExtent2D _extent;
@@ -29,6 +32,8 @@ private:
 	void DestroyRenderPass();
 
 	VkPipeline _pipeline;
+
+	std::vector<VkFramebuffer> _framebuffers;
 };
 
 #endif

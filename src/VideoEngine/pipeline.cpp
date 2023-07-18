@@ -271,3 +271,42 @@ void Pipeline::DestroyRenderPass()
 {
 	vkDestroyRenderPass(_device, _renderPass, nullptr);
 }
+
+void Pipeline::CreateFramebuffers(const std::vector<VkImageView>& imageViews)
+{
+	_framebuffers.resize(imageViews.size());
+
+	for (size_t i = 0; i < imageViews.size(); ++i) {
+		VkImageView attachments[] = {
+			imageViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType =
+			VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = _renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = _extent.width;
+		framebufferInfo.height = _extent.height;
+		framebufferInfo.layers = 1;
+
+		VkResult res = vkCreateFramebuffer(
+			_device,
+			&framebufferInfo,
+			nullptr,
+			&_framebuffers[i]);
+		
+		if (res != VK_SUCCESS) {
+			throw std::runtime_error(
+				"Failed to create framebuffer.");
+		}
+	}
+}
+
+void Pipeline::DestroyFramebuffers()
+{
+	for (auto framebuffer : _framebuffers) {
+		vkDestroyFramebuffer(_device, framebuffer, nullptr);
+	}
+}

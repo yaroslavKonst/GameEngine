@@ -277,9 +277,12 @@ void Swapchain::CreatePipelines()
 		_device,
 		_extent,
 		_imageFormat);
+
+	_pipeline->CreateFramebuffers(_imageViews);
 }
 
 void Swapchain::DestroyPipelines()
 {
+	_pipeline->DestroyFramebuffers();
 	delete _pipeline;
 }
