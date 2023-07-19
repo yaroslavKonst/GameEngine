@@ -3,6 +3,8 @@
 
 #include "MemorySystem.h"
 #include "PhysicalDeviceSupport.h"
+#include "CommandPool.h"
+#include "BufferHelper.h"
 
 namespace ImageHelper
 {
@@ -37,9 +39,25 @@ namespace ImageHelper
 		VkFormat format,
 		VkImageAspectFlags aspectFlags,
 		uint32_t mipLevels);
+
 	void DestroyImageView(
 		VkDevice device,
 		VkImageView imageView);
+
+	void ChangeImageLayout(
+		Image image,
+		VkImageLayout oldLayout,
+		VkImageLayout newLayout,
+		CommandPool* commandPool,
+		VkQueue graphicsQueue);
+
+	void CopyBufferToImage(
+		BufferHelper::Buffer buffer,
+		Image image,
+		uint32_t width,
+		uint32_t height,
+		CommandPool* commandPool,
+		VkQueue graphicsQueue);
 }
 
 #endif

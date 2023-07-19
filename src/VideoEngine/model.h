@@ -72,11 +72,55 @@ public:
 		_ready = ready;
 	}
 
+	uint32_t GetTexWidth()
+	{
+		return _texWidth;
+	}
+
+	uint32_t GetTexHeight()
+	{
+		return _texHeight;
+	}
+
+	const std::vector<uint8_t>& GetTexData()
+	{
+		return _modelTexture;
+	}
+
+	void SetTexWidth(uint32_t value)
+	{
+		_texWidth = value;
+	}
+
+	void SetTexHeight(uint32_t value)
+	{
+		_texHeight = value;
+	}
+
+	void SetTexData(const std::vector<uint8_t>& texture)
+	{
+		_modelTexture = texture;
+	}
+
+	const std::vector<glm::vec2>& GetTexCoords()
+	{
+		return _modelTexCoordBuffer;
+	}
+
+	void SetTexCoords(const std::vector<glm::vec2>& coords)
+	{
+		_modelTexCoordBuffer = coords;
+	}
+
 private:
 	std::vector<glm::vec2> _modelVertexBuffer;
 	std::vector<glm::vec3> _modelColorBuffer;
 	std::vector<uint32_t> _modelIndexBuffer;
 	std::vector<glm::vec2> _modelTexCoordBuffer;
+
+	uint32_t _texWidth;
+	uint32_t _texHeight;
+	std::vector<uint8_t> _modelTexture;
 
 	glm::mat4 _modelMatrix;
 

@@ -81,6 +81,7 @@ private:
 	void DestroyModelDescriptor(ModelDescriptor descriptor);
 	void RemoveModelDescriptor(ModelDescriptor modelDescriptor);
 	void RemoveAllModels();
+	ImageHelper::Image CreateTextureImage(Model* model);
 
 	double _fov;
 	glm::mat4 _viewMatrix;

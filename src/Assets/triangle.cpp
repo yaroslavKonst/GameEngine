@@ -1,5 +1,10 @@
 #include "triangle.h"
 
+#include <stdexcept>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../ThirdParty/stb/stb_image.h"
+
 Triangle::Triangle()
 {
 	SetModelVertices(
@@ -23,6 +28,32 @@ Triangle::Triangle()
 	SetModelActive(true);
 
 	_angle = 0;
+
+
+	int texWidth;
+	int texHeight;
+	int texChannels;
+
+	stbi_uc* pixels = stbi_load(
+		"../src/Assets/Resources/texture.jpg",
+		&texWidth,
+		&texHeight,
+		&texChannels,
+		STBI_rgb_alpha);
+
+	if (!pixels) {
+		throw std::runtime_error("Failed to load texture image.");
+	}
+
+
+	std::vector<uint8_t> texData(texWidth * texHeight * 4);
+	memcpy(texData.data(), pixels, texData.size());
+
+	SetTexWidth(texWidth);
+	SetTexHeight(texHeight);
+	SetTexData(texData);
+
+	stbi_image_free(pixels);
 }
 
 Triangle::~Triangle()

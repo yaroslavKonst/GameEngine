@@ -10,7 +10,6 @@ MemoryManager::MemoryManager(
 	uint32_t memoryTypeIndex,
 	uint32_t alignment)
 {
-
 	_device = device;
 	_pageSize = (pageSize / alignment + 1) * alignment;
 	_alignment = alignment;
@@ -23,18 +22,30 @@ MemoryManager::MemoryManager(
 		std::string("Created memory manager for index ") +
 		std::to_string(_memoryTypeIndex) + ", alignment " +
 		std::to_string(_alignment));
+
+	Logger::Verbose(
+		std::string("Page size ") + std::to_string(_pageSize));
 }
 
 MemoryManager::~MemoryManager()
 {
+	uint32_t leakedSectors = 0;
+
 	for (auto& page : _pages) {
 		vkFreeMemory(_device, page.memory, nullptr);
+
+		for (bool sector : page.data) {
+			if (sector) {
+				++leakedSectors;
+			}
+		}
 	}
 
 	Logger::Verbose(
 		std::string("Destroyed memory manager for index ") +
 		std::to_string(_memoryTypeIndex) + ", alignment " +
-		std::to_string(_alignment));
+		std::to_string(_alignment) + ". Leaks: " +
+		std::to_string(leakedSectors));
 }
 
 void MemoryManager::AddPage()
@@ -73,7 +84,9 @@ MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
 	{
 		_mutex.unlock();
 		throw std::runtime_error(
-			"Memory allocation is greater than page size.");
+			std::string("Memory allocation size ") +
+			std::to_string(size) + " is greater than page size " +
+			std::to_string(_pageSize));
 	}
 
 	uint32_t requiredSectors = (size - 1) / _alignment + 1;

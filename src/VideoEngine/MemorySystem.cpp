@@ -1,6 +1,9 @@
 #include "MemorySystem.h"
 
-#define PAGE_SIZE 1048576
+#include "../Logger/logger.h"
+
+// 16 MB for page.
+#define PAGE_SIZE 1048576 * 16
 
 MemorySystem::MemorySystem(VkDevice device)
 {
@@ -19,9 +22,12 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	AllocationProperties properties)
 {
 	if (_managers.find(properties) == _managers.end()) {
+		Logger::Verbose(std::string("Requested alignment ") +
+			std::to_string(properties.Alignment));
+
 		_managers[properties] = new MemoryManager(
 			_device,
-			properties.Alignment * PAGE_SIZE,
+			PAGE_SIZE,
 			properties.MemoryTypeIndex,
 			properties.Alignment);
 	}

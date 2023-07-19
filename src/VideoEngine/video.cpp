@@ -456,6 +456,9 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	descriptor.IndexCount = indices.size();
 
+	// Texture image.
+	descriptor.TextureImage = CreateTextureImage(model);
+
 	return descriptor;
 }
 
@@ -470,4 +473,84 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 		_device,
 		descriptor.IndexBuffer,
 		_memorySystem);
+
+	ImageHelper::DestroyImage(
+		_device,
+		descriptor.TextureImage,
+		_memorySystem);
+}
+
+ImageHelper::Image Video::CreateTextureImage(Model* model)
+{
+	uint32_t texWidth = model->GetTexWidth();
+	uint32_t texHeight = model->GetTexHeight();
+
+	uint32_t imageSize = texWidth * texHeight * 4;
+
+	ImageHelper::Image textureImage = ImageHelper::CreateImage(
+		_device,
+		texWidth,
+		texHeight,
+		1,
+		VK_SAMPLE_COUNT_1_BIT,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	BufferHelper::Buffer stagingBuffer = BufferHelper::CreateBuffer(
+		_device,
+		imageSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	uint32_t* imageData;
+	vkMapMemory(
+		_device,
+		stagingBuffer.Allocation.Memory,
+		stagingBuffer.Allocation.Offset,
+		stagingBuffer.Allocation.Size,
+		0,
+		reinterpret_cast<void**>(&imageData));
+
+	auto& pixels = model->GetTexData();
+	memcpy(imageData, pixels.data(), pixels.size());
+
+	vkUnmapMemory(
+		_device,
+		stagingBuffer.Allocation.Memory);
+
+	ImageHelper::ChangeImageLayout(
+		textureImage,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		_transferCommandPool,
+		_graphicsQueue);
+
+	ImageHelper::CopyBufferToImage(
+		stagingBuffer,
+		textureImage,
+		texWidth,
+		texHeight,
+		_transferCommandPool,
+		_graphicsQueue);
+
+	BufferHelper::DestroyBuffer(
+		_device,
+		stagingBuffer,
+		_memorySystem);
+
+	ImageHelper::ChangeImageLayout(
+		textureImage,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		_transferCommandPool,
+		_graphicsQueue);
+
+	return textureImage;
 }

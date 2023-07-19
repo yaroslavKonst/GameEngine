@@ -12,6 +12,7 @@
 
 #include "MemorySystem.h"
 #include "BufferHelper.h"
+#include "ImageHelper.h"
 
 struct ModelDescriptor
 {
@@ -26,6 +27,8 @@ struct ModelDescriptor
 
 	uint32_t IndexCount;
 	BufferHelper::Buffer IndexBuffer;
+
+	ImageHelper::Image TextureImage;
 
 	static VkVertexInputBindingDescription GetVertexBindingDescription();
 	static std::array<VkVertexInputAttributeDescription, 2>
