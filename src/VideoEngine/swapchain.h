@@ -12,6 +12,8 @@
 #include "MemorySystem.h"
 #include "ImageHelper.h"
 #include "pipeline.h"
+#include "model.h"
+#include "ModelDescriptor.h"
 
 class Swapchain
 {
@@ -24,7 +26,8 @@ public:
 		MemorySystem* memorySystem,
 		VkSampleCountFlagBits msaaSamples,
 		VkQueue graphicsQueue,
-		VkQueue presentQueue);
+		VkQueue presentQueue,
+		std::map<Model*, ModelDescriptor>* models);
 
 	~Swapchain();
 
@@ -45,6 +48,8 @@ private:
 
 	PhysicalDeviceSupport* _deviceSupport;
 	MemorySystem* _memorySystem;
+
+	std::map<Model*, ModelDescriptor>* _models;
 
 	VkQueue _graphicsQueue;
 	VkQueue _presentQueue;

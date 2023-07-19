@@ -12,7 +12,8 @@ Swapchain::Swapchain(
 	MemorySystem* memorySystem,
 	VkSampleCountFlagBits msaaSamples,
 	VkQueue graphicsQueue,
-	VkQueue presentQueue)
+	VkQueue presentQueue,
+	std::map<Model*, ModelDescriptor>* models)
 {
 	_device = device;
 	_surface = surface;
@@ -22,6 +23,7 @@ Swapchain::Swapchain(
 	_msaaSamples = msaaSamples;
 	_graphicsQueue = graphicsQueue;
 	_presentQueue = presentQueue;
+	_models = models;
 
 	Logger::Verbose("Swapchain constructor called.");
 
@@ -341,7 +343,22 @@ void Swapchain::RecordCommandBuffer(
 	scissor.extent = _extent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	for (auto& model : *_models) {
+		if (!model.first->IsModelActive()) {
+			continue;
+		}
+
+		VkBuffer vertexBuffers[] = {model.second.VertexBuffer.Buffer};
+		VkDeviceSize offsets[] = {0};
+		vkCmdBindVertexBuffers(
+			commandBuffer,
+			0,
+			1,
+			vertexBuffers,
+			offsets);
+
+		vkCmdDraw(commandBuffer, model.second.VertexCount, 1, 0, 0);
+	}
 
 	vkCmdEndRenderPass(commandBuffer);
 

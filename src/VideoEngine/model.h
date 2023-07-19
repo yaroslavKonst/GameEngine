@@ -17,19 +17,43 @@ public:
 	Model();
 	virtual ~Model();
 
-	const glm::mat4& GetModelMatrix()
+	virtual const glm::mat4& GetModelMatrix()
 	{
 		return _modelMatrix;
 	}
 
-	bool IsActive()
+	virtual const std::vector<glm::vec2>& GetModelVertices()
+	{
+		return _modelVertexBuffer;
+	}
+
+	virtual const std::vector<glm::vec3>& GetModelColors()
+	{
+		return _modelColorBuffer;
+	}
+
+	virtual void SetModelVertices(const std::vector<glm::vec2>& vertices)
+	{
+		_modelVertexBuffer = vertices;
+	}
+
+	virtual void SetModelColors(const std::vector<glm::vec3>& colors)
+	{
+		_modelColorBuffer = colors;
+	}
+	virtual bool IsModelActive()
 	{
 		return _modelActive;
 	}
 
+	virtual void SetModelActive(bool active)
+	{
+		_modelActive = active;
+	}
+
 private:
 	std::vector<glm::vec2> _modelVertexBuffer;
-	std::vector<glm::vec4> _modelColorBuffer;
+	std::vector<glm::vec3> _modelColorBuffer;
 	std::vector<uint32_t> _modelIndexBuffer;
 	std::vector<glm::vec2> _modelTexCoordBuffer;
 

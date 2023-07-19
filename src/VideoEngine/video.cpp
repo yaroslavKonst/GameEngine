@@ -299,7 +299,8 @@ void Video::CreateSwapchain()
 		_memorySystem,
 		_msaaSamples,
 		_graphicsQueue,
-		_presentQueue);
+		_presentQueue,
+		&_models);
 
 	_swapchain->Create();
 }
@@ -322,12 +323,67 @@ void Video::Stop()
 
 void Video::RegisterModel(Model* model)
 {
+	_models[model] = CreateModelDescriptor(model);
 }
 
 void Video::RemoveModel(Model* model)
 {
+	DestroyModelDescriptor(_models[model]);
+	_models.erase(model);
+}
+
+void Video::RemoveAllModels()
+{
+	for (auto& model : _models) {
+		DestroyModelDescriptor(model.second);
+	}
+
+	_models.clear();
 }
 
 ModelDescriptor Video::CreateModelDescriptor(Model* model)
 {
+	ModelDescriptor descriptor;
+
+	auto& vertices = model->GetModelVertices();
+	auto& colors = model->GetModelColors();
+
+	descriptor.VertexBuffer = BufferHelper::CreateBuffer(
+		_device,
+		sizeof(ModelDescriptor::Vertex) * vertices.size(),
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	ModelDescriptor::Vertex* data;
+	vkMapMemory(
+		_device,
+		descriptor.VertexBuffer.Allocation.Memory,
+		descriptor.VertexBuffer.Allocation.Offset,
+		descriptor.VertexBuffer.Allocation.Size,
+		0,
+		reinterpret_cast<void**>(&data));
+
+	for (size_t i = 0; i < vertices.size(); ++i) {
+		data[i].pos = vertices[i];
+		data[i].color = colors[i];
+	}
+
+	vkUnmapMemory(
+		_device,
+		descriptor.VertexBuffer.Allocation.Memory);
+
+	descriptor.VertexCount = vertices.size();
+
+	return descriptor;
+}
+
+void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
+{
+	BufferHelper::DestroyBuffer(
+		_device,
+		descriptor.VertexBuffer,
+		_memorySystem);
 }

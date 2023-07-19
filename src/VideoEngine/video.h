@@ -65,6 +65,7 @@ private:
 
 	std::map<Model*, ModelDescriptor> _models;
 	ModelDescriptor CreateModelDescriptor(Model* model);
+	void DestroyModelDescriptor(ModelDescriptor descriptor);
 	void RemoveModelDescriptor(ModelDescriptor modelDescriptor);
 	void RemoveAllModels();
 };

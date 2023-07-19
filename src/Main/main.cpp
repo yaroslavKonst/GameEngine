@@ -5,6 +5,7 @@
 #include "../VideoEngine/video.h"
 #include "../UniverseEngine/universe.h"
 #include "../Logger/logger.h"
+#include "../Assets/triangle.h"
 
 void UniverseThread(Universe* universe)
 {
@@ -20,7 +21,12 @@ int main(int argc, char** argv)
 
 	std::thread universeThread(UniverseThread, &universe);
 
+	Triangle triangle;
+	window.RegisterModel(&triangle);
+
 	window.MainLoop();
+
+	window.RemoveModel(&triangle);
 
 	universe.Stop();
 	universeThread.join();

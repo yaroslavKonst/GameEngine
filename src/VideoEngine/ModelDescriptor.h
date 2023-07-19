@@ -11,6 +11,7 @@
 #include <glm/gtx/hash.hpp>
 
 #include "MemorySystem.h"
+#include "BufferHelper.h"
 
 struct ModelDescriptor
 {
@@ -20,11 +21,9 @@ struct ModelDescriptor
 		glm::vec3 color;
 	};
 
-	VkBuffer VertexBuffer;
-	MemorySystem::Allocation VertexBufferMemory;
-
-	VkBuffer IndexBuffer;
-	MemorySystem::Allocation IndexBufferMemory;
+	uint32_t VertexCount;
+	BufferHelper::Buffer VertexBuffer;
+	BufferHelper::Buffer IndexBuffer;
 
 	static VkVertexInputBindingDescription GetVertexBindingDescription();
 	static std::array<VkVertexInputAttributeDescription, 2>

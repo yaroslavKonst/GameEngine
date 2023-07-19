@@ -14,7 +14,13 @@ namespace BufferHelper
 		MemorySystem::Allocation Allocation;
 	};
 
-	Buffer CreateBuffer(VkDevice device);
+	Buffer CreateBuffer(
+		VkDevice device,
+		uint32_t size,
+		VkBufferUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		MemorySystem* memorySystem,
+		PhysicalDeviceSupport* deviceSupport);
 
 	void DestroyBuffer(
 		VkDevice device,
