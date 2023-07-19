@@ -69,13 +69,7 @@ namespace BufferHelper
 		VkQueue graphicsQueue)
 	{
 		VkCommandBuffer commandBuffer =
-			commandPool->CreateCommandBuffer();
-
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+			commandPool->StartOneTimeBuffer();
 
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0; // Optional
@@ -89,16 +83,8 @@ namespace BufferHelper
 			1,
 			&copyRegion);
 
-		vkEndCommandBuffer(commandBuffer);
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-
-		vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(graphicsQueue);
-
-		commandPool->DestroyCommandBuffer(commandBuffer);
+		commandPool->EndOneTimeBuffer(
+			commandBuffer,
+			graphicsQueue);
 	}
 }

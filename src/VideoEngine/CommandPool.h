@@ -16,6 +16,11 @@ public:
 	VkCommandBuffer CreateCommandBuffer();
 	void DestroyCommandBuffer(VkCommandBuffer commandBuffer);
 
+	VkCommandBuffer StartOneTimeBuffer();
+	void EndOneTimeBuffer(
+		VkCommandBuffer commandBuffer,
+		VkQueue graphicsQueue);
+
 private:
 	VkDevice _device;
 	VkCommandPool _commandPool;

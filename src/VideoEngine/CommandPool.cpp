@@ -54,3 +54,33 @@ void CommandPool::DestroyCommandBuffer(VkCommandBuffer commandBuffer)
 {
 	vkFreeCommandBuffers(_device, _commandPool, 1, &commandBuffer);
 }
+
+VkCommandBuffer CommandPool::StartOneTimeBuffer()
+{
+	VkCommandBuffer commandBuffer = CreateCommandBuffer();
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	return commandBuffer;
+}
+
+void CommandPool::EndOneTimeBuffer(
+	VkCommandBuffer commandBuffer,
+	VkQueue graphicsQueue)
+{
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphicsQueue);
+
+	DestroyCommandBuffer(commandBuffer);
+}
