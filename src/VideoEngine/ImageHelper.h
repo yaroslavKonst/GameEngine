@@ -48,6 +48,7 @@ namespace ImageHelper
 		Image image,
 		VkImageLayout oldLayout,
 		VkImageLayout newLayout,
+		uint32_t mipLevels,
 		CommandPool* commandPool,
 		VkQueue graphicsQueue);
 

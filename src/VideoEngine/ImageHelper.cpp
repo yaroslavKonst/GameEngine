@@ -126,6 +126,7 @@ namespace ImageHelper
 		Image image,
 		VkImageLayout oldLayout,
 		VkImageLayout newLayout,
+		uint32_t mipLevels,
 		CommandPool* commandPool,
 		VkQueue graphicsQueue)
 	{
@@ -142,7 +143,7 @@ namespace ImageHelper
 		barrier.image = image.Image;
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.levelCount = mipLevels;
 		barrier.subresourceRange.baseArrayLayer = 0;
 		barrier.subresourceRange.layerCount = 1;
 

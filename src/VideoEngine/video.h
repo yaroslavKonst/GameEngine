@@ -81,11 +81,18 @@ private:
 	void DestroyModelDescriptor(ModelDescriptor descriptor);
 	void RemoveModelDescriptor(ModelDescriptor modelDescriptor);
 	void RemoveAllModels();
-	ImageHelper::Image CreateTextureImage(Model* model);
+	ImageHelper::Image CreateTextureImage(
+		Model* model,
+		uint32_t& mipLevels);
 	VkSampler CreateTextureSampler(float mipLevels);
 	void DestroyTextureSampler(VkSampler sampler);
 	void CreateDescriptors(ModelDescriptor* descriptor);
 	void DestroyDescriptors(ModelDescriptor* descriptor);
+	void GenerateMipmaps(
+		ImageHelper::Image image,
+		uint32_t width,
+		uint32_t height,
+		uint32_t mipLevels);
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();
