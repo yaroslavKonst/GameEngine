@@ -117,6 +117,11 @@ namespace ImageHelper
 		vkDestroyImageView(device, imageView, nullptr);
 	}
 
+	bool HasStencilComponent(VkFormat format) {
+		return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+			format == VK_FORMAT_D24_UNORM_S8_UINT;
+	}
+
 	void ChangeImageLayout(
 		Image image,
 		VkImageLayout oldLayout,
@@ -141,6 +146,21 @@ namespace ImageHelper
 		barrier.subresourceRange.baseArrayLayer = 0;
 		barrier.subresourceRange.layerCount = 1;
 
+		if (newLayout ==
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		{
+			barrier.subresourceRange.aspectMask =
+				VK_IMAGE_ASPECT_DEPTH_BIT;
+
+			if (HasStencilComponent(image.Format)) {
+				barrier.subresourceRange.aspectMask |=
+					VK_IMAGE_ASPECT_STENCIL_BIT;
+			}
+		} else {
+			barrier.subresourceRange.aspectMask =
+				VK_IMAGE_ASPECT_COLOR_BIT;
+		}
+
 		VkPipelineStageFlags sourceStage;
 		VkPipelineStageFlags destinationStage;
 
@@ -163,6 +183,19 @@ namespace ImageHelper
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage =
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		} else if (
+			oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+			newLayout ==
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		{
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask =
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage =
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		} else {
 			throw std::invalid_argument(
 				"Unsupported layout transition.");

@@ -27,7 +27,7 @@ public:
 		_modelMatrix = matrix;
 	}
 
-	virtual const std::vector<glm::vec2>& GetModelVertices()
+	virtual const std::vector<glm::vec3>& GetModelVertices()
 	{
 		return _modelVertexBuffer;
 	}
@@ -37,7 +37,7 @@ public:
 		return _modelIndexBuffer;
 	}
 
-	virtual void SetModelVertices(const std::vector<glm::vec2>& vertices)
+	virtual void SetModelVertices(const std::vector<glm::vec3>& vertices)
 	{
 		_modelVertexBuffer = vertices;
 	}
@@ -103,7 +103,7 @@ public:
 	}
 
 private:
-	std::vector<glm::vec2> _modelVertexBuffer;
+	std::vector<glm::vec3> _modelVertexBuffer;
 	std::vector<uint32_t> _modelIndexBuffer;
 	std::vector<glm::vec2> _modelTexCoordBuffer;
 

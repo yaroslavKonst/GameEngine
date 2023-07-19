@@ -18,8 +18,8 @@ struct ModelDescriptor
 {
 	struct Vertex
 	{
-		glm::vec2 pos;
-		glm::vec2 texCoord;
+		glm::vec3 Pos;
+		glm::vec2 TexCoord;
 	};
 
 	uint32_t VertexCount;

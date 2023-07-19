@@ -14,11 +14,14 @@ public:
 		VkDevice device,
 		VkExtent2D extent,
 		VkFormat colorAttachmentFormat,
+		VkFormat depthAttachmentFormat,
 		VkDescriptorSetLayout descriptorSetLayout);
 
 	~Pipeline();
 
-	void CreateFramebuffers(const std::vector<VkImageView>& imageViews);
+	void CreateFramebuffers(
+		const std::vector<VkImageView>& imageViews,
+		VkImageView depthImageView);
 	void DestroyFramebuffers();
 
 	void RecordCommandBuffer(
@@ -34,6 +37,7 @@ private:
 	VkDevice _device;
 	VkExtent2D _extent;
 	VkFormat _colorAttachmentFormat;
+	VkFormat _depthAttachmentFormat;
 
 	VkShaderModule CreateShaderModule(const uint8_t* data, size_t size);
 	void DestroyShaderModule(VkShaderModule shaderModule);

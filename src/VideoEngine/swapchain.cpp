@@ -124,6 +124,10 @@ void Swapchain::Create()
 		std::string("Extent: ") + std::to_string(_extent.width) +
 		"x" + std::to_string(_extent.height));
 
+	_transferCommandPool = new CommandPool(
+		_device,
+		indices.graphicsFamily.value(),
+		VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
 	uint32_t imageCount = supportDetails.capabilities.minImageCount + 7;
 
@@ -190,7 +194,7 @@ void Swapchain::Create()
 
 	_imageFormat = surfaceFormat.format;
 
-	CreateImages();
+	CreateRenderingImages();
 	CreateImageViews();
 	CreatePipelines();
 
@@ -217,14 +221,16 @@ void Swapchain::Destroy()
 	delete _commandPool;
 	DestroyPipelines();
 	DestroyImageViews();
-	DestroyImages();
+	DestroyRenderingImages();
+
+	delete _transferCommandPool;
 
 	vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 	_initialized = false;
 	Logger::Verbose("Swapchain destroyed.");
 }
 
-void Swapchain::CreateImages()
+void Swapchain::CreateRenderingImages()
 {
 	_colorImage = ImageHelper::CreateImage(
 		_device,
@@ -262,10 +268,26 @@ void Swapchain::CreateImages()
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 _memorySystem,
                 _deviceSupport);
+
+	_depthImageView = ImageHelper::CreateImageView(
+		_device,
+		_depthImage.Image,
+		depthFormat,
+		VK_IMAGE_ASPECT_DEPTH_BIT,
+		1);
+
+	ImageHelper::ChangeImageLayout(
+		_depthImage,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		_transferCommandPool,
+		_graphicsQueue);
 }
 
-void Swapchain::DestroyImages()
+void Swapchain::DestroyRenderingImages()
 {
+	ImageHelper::DestroyImageView(_device, _depthImageView);
+
 	ImageHelper::DestroyImage(
 		_device,
 		_colorImage,
@@ -306,9 +328,10 @@ void Swapchain::CreatePipelines()
 		_device,
 		_extent,
 		_imageFormat,
+		_depthImage.Format,
 		_descriptorSetLayout);
 
-	_pipeline->CreateFramebuffers(_imageViews);
+	_pipeline->CreateFramebuffers(_imageViews, _depthImageView);
 }
 
 void Swapchain::DestroyPipelines()

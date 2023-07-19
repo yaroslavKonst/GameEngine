@@ -74,8 +74,9 @@ private:
 
 	ImageHelper::Image _colorImage;
 	ImageHelper::Image _depthImage;
-	void CreateImages();
-	void DestroyImages();
+	VkImageView _depthImageView;
+	void CreateRenderingImages();
+	void DestroyRenderingImages();
 
 	std::vector<VkImageView> _imageViews;
 	void CreateImageViews();
@@ -86,6 +87,7 @@ private:
 	void DestroyPipelines();
 
 	CommandPool* _commandPool;
+	CommandPool* _transferCommandPool;
 	std::vector<VkCommandBuffer> _commandBuffers;
 
 	void RecordCommandBuffer(

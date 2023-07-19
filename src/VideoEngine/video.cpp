@@ -390,8 +390,8 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		reinterpret_cast<void**>(&data));
 
 	for (size_t i = 0; i < vertices.size(); ++i) {
-		data[i].pos = vertices[i];
-		data[i].texCoord = texCoords[i];
+		data[i].Pos = vertices[i];
+		data[i].TexCoord = texCoords[i];
 	}
 
 	vkUnmapMemory(
