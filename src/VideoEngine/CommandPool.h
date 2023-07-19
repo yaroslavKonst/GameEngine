@@ -14,6 +14,7 @@ public:
 	~CommandPool();
 
 	VkCommandBuffer CreateCommandBuffer();
+	void DestroyCommandBuffer(VkCommandBuffer commandBuffer);
 
 private:
 	VkDevice _device;

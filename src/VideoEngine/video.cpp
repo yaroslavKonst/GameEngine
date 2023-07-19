@@ -351,7 +351,16 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 	descriptor.VertexBuffer = BufferHelper::CreateBuffer(
 		_device,
 		sizeof(ModelDescriptor::Vertex) * vertices.size(),
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	BufferHelper::Buffer stagingBuffer = BufferHelper::CreateBuffer(
+		_device,
+		sizeof(ModelDescriptor::Vertex) * vertices.size(),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		_memorySystem,
@@ -360,9 +369,9 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 	ModelDescriptor::Vertex* data;
 	vkMapMemory(
 		_device,
-		descriptor.VertexBuffer.Allocation.Memory,
-		descriptor.VertexBuffer.Allocation.Offset,
-		descriptor.VertexBuffer.Allocation.Size,
+		stagingBuffer.Allocation.Memory,
+		stagingBuffer.Allocation.Offset,
+		stagingBuffer.Allocation.Size,
 		0,
 		reinterpret_cast<void**>(&data));
 
@@ -373,7 +382,18 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	vkUnmapMemory(
 		_device,
-		descriptor.VertexBuffer.Allocation.Memory);
+		stagingBuffer.Allocation.Memory);
+
+	BufferHelper::CopyBuffer(
+		stagingBuffer,
+		descriptor.VertexBuffer,
+		_transferCommandPool,
+		_graphicsQueue);
+
+	BufferHelper::DestroyBuffer(
+		_device,
+		stagingBuffer,
+		_memorySystem);
 
 	descriptor.VertexCount = vertices.size();
 

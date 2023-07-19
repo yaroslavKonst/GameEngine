@@ -49,3 +49,8 @@ VkCommandBuffer CommandPool::CreateCommandBuffer()
 
 	return commandBuffer;
 }
+
+void CommandPool::DestroyCommandBuffer(VkCommandBuffer commandBuffer)
+{
+	vkFreeCommandBuffers(_device, _commandPool, 1, &commandBuffer);
+}

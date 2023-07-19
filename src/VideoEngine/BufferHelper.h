@@ -5,6 +5,7 @@
 
 #include "MemorySystem.h"
 #include "PhysicalDeviceSupport.h"
+#include "CommandPool.h"
 
 namespace BufferHelper
 {
@@ -26,6 +27,12 @@ namespace BufferHelper
 		VkDevice device,
 		Buffer buffer,
 		MemorySystem* memorySystem);
+
+	void CopyBuffer(
+		Buffer src,
+		Buffer dst,
+		CommandPool* commandPool,
+		VkQueue graphicsQueue);
 }
 
 #endif

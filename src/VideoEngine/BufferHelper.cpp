@@ -61,4 +61,44 @@ namespace BufferHelper
 		vkDestroyBuffer(device, buffer.Buffer, nullptr);
 		memorySystem->Free(buffer.Allocation);
 	}
+
+	void CopyBuffer(
+		Buffer src,
+		Buffer dst,
+		CommandPool* commandPool,
+		VkQueue graphicsQueue)
+	{
+		VkCommandBuffer commandBuffer =
+			commandPool->CreateCommandBuffer();
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		VkBufferCopy copyRegion{};
+		copyRegion.srcOffset = 0; // Optional
+		copyRegion.dstOffset = 0; // Optional
+		copyRegion.size = src.Allocation.Size;
+
+		vkCmdCopyBuffer(
+			commandBuffer,
+			src.Buffer,
+			dst.Buffer,
+			1,
+			&copyRegion);
+
+		vkEndCommandBuffer(commandBuffer);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphicsQueue);
+
+		commandPool->DestroyCommandBuffer(commandBuffer);
+	}
 }
