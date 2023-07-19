@@ -2,6 +2,7 @@
 #define _VIDEO_H
 
 #include <vector>
+#include <map>
 #include <optional>
 
 #include "window.h"
@@ -10,6 +11,9 @@
 #include "swapchain.h"
 #include "PhysicalDeviceSupport.h"
 #include "MemorySystem.h"
+#include "model.h"
+#include "ModelDescriptor.h"
+#include "BufferHelper.h"
 
 class Video
 {
@@ -24,6 +28,9 @@ public:
 
 	void MainLoop();
 	void Stop();
+
+	void RegisterModel(Model* model);
+	void RemoveModel(Model* model);
 
 private:
 	Window _window;
@@ -55,6 +62,11 @@ private:
 	Swapchain* _swapchain;
 	void CreateSwapchain();
 	void DestroySwapchain();
+
+	std::map<Model*, ModelDescriptor> _models;
+	ModelDescriptor CreateModelDescriptor(Model* model);
+	void RemoveModelDescriptor(ModelDescriptor modelDescriptor);
+	void RemoveAllModels();
 };
 
 #endif

@@ -11,7 +11,10 @@ all: \
 	../../build/PhysicalDeviceSupport.o \
 	../../build/MemorySystem.o \
 	../../build/ImageHelper.o \
-	../../build/pipeline.o
+	../../build/pipeline.o \
+	../../build/model.o \
+	../../build/ModelDescriptor.o \
+	../../build/BufferHelper.o
 
 shaders:
 	cd shaders ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)

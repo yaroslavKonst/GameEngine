@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "ModelDescriptor.h"
+
 class Pipeline
 {
 public:

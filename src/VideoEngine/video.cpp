@@ -30,6 +30,7 @@ Video::~Video()
 {
 	DestroySwapchain();
 
+	RemoveAllModels();
 	DestroyCommandPools();
 	DestroyDevice();
 	DestroySurface();
@@ -317,4 +318,16 @@ void Video::MainLoop()
 void Video::Stop()
 {
 	_swapchain->Stop();
+}
+
+void Video::RegisterModel(Model* model)
+{
+}
+
+void Video::RemoveModel(Model* model)
+{
+}
+
+ModelDescriptor Video::CreateModelDescriptor(Model* model)
+{
 }
