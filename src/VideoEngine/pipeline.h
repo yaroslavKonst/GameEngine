@@ -13,7 +13,8 @@ public:
 	Pipeline(
 		VkDevice device,
 		VkExtent2D extent,
-		VkFormat colorAttachmentFormat);
+		VkFormat colorAttachmentFormat,
+		VkDescriptorSetLayout descriptorSetLayout);
 
 	~Pipeline();
 

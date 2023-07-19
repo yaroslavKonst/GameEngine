@@ -16,7 +16,8 @@ Swapchain::Swapchain(
 	VkQueue presentQueue,
 	std::map<Model*, ModelDescriptor>* models,
 	glm::mat4* viewMatrix,
-	double* fov)
+	double* fov,
+	VkDescriptorSetLayout descriptorSetLayout)
 {
 	_device = device;
 	_surface = surface;
@@ -29,6 +30,7 @@ Swapchain::Swapchain(
 	_models = models;
 	_viewMatrix = viewMatrix;
 	_fov = fov;
+	_descriptorSetLayout = descriptorSetLayout;
 
 	Logger::Verbose("Swapchain constructor called.");
 
@@ -303,7 +305,8 @@ void Swapchain::CreatePipelines()
 	_pipeline = new Pipeline(
 		_device,
 		_extent,
-		_imageFormat);
+		_imageFormat,
+		_descriptorSetLayout);
 
 	_pipeline->CreateFramebuffers(_imageViews);
 }
@@ -387,6 +390,16 @@ void Swapchain::RecordCommandBuffer(
 			0,
 			sizeof(MVP),
 			&mvp);
+
+		vkCmdBindDescriptorSets(
+			commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			_pipeline->GetPipelineLayout(),
+			0,
+			1,
+			&model.second.DescriptorSet,
+			0,
+			nullptr);
 
 		vkCmdDrawIndexed(
 			commandBuffer,

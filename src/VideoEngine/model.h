@@ -32,11 +32,6 @@ public:
 		return _modelVertexBuffer;
 	}
 
-	virtual const std::vector<glm::vec3>& GetModelColors()
-	{
-		return _modelColorBuffer;
-	}
-
 	virtual const std::vector<uint32_t>& GetModelIndices()
 	{
 		return _modelIndexBuffer;
@@ -45,11 +40,6 @@ public:
 	virtual void SetModelVertices(const std::vector<glm::vec2>& vertices)
 	{
 		_modelVertexBuffer = vertices;
-	}
-
-	virtual void SetModelColors(const std::vector<glm::vec3>& colors)
-	{
-		_modelColorBuffer = colors;
 	}
 
 	virtual void SetModelIndices(const std::vector<uint32_t>& indices)
@@ -114,7 +104,6 @@ public:
 
 private:
 	std::vector<glm::vec2> _modelVertexBuffer;
-	std::vector<glm::vec3> _modelColorBuffer;
 	std::vector<uint32_t> _modelIndexBuffer;
 	std::vector<glm::vec2> _modelTexCoordBuffer;
 

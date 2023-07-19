@@ -19,7 +19,7 @@ struct ModelDescriptor
 	struct Vertex
 	{
 		glm::vec2 pos;
-		glm::vec3 color;
+		glm::vec2 texCoord;
 	};
 
 	uint32_t VertexCount;
@@ -31,6 +31,9 @@ struct ModelDescriptor
 	ImageHelper::Image TextureImage;
 	VkImageView TextureImageView;
 	VkSampler TextureSampler;
+
+	VkDescriptorPool DescriptorPool;
+	VkDescriptorSet DescriptorSet;
 
 	static VkVertexInputBindingDescription GetVertexBindingDescription();
 	static std::array<VkVertexInputAttributeDescription, 2>

@@ -82,12 +82,17 @@ private:
 	void RemoveModelDescriptor(ModelDescriptor modelDescriptor);
 	void RemoveAllModels();
 	ImageHelper::Image CreateTextureImage(Model* model);
+	VkSampler CreateTextureSampler(float mipLevels);
+	void DestroyTextureSampler(VkSampler sampler);
+	void CreateDescriptors(ModelDescriptor* descriptor);
+	void DestroyDescriptors(ModelDescriptor* descriptor);
+
+	VkDescriptorSetLayout _descriptorSetLayout;
+	void CreateDescriptorSetLayout();
+	void DestroyDescriptorSetLayout();
 
 	double _fov;
 	glm::mat4 _viewMatrix;
-
-	VkSampler CreateTextureSampler(float mipLevels);
-	void DestroyTextureSampler(VkSampler sampler);
 };
 
 #endif

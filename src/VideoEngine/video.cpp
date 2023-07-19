@@ -22,6 +22,7 @@ Video::Video(
 	SelectPhysicalDevice();
 	CreateDevice();
 	CreateCommandPools();
+	CreateDescriptorSetLayout();
 
 	CreateSwapchain();
 }
@@ -31,6 +32,8 @@ Video::~Video()
 	DestroySwapchain();
 
 	RemoveAllModels();
+
+	DestroyDescriptorSetLayout();
 	DestroyCommandPools();
 	DestroyDevice();
 	DestroySurface();
@@ -302,7 +305,8 @@ void Video::CreateSwapchain()
 		_presentQueue,
 		&_models,
 		&_viewMatrix,
-		&_fov);
+		&_fov,
+		_descriptorSetLayout);
 
 	_swapchain->Create();
 }
@@ -356,7 +360,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	// Vertex buffer creation.
 	auto& vertices = model->GetModelVertices();
-	auto& colors = model->GetModelColors();
+	auto& texCoords = model->GetTexCoords();
 
 	descriptor.VertexBuffer = BufferHelper::CreateBuffer(
 		_device,
@@ -387,7 +391,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	for (size_t i = 0; i < vertices.size(); ++i) {
 		data[i].pos = vertices[i];
-		data[i].color = colors[i];
+		data[i].texCoord = texCoords[i];
 	}
 
 	vkUnmapMemory(
@@ -466,11 +470,15 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		1);
 	descriptor.TextureSampler = CreateTextureSampler(0.0f);
 
+	CreateDescriptors(&descriptor);
+
 	return descriptor;
 }
 
 void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 {
+	DestroyDescriptors(&descriptor);
+
 	BufferHelper::DestroyBuffer(
 		_device,
 		descriptor.VertexBuffer,
@@ -613,4 +621,105 @@ VkSampler Video::CreateTextureSampler(float mipLevels)
 void Video::DestroyTextureSampler(VkSampler sampler)
 {
 	vkDestroySampler(_device, sampler, nullptr);
+}
+
+void Video::CreateDescriptors(ModelDescriptor* descriptor)
+{
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSize.descriptorCount = 1;
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = 1;
+
+	VkResult res = vkCreateDescriptorPool(
+		_device,
+		&poolInfo,
+		nullptr,
+		&descriptor->DescriptorPool);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create descriptor pool.");
+	}
+
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = descriptor->DescriptorPool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &_descriptorSetLayout;
+
+	res = vkAllocateDescriptorSets(
+		_device,
+		&allocInfo,
+		&descriptor->DescriptorSet);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("Failed to allocate descriptor set.");
+	}
+
+
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = descriptor->TextureImageView;
+	imageInfo.sampler = descriptor->TextureSampler;
+
+	VkWriteDescriptorSet descriptorWrite{};
+
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet = descriptor->DescriptorSet;
+	descriptorWrite.dstBinding = 0;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType =
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.pImageInfo = &imageInfo;
+
+	vkUpdateDescriptorSets(
+		_device,
+		1,
+		&descriptorWrite,
+		0,
+		nullptr);
+}
+
+void Video::DestroyDescriptors(ModelDescriptor* descriptor)
+{
+	vkDestroyDescriptorPool(_device, descriptor->DescriptorPool, nullptr);
+}
+
+void Video::CreateDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	samplerLayoutBinding.binding = 0;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.descriptorType =
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers = nullptr;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::array<VkDescriptorSetLayoutBinding, 1> bindings = {
+		samplerLayoutBinding
+	};
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	layoutInfo.pBindings = bindings.data();
+
+	VkResult res = vkCreateDescriptorSetLayout(
+		_device,
+		&layoutInfo,
+		nullptr,
+		&_descriptorSetLayout);
+	
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error(
+			"Failed to create descriptor set layout.");
+	}
+}
+
+void Video::DestroyDescriptorSetLayout()
+{
+	vkDestroyDescriptorSetLayout(_device, _descriptorSetLayout, nullptr);
 }

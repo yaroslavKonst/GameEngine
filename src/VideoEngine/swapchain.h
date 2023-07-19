@@ -29,7 +29,8 @@ public:
 		VkQueue presentQueue,
 		std::map<Model*, ModelDescriptor>* models,
 		glm::mat4* viewMatrix,
-		double* fov);
+		double* fov,
+		VkDescriptorSetLayout descriptorSetLayout);
 
 	~Swapchain();
 
@@ -52,6 +53,8 @@ private:
 	MemorySystem* _memorySystem;
 
 	std::map<Model*, ModelDescriptor>* _models;
+
+	VkDescriptorSetLayout _descriptorSetLayout;
 
 	VkQueue _graphicsQueue;
 	VkQueue _presentQueue;
