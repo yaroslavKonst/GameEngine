@@ -300,7 +300,9 @@ void Video::CreateSwapchain()
 		_msaaSamples,
 		_graphicsQueue,
 		_presentQueue,
-		&_models);
+		&_models,
+		&_viewMatrix,
+		&_fov);
 
 	_swapchain->Create();
 }
@@ -324,17 +326,24 @@ void Video::Stop()
 void Video::RegisterModel(Model* model)
 {
 	_models[model] = CreateModelDescriptor(model);
+	model->SetModelReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
+	model->SetModelReady(false);
+	vkQueueWaitIdle(_graphicsQueue);
+
 	DestroyModelDescriptor(_models[model]);
 	_models.erase(model);
 }
 
 void Video::RemoveAllModels()
 {
+	vkQueueWaitIdle(_graphicsQueue);
+
 	for (auto& model : _models) {
+		model.first->SetModelReady(false);
 		DestroyModelDescriptor(model.second);
 	}
 
@@ -345,6 +354,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 {
 	ModelDescriptor descriptor;
 
+	// Vertex buffer creation.
 	auto& vertices = model->GetModelVertices();
 	auto& colors = model->GetModelColors();
 
@@ -397,6 +407,55 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	descriptor.VertexCount = vertices.size();
 
+	// Index buffer creation.
+	auto& indices = model->GetModelIndices();
+
+	descriptor.IndexBuffer = BufferHelper::CreateBuffer(
+		_device,
+		sizeof(uint32_t) * indices.size(),
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	stagingBuffer = BufferHelper::CreateBuffer(
+		_device,
+		sizeof(uint32_t) * indices.size(),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	uint32_t* indexData;
+	vkMapMemory(
+		_device,
+		stagingBuffer.Allocation.Memory,
+		stagingBuffer.Allocation.Offset,
+		stagingBuffer.Allocation.Size,
+		0,
+		reinterpret_cast<void**>(&indexData));
+
+	memcpy(indexData, indices.data(), sizeof(uint32_t) * indices.size());
+
+	vkUnmapMemory(
+		_device,
+		stagingBuffer.Allocation.Memory);
+
+	BufferHelper::CopyBuffer(
+		stagingBuffer,
+		descriptor.IndexBuffer,
+		_transferCommandPool,
+		_graphicsQueue);
+
+	BufferHelper::DestroyBuffer(
+		_device,
+		stagingBuffer,
+		_memorySystem);
+
+	descriptor.IndexCount = indices.size();
+
 	return descriptor;
 }
 
@@ -405,5 +464,10 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 	BufferHelper::DestroyBuffer(
 		_device,
 		descriptor.VertexBuffer,
+		_memorySystem);
+
+	BufferHelper::DestroyBuffer(
+		_device,
+		descriptor.IndexBuffer,
 		_memorySystem);
 }

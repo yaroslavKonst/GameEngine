@@ -22,6 +22,11 @@ public:
 		return _modelMatrix;
 	}
 
+	virtual void SetModelMatrix(const glm::mat4& matrix)
+	{
+		_modelMatrix = matrix;
+	}
+
 	virtual const std::vector<glm::vec2>& GetModelVertices()
 	{
 		return _modelVertexBuffer;
@@ -30,6 +35,11 @@ public:
 	virtual const std::vector<glm::vec3>& GetModelColors()
 	{
 		return _modelColorBuffer;
+	}
+
+	virtual const std::vector<uint32_t>& GetModelIndices()
+	{
+		return _modelIndexBuffer;
 	}
 
 	virtual void SetModelVertices(const std::vector<glm::vec2>& vertices)
@@ -41,14 +51,25 @@ public:
 	{
 		_modelColorBuffer = colors;
 	}
+
+	virtual void SetModelIndices(const std::vector<uint32_t>& indices)
+	{
+		_modelIndexBuffer = indices;
+	}
+
 	virtual bool IsModelActive()
 	{
-		return _modelActive;
+		return _modelActive && _ready;
 	}
 
 	virtual void SetModelActive(bool active)
 	{
 		_modelActive = active;
+	}
+
+	virtual void SetModelReady(bool ready)
+	{
+		_ready = ready;
 	}
 
 private:
@@ -60,6 +81,7 @@ private:
 	glm::mat4 _modelMatrix;
 
 	bool _modelActive;
+	bool _ready;
 };
 
 #endif

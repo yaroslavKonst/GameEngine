@@ -24,6 +24,11 @@ public:
 		VkCommandBuffer commandBuffer,
 		uint32_t imageIndex);
 
+	VkPipelineLayout GetPipelineLayout()
+	{
+		return _pipelineLayout;
+	}
+
 private:
 	VkDevice _device;
 	VkExtent2D _extent;

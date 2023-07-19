@@ -7,17 +7,11 @@
 #include <thread>
 
 #include "ThreadPool.h"
+#include "actor.h"
 
 class Universe
 {
 public:
-	class Actor
-	{
-	public:
-		virtual ~Actor();
-		virtual void Tick() = 0;
-	};
-
 	Universe(uint32_t tickDelayMS);
 	~Universe();
 

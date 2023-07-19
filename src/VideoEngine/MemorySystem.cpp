@@ -1,6 +1,6 @@
 #include "MemorySystem.h"
 
-#define PAGE_SIZE 1048576 * 256
+#define PAGE_SIZE 1048576
 
 MemorySystem::MemorySystem(VkDevice device)
 {
@@ -21,7 +21,7 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	if (_managers.find(properties) == _managers.end()) {
 		_managers[properties] = new MemoryManager(
 			_device,
-			PAGE_SIZE,
+			properties.Alignment * PAGE_SIZE,
 			properties.MemoryTypeIndex,
 			properties.Alignment);
 	}

@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "../Logger/logger.h"
+#include "mvp.h"
 
 Swapchain::Swapchain(
 	VkDevice device,
@@ -13,7 +14,9 @@ Swapchain::Swapchain(
 	VkSampleCountFlagBits msaaSamples,
 	VkQueue graphicsQueue,
 	VkQueue presentQueue,
-	std::map<Model*, ModelDescriptor>* models)
+	std::map<Model*, ModelDescriptor>* models,
+	glm::mat4* viewMatrix,
+	double* fov)
 {
 	_device = device;
 	_surface = surface;
@@ -24,6 +27,8 @@ Swapchain::Swapchain(
 	_graphicsQueue = graphicsQueue;
 	_presentQueue = presentQueue;
 	_models = models;
+	_viewMatrix = viewMatrix;
+	_fov = fov;
 
 	Logger::Verbose("Swapchain constructor called.");
 
@@ -343,10 +348,20 @@ void Swapchain::RecordCommandBuffer(
 	scissor.extent = _extent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+	MVP mvp;
+	mvp.View = *_viewMatrix;
+	mvp.Proj = glm::perspective(
+		glm::radians((float)*_fov),
+		(float)_extent.width / (float)_extent.height,
+		0.1f,
+		10.0f);
+
 	for (auto& model : *_models) {
 		if (!model.first->IsModelActive()) {
 			continue;
 		}
+
+		mvp.Model = model.first->GetModelMatrix();
 
 		VkBuffer vertexBuffers[] = {model.second.VertexBuffer.Buffer};
 		VkDeviceSize offsets[] = {0};
@@ -357,7 +372,27 @@ void Swapchain::RecordCommandBuffer(
 			vertexBuffers,
 			offsets);
 
-		vkCmdDraw(commandBuffer, model.second.VertexCount, 1, 0, 0);
+		vkCmdBindIndexBuffer(
+			commandBuffer,
+			model.second.IndexBuffer.Buffer,
+			0,
+			VK_INDEX_TYPE_UINT32);
+
+		vkCmdPushConstants(
+			commandBuffer,
+			_pipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_VERTEX_BIT,
+			0,
+			sizeof(MVP),
+			&mvp);
+
+		vkCmdDrawIndexed(
+			commandBuffer,
+			model.second.IndexCount,
+			1,
+			0,
+			0,
+			0);
 	}
 
 	vkCmdEndRenderPass(commandBuffer);

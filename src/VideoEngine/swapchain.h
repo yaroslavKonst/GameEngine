@@ -27,7 +27,9 @@ public:
 		VkSampleCountFlagBits msaaSamples,
 		VkQueue graphicsQueue,
 		VkQueue presentQueue,
-		std::map<Model*, ModelDescriptor>* models);
+		std::map<Model*, ModelDescriptor>* models,
+		glm::mat4* viewMatrix,
+		double* fov);
 
 	~Swapchain();
 
@@ -97,6 +99,9 @@ private:
 	std::vector<VkFence> _inFlightFences;
 	void CreateSyncObjects();
 	void DestroySyncObjects();
+
+	glm::mat4* _viewMatrix;
+	double* _fov;
 };
 
 #endif

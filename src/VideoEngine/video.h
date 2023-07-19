@@ -26,11 +26,24 @@ public:
 
 	~Video();
 
+	Video(const Video& video) = delete;
+	Video& operator=(const Video& video) = delete;
+
 	void MainLoop();
 	void Stop();
 
 	void RegisterModel(Model* model);
 	void RemoveModel(Model* model);
+
+	void SetFOV(double fov)
+	{
+		_fov = fov;
+	}
+
+	void SetViewMatrix(const glm::mat4& matrix)
+	{
+		_viewMatrix = matrix;
+	}
 
 private:
 	Window _window;
@@ -68,6 +81,9 @@ private:
 	void DestroyModelDescriptor(ModelDescriptor descriptor);
 	void RemoveModelDescriptor(ModelDescriptor modelDescriptor);
 	void RemoveAllModels();
+
+	double _fov;
+	glm::mat4 _viewMatrix;
 };
 
 #endif

@@ -1,6 +1,7 @@
 #include "pipeline.h"
 
 #include "../Logger/logger.h"
+#include "mvp.h"
 
 #include "shaders/spir-v/Shader_vert.spv"
 #include "shaders/spir-v/Shader_frag.spv"
@@ -143,13 +144,18 @@ Pipeline::Pipeline(
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
+	VkPushConstantRange pushConstant{};
+	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstant.offset = 0;
+	pushConstant.size = sizeof(MVP);
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType =
 		VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 0; // Optional
 	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
 
 	VkResult res = vkCreatePipelineLayout(
 		_device,

@@ -23,6 +23,8 @@ struct ModelDescriptor
 
 	uint32_t VertexCount;
 	BufferHelper::Buffer VertexBuffer;
+
+	uint32_t IndexCount;
 	BufferHelper::Buffer IndexBuffer;
 
 	static VkVertexInputBindingDescription GetVertexBindingDescription();
