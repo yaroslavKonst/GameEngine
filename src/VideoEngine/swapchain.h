@@ -73,6 +73,7 @@ private:
 	VkFormat _imageFormat;
 
 	ImageHelper::Image _colorImage;
+	VkImageView _colorImageView;
 	ImageHelper::Image _depthImage;
 	VkImageView _depthImageView;
 	void CreateRenderingImages();

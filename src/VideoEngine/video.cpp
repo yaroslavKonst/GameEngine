@@ -89,6 +89,23 @@ void Video::SelectPhysicalDevice()
 		if (IsDeviceSuitable(device)) {
 			_physicalDevice = device;
 			_msaaSamples = GetMaxSampleCount();
+
+			if (_msaaSamples == VK_SAMPLE_COUNT_64_BIT) {
+				Logger::Verbose("MSAA 64");
+			} else if (_msaaSamples == VK_SAMPLE_COUNT_32_BIT) {
+				Logger::Verbose("MSAA 32");
+			} else if (_msaaSamples == VK_SAMPLE_COUNT_16_BIT) {
+				Logger::Verbose("MSAA 16");
+			} else if (_msaaSamples == VK_SAMPLE_COUNT_8_BIT) {
+				Logger::Verbose("MSAA 8");
+			} else if (_msaaSamples == VK_SAMPLE_COUNT_4_BIT) {
+				Logger::Verbose("MSAA 4");
+			} else if (_msaaSamples == VK_SAMPLE_COUNT_2_BIT) {
+				Logger::Verbose("MSAA 2");
+			} else if (_msaaSamples == VK_SAMPLE_COUNT_1_BIT) {
+				Logger::Verbose("MSAA 1");
+			}
+
 			break;
 		}
 	}

@@ -15,12 +15,14 @@ public:
 		VkExtent2D extent,
 		VkFormat colorAttachmentFormat,
 		VkFormat depthAttachmentFormat,
-		VkDescriptorSetLayout descriptorSetLayout);
+		VkDescriptorSetLayout descriptorSetLayout,
+		VkSampleCountFlagBits msaaSamples);
 
 	~Pipeline();
 
 	void CreateFramebuffers(
 		const std::vector<VkImageView>& imageViews,
+		VkImageView colorImageView,
 		VkImageView depthImageView);
 	void DestroyFramebuffers();
 
@@ -38,6 +40,7 @@ private:
 	VkExtent2D _extent;
 	VkFormat _colorAttachmentFormat;
 	VkFormat _depthAttachmentFormat;
+	VkSampleCountFlagBits _msaaSamples;
 
 	VkShaderModule CreateShaderModule(const uint8_t* data, size_t size);
 	void DestroyShaderModule(VkShaderModule shaderModule);

@@ -237,7 +237,7 @@ void Swapchain::CreateRenderingImages()
 		_extent.width,
                 _extent.height,
                 1,
-                VK_SAMPLE_COUNT_1_BIT, // _msaaSamples,
+                _msaaSamples,
                 _imageFormat,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
@@ -245,6 +245,13 @@ void Swapchain::CreateRenderingImages()
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 _memorySystem,
                 _deviceSupport);
+
+	_colorImageView = ImageHelper::CreateImageView(
+		_device,
+		_colorImage.Image,
+		_imageFormat,
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		1);
 
 	VkFormat depthFormat = _deviceSupport->FindSupportedFormat(
 		{
@@ -261,7 +268,7 @@ void Swapchain::CreateRenderingImages()
 		_extent.width,
                 _extent.height,
                 1,
-                VK_SAMPLE_COUNT_1_BIT, // _msaaSamples,
+                _msaaSamples,
                 depthFormat,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -330,9 +337,13 @@ void Swapchain::CreatePipelines()
 		_extent,
 		_imageFormat,
 		_depthImage.Format,
-		_descriptorSetLayout);
+		_descriptorSetLayout,
+		_msaaSamples);
 
-	_pipeline->CreateFramebuffers(_imageViews, _depthImageView);
+	_pipeline->CreateFramebuffers(
+		_imageViews,
+		_colorImageView,
+		_depthImageView);
 }
 
 void Swapchain::DestroyPipelines()

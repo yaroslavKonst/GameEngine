@@ -3,7 +3,7 @@
 #include "../Logger/logger.h"
 
 // 16 MB for page.
-#define PAGE_SIZE 1048576 * 16
+#define PAGE_SIZE 1048576 * 64
 
 MemorySystem::MemorySystem(VkDevice device)
 {
