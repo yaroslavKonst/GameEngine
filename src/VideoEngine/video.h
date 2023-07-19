@@ -85,6 +85,9 @@ private:
 
 	double _fov;
 	glm::mat4 _viewMatrix;
+
+	VkSampler CreateTextureSampler(float mipLevels);
+	void DestroyTextureSampler(VkSampler sampler);
 };
 
 #endif

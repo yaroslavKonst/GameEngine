@@ -29,6 +29,8 @@ struct ModelDescriptor
 	BufferHelper::Buffer IndexBuffer;
 
 	ImageHelper::Image TextureImage;
+	VkImageView TextureImageView;
+	VkSampler TextureSampler;
 
 	static VkVertexInputBindingDescription GetVertexBindingDescription();
 	static std::array<VkVertexInputAttributeDescription, 2>

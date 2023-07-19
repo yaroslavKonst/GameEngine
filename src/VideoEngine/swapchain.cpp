@@ -356,6 +356,8 @@ void Swapchain::RecordCommandBuffer(
 		0.1f,
 		10.0f);
 
+	mvp.Proj[1][1] *= -1;
+
 	for (auto& model : *_models) {
 		if (!model.first->IsModelActive()) {
 			continue;
