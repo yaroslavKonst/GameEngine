@@ -102,16 +102,38 @@ public:
 		_modelTexCoordBuffer = coords;
 	}
 
+	const std::vector<glm::mat4>& GetInstances()
+	{
+		return _modelInstances;
+	}
+
+	void SetInstances(const std::vector<glm::mat4>& instances)
+	{
+		_modelInstances = instances;
+	}
+
+	virtual const glm::mat4& GetModelInnerMatrix()
+	{
+		return _modelInnerMatrix;
+	}
+
+	virtual void SetModelInnerMatrix(const glm::mat4& matrix)
+	{
+		_modelInnerMatrix = matrix;
+	}
+
 private:
 	std::vector<glm::vec3> _modelVertexBuffer;
 	std::vector<uint32_t> _modelIndexBuffer;
 	std::vector<glm::vec2> _modelTexCoordBuffer;
+	std::vector<glm::mat4> _modelInstances;
 
 	uint32_t _texWidth;
 	uint32_t _texHeight;
 	std::vector<uint8_t> _modelTexture;
 
 	glm::mat4 _modelMatrix;
+	glm::mat4 _modelInnerMatrix;
 
 	bool _modelActive;
 	bool _ready;

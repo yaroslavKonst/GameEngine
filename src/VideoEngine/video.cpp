@@ -477,6 +477,58 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	descriptor.IndexCount = indices.size();
 
+	// Instance buffer.
+	auto& instances = model->GetInstances();
+
+	descriptor.InstanceBuffer = BufferHelper::CreateBuffer(
+		_device,
+		sizeof(glm::mat4) * instances.size(),
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	stagingBuffer = BufferHelper::CreateBuffer(
+		_device,
+		sizeof(glm::mat4) * instances.size(),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		_memorySystem,
+		&_deviceSupport);
+
+	glm::mat4* instanceData;
+	vkMapMemory(
+		_device,
+		stagingBuffer.Allocation.Memory,
+		stagingBuffer.Allocation.Offset,
+		stagingBuffer.Allocation.Size,
+		0,
+		reinterpret_cast<void**>(&instanceData));
+
+	memcpy(
+		instanceData,
+		instances.data(),
+		sizeof(glm::mat4) * instances.size());
+
+	vkUnmapMemory(
+		_device,
+		stagingBuffer.Allocation.Memory);
+
+	BufferHelper::CopyBuffer(
+		stagingBuffer,
+		descriptor.InstanceBuffer,
+		_transferCommandPool,
+		_graphicsQueue);
+
+	BufferHelper::DestroyBuffer(
+		_device,
+		stagingBuffer,
+		_memorySystem);
+
+	descriptor.InstanceCount = instances.size();
+
 	// Texture image.
 	uint32_t mipLevels;
 	descriptor.TextureImage = CreateTextureImage(model, mipLevels);
@@ -505,6 +557,11 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 	BufferHelper::DestroyBuffer(
 		_device,
 		descriptor.IndexBuffer,
+		_memorySystem);
+
+	BufferHelper::DestroyBuffer(
+		_device,
+		descriptor.InstanceBuffer,
 		_memorySystem);
 
 	DestroyTextureSampler(descriptor.TextureSampler);

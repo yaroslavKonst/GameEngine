@@ -402,13 +402,18 @@ void Swapchain::RecordCommandBuffer(
 		}
 
 		mvp.Model = model.first->GetModelMatrix();
+		mvp.InnerModel = model.first->GetModelInnerMatrix();
 
-		VkBuffer vertexBuffers[] = {model.second.VertexBuffer.Buffer};
-		VkDeviceSize offsets[] = {0};
+		VkBuffer vertexBuffers[] = {
+			model.second.VertexBuffer.Buffer,
+			model.second.InstanceBuffer.Buffer
+		};
+
+		VkDeviceSize offsets[] = {0, 0};
 		vkCmdBindVertexBuffers(
 			commandBuffer,
 			0,
-			1,
+			2,
 			vertexBuffers,
 			offsets);
 
@@ -439,7 +444,7 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdDrawIndexed(
 			commandBuffer,
 			model.second.IndexCount,
-			1,
+			model.second.InstanceCount,
 			0,
 			0,
 			0);

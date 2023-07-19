@@ -12,6 +12,7 @@
 struct MVP
 {
 	glm::mat4 Model;
+	glm::mat4 InnerModel;
 	glm::mat4 View;
 	glm::mat4 Proj;
 };

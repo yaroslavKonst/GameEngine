@@ -62,6 +62,15 @@ Triangle::Triangle()
 	SetTexData(texData);
 
 	stbi_image_free(pixels);
+
+	SetModelMatrix(glm::mat4(1.0f));
+	SetModelInnerMatrix(glm::mat4(1.0f));
+
+	SetInstances({
+		glm::mat4(1.0f),
+		glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, -0.2f)),
+		glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.2f))
+	});
 }
 
 Triangle::~Triangle()
@@ -73,6 +82,11 @@ void Triangle::Tick()
 	SetModelMatrix(glm::rotate(
 		glm::mat4(1.0f),
 		glm::radians((float)_angle),
+		glm::vec3(0.0f, 0.0f, 1.0f)));
+
+	SetModelInnerMatrix(glm::rotate(
+		glm::mat4(1.0f),
+		glm::radians((float)_angle * 4),
 		glm::vec3(0.0f, 0.0f, 1.0f)));
 
 	_angle += 0.1;
