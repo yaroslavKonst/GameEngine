@@ -4,8 +4,7 @@
 #include <cstring>
 #include <cmath>
 
-//#define STB_IMAGE_IMPLEMENTATION
-#include "../ThirdParty/stb/stb_image.h"
+#include "loader.h"
 
 Square::Square(const char* texturePath, float depthMod)
 {
@@ -13,28 +12,15 @@ Square::Square(const char* texturePath, float depthMod)
 
 	int texWidth;
 	int texHeight;
-	int texChannels;
 
-	stbi_uc* pixels = stbi_load(
+	std::vector<uint8_t> texData = Loader::LoadImage(
 		texturePath,
-		&texWidth,
-		&texHeight,
-		&texChannels,
-		STBI_rgb_alpha);
-
-	if (!pixels) {
-		throw std::runtime_error("Failed to load texture image.");
-	}
-
-
-	std::vector<uint8_t> texData(texWidth * texHeight * 4);
-	memcpy(texData.data(), pixels, texData.size());
+		texWidth,
+		texHeight);
 
 	SetTexWidth(texWidth);
 	SetTexHeight(texHeight);
 	SetTexData(texData);
-
-	stbi_image_free(pixels);
 
 	SetActive(true);
 
