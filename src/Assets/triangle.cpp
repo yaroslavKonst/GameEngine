@@ -33,7 +33,7 @@ Triangle::Triangle()
 
 	SetModelIndices({0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4});
 
-	SetModelActive(true);
+	SetActive(true);
 
 	_angle = 0;
 

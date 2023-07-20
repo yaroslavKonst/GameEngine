@@ -13,6 +13,7 @@
 #include "ImageHelper.h"
 #include "pipeline.h"
 #include "model.h"
+#include "rectangle.h"
 #include "ModelDescriptor.h"
 
 class Swapchain
@@ -28,6 +29,7 @@ public:
 		VkQueue graphicsQueue,
 		VkQueue presentQueue,
 		std::map<Model*, ModelDescriptor>* models,
+		std::map<Rectangle*, ModelDescriptor>* rectangles,
 		glm::mat4* viewMatrix,
 		double* fov,
 		VkDescriptorSetLayout descriptorSetLayout);
@@ -53,6 +55,7 @@ private:
 	MemorySystem* _memorySystem;
 
 	std::map<Model*, ModelDescriptor>* _models;
+	std::map<Rectangle*, ModelDescriptor>* _rectangles;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 
@@ -84,6 +87,7 @@ private:
 	void DestroyImageViews();
 
 	Pipeline* _pipeline;
+	Pipeline* _rectanglePipeline;
 	void CreatePipelines();
 	void DestroyPipelines();
 

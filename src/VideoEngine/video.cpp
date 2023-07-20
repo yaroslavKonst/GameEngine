@@ -1,8 +1,8 @@
 #include "video.h"
 
 #include <vector>
-#include <string.h>
 #include <set>
+#include <cstring>
 
 #include "../Logger/logger.h"
 
@@ -321,6 +321,7 @@ void Video::CreateSwapchain()
 		_graphicsQueue,
 		_presentQueue,
 		&_models,
+		&_rectangles,
 		&_viewMatrix,
 		&_fov,
 		_descriptorSetLayout);
@@ -347,12 +348,12 @@ void Video::Stop()
 void Video::RegisterModel(Model* model)
 {
 	_models[model] = CreateModelDescriptor(model);
-	model->SetModelReady(true);
+	model->SetReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
-	model->SetModelReady(false);
+	model->SetReady(false);
 	vkQueueWaitIdle(_graphicsQueue);
 
 	DestroyModelDescriptor(_models[model]);
@@ -364,7 +365,7 @@ void Video::RemoveAllModels()
 	vkQueueWaitIdle(_graphicsQueue);
 
 	for (auto& model : _models) {
-		model.first->SetModelReady(false);
+		model.first->SetReady(false);
 		DestroyModelDescriptor(model.second);
 	}
 
@@ -379,6 +380,8 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 	auto& vertices = model->GetModelVertices();
 	auto& texCoords = model->GetTexCoords();
 
+	std::vector<ModelDescriptor::Vertex> vertexData(vertices.size());
+
 	descriptor.VertexBuffer = BufferHelper::CreateBuffer(
 		_device,
 		sizeof(ModelDescriptor::Vertex) * vertices.size(),
@@ -388,43 +391,20 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		_memorySystem,
 		&_deviceSupport);
 
-	BufferHelper::Buffer stagingBuffer = BufferHelper::CreateBuffer(
-		_device,
-		sizeof(ModelDescriptor::Vertex) * vertices.size(),
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		_memorySystem,
-		&_deviceSupport);
-
-	ModelDescriptor::Vertex* data;
-	vkMapMemory(
-		_device,
-		stagingBuffer.Allocation.Memory,
-		stagingBuffer.Allocation.Offset,
-		stagingBuffer.Allocation.Size,
-		0,
-		reinterpret_cast<void**>(&data));
-
 	for (size_t i = 0; i < vertices.size(); ++i) {
-		data[i].Pos = vertices[i];
-		data[i].TexCoord = texCoords[i];
+		vertexData[i].Pos = vertices[i];
+		vertexData[i].TexCoord = texCoords[i];
 	}
 
-	vkUnmapMemory(
+	BufferHelper::LoadDataToBuffer(
 		_device,
-		stagingBuffer.Allocation.Memory);
-
-	BufferHelper::CopyBuffer(
-		stagingBuffer,
 		descriptor.VertexBuffer,
+		vertexData.data(),
+		vertexData.size() * sizeof(ModelDescriptor::Vertex),
+		_memorySystem,
+		&_deviceSupport,
 		_transferCommandPool,
 		_graphicsQueue);
-
-	BufferHelper::DestroyBuffer(
-		_device,
-		stagingBuffer,
-		_memorySystem);
 
 	descriptor.VertexCount = vertices.size();
 
@@ -440,40 +420,15 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		_memorySystem,
 		&_deviceSupport);
 
-	stagingBuffer = BufferHelper::CreateBuffer(
+	BufferHelper::LoadDataToBuffer(
 		_device,
-		sizeof(uint32_t) * indices.size(),
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		_memorySystem,
-		&_deviceSupport);
-
-	uint32_t* indexData;
-	vkMapMemory(
-		_device,
-		stagingBuffer.Allocation.Memory,
-		stagingBuffer.Allocation.Offset,
-		stagingBuffer.Allocation.Size,
-		0,
-		reinterpret_cast<void**>(&indexData));
-
-	memcpy(indexData, indices.data(), sizeof(uint32_t) * indices.size());
-
-	vkUnmapMemory(
-		_device,
-		stagingBuffer.Allocation.Memory);
-
-	BufferHelper::CopyBuffer(
-		stagingBuffer,
 		descriptor.IndexBuffer,
+		indices.data(),
+		indices.size() * sizeof(uint32_t),
+		_memorySystem,
+		&_deviceSupport,
 		_transferCommandPool,
 		_graphicsQueue);
-
-	BufferHelper::DestroyBuffer(
-		_device,
-		stagingBuffer,
-		_memorySystem);
 
 	descriptor.IndexCount = indices.size();
 
@@ -489,43 +444,15 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		_memorySystem,
 		&_deviceSupport);
 
-	stagingBuffer = BufferHelper::CreateBuffer(
+	BufferHelper::LoadDataToBuffer(
 		_device,
-		sizeof(glm::mat4) * instances.size(),
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		_memorySystem,
-		&_deviceSupport);
-
-	glm::mat4* instanceData;
-	vkMapMemory(
-		_device,
-		stagingBuffer.Allocation.Memory,
-		stagingBuffer.Allocation.Offset,
-		stagingBuffer.Allocation.Size,
-		0,
-		reinterpret_cast<void**>(&instanceData));
-
-	memcpy(
-		instanceData,
-		instances.data(),
-		sizeof(glm::mat4) * instances.size());
-
-	vkUnmapMemory(
-		_device,
-		stagingBuffer.Allocation.Memory);
-
-	BufferHelper::CopyBuffer(
-		stagingBuffer,
 		descriptor.InstanceBuffer,
+		instances.data(),
+		instances.size() * sizeof(glm::mat4),
+		_memorySystem,
+		&_deviceSupport,
 		_transferCommandPool,
 		_graphicsQueue);
-
-	BufferHelper::DestroyBuffer(
-		_device,
-		stagingBuffer,
-		_memorySystem);
 
 	descriptor.InstanceCount = instances.size();
 
@@ -540,14 +467,14 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		1);
 	descriptor.TextureSampler = CreateTextureSampler(mipLevels);
 
-	CreateDescriptors(&descriptor);
+	CreateDescriptorSets(&descriptor);
 
 	return descriptor;
 }
 
 void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 {
-	DestroyDescriptors(&descriptor);
+	DestroyDescriptorSets(&descriptor);
 
 	BufferHelper::DestroyBuffer(
 		_device,
@@ -576,7 +503,72 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 		_memorySystem);
 }
 
-ImageHelper::Image Video::CreateTextureImage(Model* model, uint32_t& mipLevels)
+void Video::RegisterRectangle(Rectangle* rectangle)
+{
+	_rectangles[rectangle] = CreateRectangleDescriptor(rectangle);
+	rectangle->SetReady(true);
+}
+
+void Video::RemoveRectangle(Rectangle* rectangle)
+{
+	rectangle->SetReady(false);
+	vkQueueWaitIdle(_graphicsQueue);
+
+	DestroyRectangleDescriptor(_rectangles[rectangle]);
+	_rectangles.erase(rectangle);
+}
+
+void Video::RemoveAllRectangles()
+{
+	vkQueueWaitIdle(_graphicsQueue);
+
+	for (auto& rectangle : _rectangles) {
+		rectangle.first->SetReady(false);
+		DestroyRectangleDescriptor(rectangle.second);
+	}
+
+	_rectangles.clear();
+}
+
+ModelDescriptor Video::CreateRectangleDescriptor(Rectangle* rectangle)
+{
+	ModelDescriptor descriptor;
+
+	// Texture image.
+	uint32_t mipLevels;
+	descriptor.TextureImage = CreateTextureImage(rectangle, mipLevels);
+	descriptor.TextureImageView = ImageHelper::CreateImageView(
+		_device,
+		descriptor.TextureImage.Image,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		1);
+	descriptor.TextureSampler = CreateTextureSampler(mipLevels);
+
+	CreateDescriptorSets(&descriptor);
+
+	return descriptor;
+}
+
+void Video::DestroyRectangleDescriptor(ModelDescriptor descriptor)
+{
+	DestroyDescriptorSets(&descriptor);
+
+	DestroyTextureSampler(descriptor.TextureSampler);
+
+	ImageHelper::DestroyImageView(
+		_device,
+		descriptor.TextureImageView);
+
+	ImageHelper::DestroyImage(
+		_device,
+		descriptor.TextureImage,
+		_memorySystem);
+}
+
+ImageHelper::Image Video::CreateTextureImage(
+	Texturable* model,
+	uint32_t& mipLevels)
 {
 	uint32_t texWidth = model->GetTexWidth();
 	uint32_t texHeight = model->GetTexHeight();
@@ -836,7 +828,7 @@ void Video::DestroyTextureSampler(VkSampler sampler)
 	vkDestroySampler(_device, sampler, nullptr);
 }
 
-void Video::CreateDescriptors(ModelDescriptor* descriptor)
+void Video::CreateDescriptorSets(ModelDescriptor* descriptor)
 {
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -896,7 +888,7 @@ void Video::CreateDescriptors(ModelDescriptor* descriptor)
 		nullptr);
 }
 
-void Video::DestroyDescriptors(ModelDescriptor* descriptor)
+void Video::DestroyDescriptorSets(ModelDescriptor* descriptor)
 {
 	vkDestroyDescriptorPool(_device, descriptor->DescriptorPool, nullptr);
 }

@@ -10,13 +10,30 @@
 class Pipeline
 {
 public:
-	Pipeline(
-		VkDevice device,
-		VkExtent2D extent,
-		VkFormat colorAttachmentFormat,
-		VkFormat depthAttachmentFormat,
-		VkDescriptorSetLayout descriptorSetLayout,
-		VkSampleCountFlagBits msaaSamples);
+	struct InitInfo
+	{
+		VkDevice Device;
+		VkExtent2D Extent;
+		VkFormat ColorAttachmentFormat;
+		VkFormat DepthAttachmentFormat;
+		VkDescriptorSetLayout DescriptorSetLayout;
+		VkSampleCountFlagBits MsaaSamples;
+		const uint8_t* VertexShaderCode;
+		size_t VertexShaderSize;
+		const uint8_t* FragmentShaderCode;
+		size_t FragmentShaderSize;
+		std::vector<VkVertexInputBindingDescription>
+			VertexBindingDescriptions;
+		std::vector<VkVertexInputAttributeDescription>
+			VertexAttributeDescriptions;
+		VkBool32 DepthTestEnabled;
+		bool PushConstantEnabled;
+		VkPushConstantRange PushConstant;
+		bool ResolveImage;
+		bool ClearInputBuffer;
+	};
+
+	Pipeline(InitInfo* initInfo);
 
 	~Pipeline();
 
@@ -41,6 +58,8 @@ private:
 	VkFormat _colorAttachmentFormat;
 	VkFormat _depthAttachmentFormat;
 	VkSampleCountFlagBits _msaaSamples;
+	bool _resolve;
+	bool _clearInputBuffer;
 
 	VkShaderModule CreateShaderModule(const uint8_t* data, size_t size);
 	void DestroyShaderModule(VkShaderModule shaderModule);

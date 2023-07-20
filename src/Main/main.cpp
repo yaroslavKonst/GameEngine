@@ -6,6 +6,7 @@
 #include "../UniverseEngine/universe.h"
 #include "../Logger/logger.h"
 #include "../Assets/triangle.h"
+#include "../Assets/square.h"
 
 void UniverseThread(Universe* universe)
 {
@@ -30,13 +31,20 @@ int main(int argc, char** argv)
 	std::thread universeThread(UniverseThread, &universe);
 
 	Triangle triangle;
+	Square square;
+
 	window.RegisterModel(&triangle);
 	universe.RegisterActor(&triangle);
+
+	window.RegisterRectangle(&square);
+	universe.RegisterActor(&square);
 
 	window.MainLoop();
 
 	window.RemoveModel(&triangle);
+	window.RemoveRectangle(&square);
 	universe.RemoveActor(&triangle);
+	universe.RemoveActor(&square);
 
 	universe.Stop();
 	universeThread.join();

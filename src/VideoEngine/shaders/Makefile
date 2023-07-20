@@ -7,7 +7,9 @@ shaders: \
 	outdir \
 	../../../build/converter \
 	spir-v/Shader_vert.spv \
-	spir-v/Shader_frag.spv
+	spir-v/Shader_frag.spv \
+	spir-v/RectangleShader_vert.spv \
+	spir-v/RectangleShader_frag.spv
 
 outdir:
 	mkdir -p spir-v

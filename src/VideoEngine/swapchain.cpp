@@ -5,6 +5,12 @@
 #include "../Logger/logger.h"
 #include "mvp.h"
 
+#include "shaders/spir-v/Shader_vert.spv"
+#include "shaders/spir-v/Shader_frag.spv"
+
+#include "shaders/spir-v/RectangleShader_vert.spv"
+#include "shaders/spir-v/RectangleShader_frag.spv"
+
 Swapchain::Swapchain(
 	VkDevice device,
 	VkSurfaceKHR surface,
@@ -15,6 +21,7 @@ Swapchain::Swapchain(
 	VkQueue graphicsQueue,
 	VkQueue presentQueue,
 	std::map<Model*, ModelDescriptor>* models,
+	std::map<Rectangle*, ModelDescriptor>* rectangles,
 	glm::mat4* viewMatrix,
 	double* fov,
 	VkDescriptorSetLayout descriptorSetLayout)
@@ -28,6 +35,7 @@ Swapchain::Swapchain(
 	_graphicsQueue = graphicsQueue;
 	_presentQueue = presentQueue;
 	_models = models;
+	_rectangles = rectangles;
 	_viewMatrix = viewMatrix;
 	_fov = fov;
 	_descriptorSetLayout = descriptorSetLayout;
@@ -332,22 +340,59 @@ void Swapchain::DestroyImageViews()
 
 void Swapchain::CreatePipelines()
 {
-	_pipeline = new Pipeline(
-		_device,
-		_extent,
-		_imageFormat,
-		_depthImage.Format,
-		_descriptorSetLayout,
-		_msaaSamples);
+	Pipeline::InitInfo initInfo;
+	initInfo.Device = _device;
+	initInfo.Extent = _extent;
+	initInfo.ColorAttachmentFormat = _imageFormat;
+	initInfo.DepthAttachmentFormat = _depthImage.Format;
+	initInfo.DescriptorSetLayout = _descriptorSetLayout;
+	initInfo.MsaaSamples = _msaaSamples;
+	initInfo.VertexShaderCode = ShaderVert;
+	initInfo.VertexShaderSize = sizeof(ShaderVert);
+	initInfo.FragmentShaderCode = ShaderFrag;
+	initInfo.FragmentShaderSize = sizeof(ShaderFrag);
+	initInfo.VertexBindingDescriptions =
+		ModelDescriptor::GetVertexBindingDescription();
+	initInfo.VertexAttributeDescriptions =
+		ModelDescriptor::GetAttributeDescriptions();
+	initInfo.DepthTestEnabled = VK_TRUE;
+	initInfo.PushConstantEnabled = true;
+	initInfo.PushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	initInfo.PushConstant.offset = 0;
+	initInfo.PushConstant.size = sizeof(MVP);
+	initInfo.ResolveImage = false;
+	initInfo.ClearInputBuffer = true;
 
+	_pipeline = new Pipeline(&initInfo);
 	_pipeline->CreateFramebuffers(
 		_imageViews,
 		_colorImageView,
 		_depthImageView);
+
+	initInfo.DepthTestEnabled = VK_FALSE;
+	initInfo.PushConstant.size = sizeof(glm::vec4) * 2;
+	initInfo.ResolveImage = true;
+	initInfo.VertexBindingDescriptions.clear();
+	initInfo.VertexAttributeDescriptions.clear();
+	initInfo.VertexShaderCode = RectangleShaderVert;
+	initInfo.VertexShaderSize = sizeof(RectangleShaderVert);
+	initInfo.FragmentShaderCode = RectangleShaderFrag;
+	initInfo.FragmentShaderSize = sizeof(RectangleShaderFrag);
+	initInfo.ClearInputBuffer = false;
+
+	_rectanglePipeline = new Pipeline(&initInfo);
+	_rectanglePipeline->CreateFramebuffers(
+		_imageViews,
+		_colorImageView,
+		_depthImageView);
+
 }
 
 void Swapchain::DestroyPipelines()
 {
+	_rectanglePipeline->DestroyFramebuffers();
+	delete _rectanglePipeline;
+
 	_pipeline->DestroyFramebuffers();
 	delete _pipeline;
 }
@@ -370,6 +415,7 @@ void Swapchain::RecordCommandBuffer(
 			"Failed to begin recording command buffer.");
 	}
 
+	// Object pipeline.
 	_pipeline->RecordCommandBuffer(commandBuffer, imageIndex);
 
 	VkViewport viewport{};
@@ -397,7 +443,7 @@ void Swapchain::RecordCommandBuffer(
 	mvp.Proj[1][1] *= -1;
 
 	for (auto& model : *_models) {
-		if (!model.first->IsModelActive()) {
+		if (!model.first->IsActive()) {
 			continue;
 		}
 
@@ -452,6 +498,54 @@ void Swapchain::RecordCommandBuffer(
 
 	vkCmdEndRenderPass(commandBuffer);
 
+	// Rectangle pipeline.
+	_rectanglePipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(_extent.width);
+	viewport.height = static_cast<float>(_extent.height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	scissor.offset = {0, 0};
+	scissor.extent = _extent;
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	std::vector<glm::vec4> rectData(2);
+
+	for (auto& rectangle : *_rectangles) {
+		if (!rectangle.first->IsActive()) {
+			continue;
+		}
+
+		rectData[0] = rectangle.first->GetPosition();
+		rectData[1] = rectangle.first->GetTexCoords();
+
+		vkCmdPushConstants(
+			commandBuffer,
+			_pipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_VERTEX_BIT,
+			0,
+			sizeof(glm::vec4) * 2,
+			rectData.data());
+
+		vkCmdBindDescriptorSets(
+			commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			_pipeline->GetPipelineLayout(),
+			0,
+			1,
+			&rectangle.second.DescriptorSet,
+			0,
+			nullptr);
+
+		vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+	}
+
+	vkCmdEndRenderPass(commandBuffer);
+
 	res = vkEndCommandBuffer(commandBuffer);
 	
 	if (res != VK_SUCCESS) {
@@ -460,6 +554,8 @@ void Swapchain::RecordCommandBuffer(
 }
 
 void Swapchain::MainLoop() {
+	Logger::Verbose("Video main loop called.");
+
 	_work = true;
 
 	while (!glfwWindowShouldClose(_window) && _work) {

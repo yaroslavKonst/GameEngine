@@ -1,31 +1,24 @@
 #include "pipeline.h"
 
 #include "../Logger/logger.h"
-#include "mvp.h"
 
-#include "shaders/spir-v/Shader_vert.spv"
-#include "shaders/spir-v/Shader_frag.spv"
-
-Pipeline::Pipeline(
-	VkDevice device,
-	VkExtent2D extent,
-	VkFormat colorAttachmentFormat,
-	VkFormat depthAttachmentFormat,
-	VkDescriptorSetLayout descriptorSetLayout,
-	VkSampleCountFlagBits msaaSamples)
+Pipeline::Pipeline(InitInfo* initInfo)
 {
-	_device = device;
-	_extent = extent;
-	_colorAttachmentFormat = colorAttachmentFormat;
-	_depthAttachmentFormat = depthAttachmentFormat;
-	_msaaSamples = msaaSamples;
+	_device = initInfo->Device;
+	_extent = initInfo->Extent;
+	_colorAttachmentFormat = initInfo->ColorAttachmentFormat;
+	_depthAttachmentFormat = initInfo->DepthAttachmentFormat;
+	_msaaSamples = initInfo->MsaaSamples;
+	_resolve = initInfo->ResolveImage;
+	_clearInputBuffer = initInfo->ClearInputBuffer;
 
 	VkShaderModule vertShaderModule = CreateShaderModule(
-		ShaderVert,
-		sizeof(ShaderVert));
+		initInfo->VertexShaderCode,
+		initInfo->VertexShaderSize);
+
 	VkShaderModule fragShaderModule = CreateShaderModule(
-		ShaderFrag,
-		sizeof(ShaderFrag));
+		initInfo->FragmentShaderCode,
+		initInfo->FragmentShaderSize);
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType =
@@ -46,21 +39,19 @@ Pipeline::Pipeline(
 		fragShaderStageInfo
 	};
 
-	auto bindingDescriptions =
-		ModelDescriptor::GetVertexBindingDescription();
-	auto attributeDescriptions =
-		ModelDescriptor::GetAttributeDescriptions();
-
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType =
 		VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertexInputInfo.vertexBindingDescriptionCount =
-		static_cast<uint32_t>(bindingDescriptions.size());
-	vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+		static_cast<uint32_t>(
+			initInfo->VertexBindingDescriptions.size());
+	vertexInputInfo.pVertexBindingDescriptions =
+		initInfo->VertexBindingDescriptions.data();
 	vertexInputInfo.vertexAttributeDescriptionCount =
-		static_cast<uint32_t>(attributeDescriptions.size());
+		static_cast<uint32_t>(
+			initInfo->VertexAttributeDescriptions.size());
 	vertexInputInfo.pVertexAttributeDescriptions =
-		attributeDescriptions.data();
+		initInfo->VertexAttributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType =
@@ -127,7 +118,7 @@ Pipeline::Pipeline(
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType =
 		VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencil.depthTestEnable = VK_TRUE;
+	depthStencil.depthTestEnable = initInfo->DepthTestEnabled;
 	depthStencil.depthWriteEnable = VK_TRUE;
 	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
@@ -163,18 +154,19 @@ Pipeline::Pipeline(
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
-	VkPushConstantRange pushConstant{};
-	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	pushConstant.offset = 0;
-	pushConstant.size = sizeof(MVP);
-
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType =
 		VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 1;
-	pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+	pipelineLayoutInfo.pSetLayouts = &initInfo->DescriptorSetLayout;
+
+	if (initInfo->PushConstantEnabled) {
+		pipelineLayoutInfo.pushConstantRangeCount = 1;
+		pipelineLayoutInfo.pPushConstantRanges =
+			&initInfo->PushConstant;
+	} else {
+		pipelineLayoutInfo.pushConstantRangeCount = 0;
+	}
 
 	VkResult res = vkCreatePipelineLayout(
 		_device,
@@ -266,12 +258,19 @@ void Pipeline::CreateRenderPass()
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = _colorAttachmentFormat;
 	colorAttachment.samples = _msaaSamples;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	if (_clearInputBuffer) {
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	} else {
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		colorAttachment.initialLayout =
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	}
 
 	VkAttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
@@ -314,7 +313,10 @@ void Pipeline::CreateRenderPass()
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pDepthStencilAttachment = &depthAttachmentRef;
-	subpass.pResolveAttachments = &colorAttachmentResolveRef;
+
+	if (_resolve) {
+		subpass.pResolveAttachments = &colorAttachmentResolveRef;
+	}
 
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -330,11 +332,20 @@ void Pipeline::CreateRenderPass()
 		VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-	std::vector<VkAttachmentDescription> attachments = {
-		colorAttachment,
-		depthAttachment,
-		colorAttachmentResolve
-	};
+	std::vector<VkAttachmentDescription> attachments;
+
+	if (_resolve) {
+		attachments = {
+			colorAttachment,
+			depthAttachment,
+			colorAttachmentResolve
+		};
+	} else {
+		attachments = {
+			colorAttachment,
+			depthAttachment
+		};
+	}
 
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -369,11 +380,20 @@ void Pipeline::CreateFramebuffers(
 	_framebuffers.resize(imageViews.size());
 
 	for (size_t i = 0; i < imageViews.size(); ++i) {
-		std::vector<VkImageView> attachments = {
-			colorImageView,
-			depthImageView,
-			imageViews[i]
-		};
+		std::vector<VkImageView> attachments;
+
+		if (_resolve) {
+			attachments = {
+				colorImageView,
+				depthImageView,
+				imageViews[i]
+			};
+		} else {
+			attachments = {
+				colorImageView,
+				depthImageView,
+			};
+		}
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType =

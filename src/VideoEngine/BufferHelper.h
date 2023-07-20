@@ -33,6 +33,16 @@ namespace BufferHelper
 		Buffer dst,
 		CommandPool* commandPool,
 		VkQueue graphicsQueue);
+
+	void LoadDataToBuffer(
+		VkDevice device,
+		Buffer buffer,
+		const void* data,
+		size_t size,
+		MemorySystem* memorySystem,
+		PhysicalDeviceSupport* deviceSupport,
+		CommandPool* commandPool,
+		VkQueue graphicsQueue);
 }
 
 #endif

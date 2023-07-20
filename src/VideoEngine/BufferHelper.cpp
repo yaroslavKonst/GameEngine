@@ -1,5 +1,7 @@
 #include "BufferHelper.h"
 
+#include <cstring>
+
 namespace BufferHelper
 {
 	Buffer CreateBuffer(VkDevice device,
@@ -86,5 +88,52 @@ namespace BufferHelper
 		commandPool->EndOneTimeBuffer(
 			commandBuffer,
 			graphicsQueue);
+	}
+
+	void LoadDataToBuffer(
+		VkDevice device,
+		Buffer buffer,
+		const void* data,
+		size_t size,
+		MemorySystem* memorySystem,
+		PhysicalDeviceSupport* deviceSupport,
+		CommandPool* commandPool,
+		VkQueue graphicsQueue)
+	{
+		Buffer stagingBuffer = CreateBuffer(
+			device,
+			size,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			memorySystem,
+			deviceSupport);
+
+		void* mappedMemory;
+
+		vkMapMemory(
+			device,
+			stagingBuffer.Allocation.Memory,
+			stagingBuffer.Allocation.Offset,
+			stagingBuffer.Allocation.Size,
+			0,
+			&mappedMemory);
+
+		memcpy(mappedMemory, data, size);
+
+		vkUnmapMemory(
+			device,
+			stagingBuffer.Allocation.Memory);
+
+		CopyBuffer(
+			stagingBuffer,
+			buffer,
+			commandPool,
+			graphicsQueue);
+
+		DestroyBuffer(
+			device,
+			stagingBuffer,
+			memorySystem);
 	}
 }

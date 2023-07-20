@@ -12,6 +12,7 @@
 #include "PhysicalDeviceSupport.h"
 #include "MemorySystem.h"
 #include "model.h"
+#include "rectangle.h"
 #include "ModelDescriptor.h"
 #include "BufferHelper.h"
 
@@ -34,6 +35,9 @@ public:
 
 	void RegisterModel(Model* model);
 	void RemoveModel(Model* model);
+
+	void RegisterRectangle(Rectangle* rectangle);
+	void RemoveRectangle(Rectangle* rectangle);
 
 	void SetFOV(double fov)
 	{
@@ -79,15 +83,20 @@ private:
 	std::map<Model*, ModelDescriptor> _models;
 	ModelDescriptor CreateModelDescriptor(Model* model);
 	void DestroyModelDescriptor(ModelDescriptor descriptor);
-	void RemoveModelDescriptor(ModelDescriptor modelDescriptor);
 	void RemoveAllModels();
+
+	std::map<Rectangle*, ModelDescriptor> _rectangles;
+	ModelDescriptor CreateRectangleDescriptor(Rectangle* rectangle);
+	void DestroyRectangleDescriptor(ModelDescriptor descriptor);
+	void RemoveAllRectangles();
+
 	ImageHelper::Image CreateTextureImage(
-		Model* model,
+		Texturable* model,
 		uint32_t& mipLevels);
 	VkSampler CreateTextureSampler(float mipLevels);
 	void DestroyTextureSampler(VkSampler sampler);
-	void CreateDescriptors(ModelDescriptor* descriptor);
-	void DestroyDescriptors(ModelDescriptor* descriptor);
+	void CreateDescriptorSets(ModelDescriptor* descriptor);
+	void DestroyDescriptorSets(ModelDescriptor* descriptor);
 	void GenerateMipmaps(
 		ImageHelper::Image image,
 		uint32_t width,
