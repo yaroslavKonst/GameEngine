@@ -21,6 +21,7 @@ Video::Video(
 	CreateSurface();
 	SelectPhysicalDevice();
 	CreateDevice();
+	_inputControl = new InputControl(_window.GetWindow());
 	CreateCommandPools();
 	CreateDescriptorSetLayout();
 
@@ -35,6 +36,7 @@ Video::~Video()
 
 	DestroyDescriptorSetLayout();
 	DestroyCommandPools();
+	delete _inputControl;
 	DestroyDevice();
 	DestroySurface();
 

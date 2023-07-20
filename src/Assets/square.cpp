@@ -41,9 +41,16 @@ Square::Square(const char* texturePath, float depthMod)
 	SetPosition(glm::vec4(-1.0f, -1.0f, -0.1f, -0.1f));
 	SetTexCoords(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
+	Area.x0 = -1;
+	Area.y0 = -1;
+	Area.x1 = -0.1;
+	Area.y1 = -0.1;
+
 	_time = 0;
 
 	SetDepth(0);
+	SetLayer(_depthMod);
+	SetMute(false);
 }
 
 Square::~Square()

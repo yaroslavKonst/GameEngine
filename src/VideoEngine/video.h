@@ -15,6 +15,7 @@
 #include "rectangle.h"
 #include "ModelDescriptor.h"
 #include "BufferHelper.h"
+#include "InputControl.h"
 
 class Video
 {
@@ -47,6 +48,11 @@ public:
 	void SetViewMatrix(const glm::mat4& matrix)
 	{
 		_viewMatrix = matrix;
+	}
+
+	InputControl* GetInputControl()
+	{
+		return _inputControl;
 	}
 
 private:
@@ -109,6 +115,8 @@ private:
 
 	double _fov;
 	glm::mat4 _viewMatrix;
+
+	InputControl* _inputControl;
 };
 
 #endif

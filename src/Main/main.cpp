@@ -3,6 +3,7 @@
 #include <thread>
 
 #include "../VideoEngine/video.h"
+#include "../VideoEngine/InputControl.h"
 #include "../UniverseEngine/universe.h"
 #include "../Logger/logger.h"
 #include "../Assets/triangle.h"
@@ -33,6 +34,8 @@ int main(int argc, char** argv)
 	Triangle triangle;
 	Square square("../src/Assets/Resources/texture.jpg", 1);
 	Square square2("../src/Assets/Resources/transparent.png", -1);
+
+	window.GetInputControl()->Subscribe(&square);
 
 	window.RegisterModel(&triangle);
 	universe.RegisterActor(&triangle);
