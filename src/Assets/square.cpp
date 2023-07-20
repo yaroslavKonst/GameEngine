@@ -14,7 +14,7 @@ Square::Square()
 	int texChannels;
 
 	stbi_uc* pixels = stbi_load(
-		"../src/Assets/Resources/texture.jpg",
+		"../src/Assets/Resources/transparent.png",
 		&texWidth,
 		&texHeight,
 		&texChannels,
@@ -36,7 +36,7 @@ Square::Square()
 
 	SetActive(true);
 
-	SetPosition(glm::vec4(-1.0f, -1.0f, -0.2f, -0.2f));
+	SetPosition(glm::vec4(-1.0f, -1.0f, -0.1f, -0.1f));
 	SetTexCoords(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
 	_time = 0;
