@@ -7,14 +7,16 @@
 //#define STB_IMAGE_IMPLEMENTATION
 #include "../ThirdParty/stb/stb_image.h"
 
-Square::Square()
+Square::Square(const char* texturePath, float depthMod)
 {
+	_depthMod = depthMod;
+
 	int texWidth;
 	int texHeight;
 	int texChannels;
 
 	stbi_uc* pixels = stbi_load(
-		"../src/Assets/Resources/transparent.png",
+		texturePath,
 		&texWidth,
 		&texHeight,
 		&texChannels,
@@ -40,6 +42,8 @@ Square::Square()
 	SetTexCoords(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
 	_time = 0;
+
+	SetDepth(0);
 }
 
 Square::~Square()
@@ -55,6 +59,8 @@ void Square::Tick()
 		1.0f + sinf(_time)));
 
 	_time += 0.01;
+
+	SetDepth(_depthMod * sinf(_time));
 
 	if (_time >= 2 * M_PI) {
 		_time = 0;

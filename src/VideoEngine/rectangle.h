@@ -39,9 +39,20 @@ public:
 		_texCoords = texCoords;
 	}
 
+	virtual float GetDepth()
+	{
+		return _depth;
+	}
+
+	virtual void SetDepth(float depth)
+	{
+		_depth = depth;
+	}
+
 private:
 	glm::vec4 _position;
 	glm::vec4 _texCoords;
+	float _depth;
 };
 
 #endif

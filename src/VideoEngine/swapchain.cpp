@@ -514,10 +514,21 @@ void Swapchain::RecordCommandBuffer(
 
 	std::vector<glm::vec4> rectData(2);
 
+	std::map<float, Rectangle*> orderedRectangles;
+
 	for (auto& rectangle : *_rectangles) {
 		if (!rectangle.first->IsActive()) {
 			continue;
 		}
+
+		orderedRectangles[rectangle.first->GetDepth()] =
+			rectangle.first;
+	}
+
+	for (auto& rect : orderedRectangles) {
+		auto rectangle = std::pair<Rectangle*, ModelDescriptor>(
+			rect.second,
+			(*_rectangles)[rect.second]);
 
 		rectData[0] = rectangle.first->GetPosition();
 		rectData[1] = rectangle.first->GetTexCoords();

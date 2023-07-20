@@ -16,7 +16,8 @@ all: \
 	../../build/ModelDescriptor.o \
 	../../build/BufferHelper.o \
 	../../build/rectangle.o \
-	../../build/drawable.o
+	../../build/drawable.o \
+	../../build/InputControl.o
 
 shaders:
 	cd shaders ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)

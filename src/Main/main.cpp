@@ -31,7 +31,8 @@ int main(int argc, char** argv)
 	std::thread universeThread(UniverseThread, &universe);
 
 	Triangle triangle;
-	Square square;
+	Square square("../src/Assets/Resources/texture.jpg", 1);
+	Square square2("../src/Assets/Resources/transparent.png", -1);
 
 	window.RegisterModel(&triangle);
 	universe.RegisterActor(&triangle);
@@ -39,12 +40,17 @@ int main(int argc, char** argv)
 	window.RegisterRectangle(&square);
 	universe.RegisterActor(&square);
 
+	window.RegisterRectangle(&square2);
+	universe.RegisterActor(&square2);
+
 	window.MainLoop();
 
 	window.RemoveModel(&triangle);
 	window.RemoveRectangle(&square);
+	window.RemoveRectangle(&square2);
 	universe.RemoveActor(&triangle);
 	universe.RemoveActor(&square);
+	universe.RemoveActor(&square2);
 
 	universe.Stop();
 	universeThread.join();

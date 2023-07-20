@@ -7,12 +7,13 @@
 class Square : public Rectangle, public Actor
 {
 public:
-	Square();
+	Square(const char* texturePath, float depthMod);
 	~Square();
 	void Tick();
 
 private:
 	float _time;
+	float _depthMod;
 };
 
 #endif
