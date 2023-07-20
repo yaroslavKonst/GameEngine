@@ -40,7 +40,7 @@ Swapchain::Swapchain(
 	_fov = fov;
 	_descriptorSetLayout = descriptorSetLayout;
 
-	Logger::Verbose("Swapchain constructor called.");
+	Logger::Verbose() << "Swapchain constructor called.";
 
 	_initialized = false;
 }
@@ -110,7 +110,7 @@ VkExtent2D Swapchain::ChooseExtent(VkSurfaceCapabilitiesKHR capabilities)
 
 void Swapchain::Create()
 {
-	Logger::Verbose("Create swapchain called.");
+	Logger::Verbose() << "Create swapchain called.";
 
 	if (_initialized) {
 		Destroy();
@@ -128,9 +128,8 @@ void Swapchain::Create()
 
 	_extent = ChooseExtent(supportDetails.capabilities);
 
-	Logger::Verbose(
-		std::string("Extent: ") + std::to_string(_extent.width) +
-		"x" + std::to_string(_extent.height));
+	Logger::Verbose() <<
+		"Extent: " << _extent.width << "x" << _extent.height;
 
 	_transferCommandPool = new CommandPool(
 		_device,
@@ -235,7 +234,7 @@ void Swapchain::Destroy()
 
 	vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 	_initialized = false;
-	Logger::Verbose("Swapchain destroyed.");
+	Logger::Verbose() << "Swapchain destroyed.";
 }
 
 void Swapchain::CreateRenderingImages()
@@ -554,7 +553,7 @@ void Swapchain::RecordCommandBuffer(
 }
 
 void Swapchain::MainLoop() {
-	Logger::Verbose("Video main loop called.");
+	Logger::Verbose() << "Video main loop called.";
 
 	_work = true;
 

@@ -15,7 +15,7 @@ ThreadPool::ThreadPool(uint32_t threadCount) :
 		_threads[i] = new std::thread(
 			&ThreadPool::ThreadFunction,
 			this);
-		Logger::Verbose("ThreadPool thread created.");
+		Logger::Verbose() << "ThreadPool thread created.";
 	}
 }
 
@@ -30,7 +30,7 @@ ThreadPool::~ThreadPool()
 	for (size_t i = 0; i < _threads.size(); ++i) {
 		_threads[i]->join();
 		delete _threads[i];
-		Logger::Verbose("ThreadPool thread joined.");
+		Logger::Verbose() << "ThreadPool thread joined.";
 	}
 }
 

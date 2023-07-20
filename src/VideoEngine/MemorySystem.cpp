@@ -22,8 +22,8 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	AllocationProperties properties)
 {
 	if (_managers.find(properties) == _managers.end()) {
-		Logger::Verbose(std::string("Requested alignment ") +
-			std::to_string(properties.Alignment));
+		Logger::Verbose() <<
+			"Requested alignment " << properties.Alignment;
 
 		_managers[properties] = new MemoryManager(
 			_device,

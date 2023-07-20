@@ -7,13 +7,13 @@ Universe::Universe(uint32_t tickDelayMS)
 	_tickDelayMS = tickDelayMS;
 	_threadPool = new ThreadPool(3);
 
-	Logger::Verbose("Universe created.");
+	Logger::Verbose() << "Universe created.";
 }
 
 Universe::~Universe()
 {
 	delete _threadPool;
-	Logger::Verbose("Universe destroyed.");
+	Logger::Verbose() << "Universe destroyed.";
 }
 
 void Universe::RegisterActor(Actor* actor)
@@ -57,13 +57,15 @@ void Universe::MainLoop()
 			uint32_t timeToSleepMS = _tickDelayMS - spentTimeMS;
 
 			if (timeToSleepMS < _tickDelayMS / 3) {
-				Logger::Verbose(
-					std::string("Sleeping ") +
-					std::to_string(timeToSleepMS) + " ms");
+				Logger::Verbose() <<
+					"Sleeping " << timeToSleepMS << " ms.";
 			}
 
 			std::this_thread::sleep_for(
 				std::chrono::milliseconds(timeToSleepMS));
+		} else {
+			Logger::Warning() <<
+				"Tick processing took tick delay.";
 		}
 	}
 }

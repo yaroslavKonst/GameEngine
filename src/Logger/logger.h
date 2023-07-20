@@ -2,6 +2,7 @@
 #define _LOGGER_H
 
 #include <string>
+#include <cstdint>
 
 namespace Logger
 {
@@ -13,11 +14,28 @@ namespace Logger
 		Verbose = 3
 	};
 
+	class Logger
+	{
+	public:
+		Logger(Level level);
+		~Logger();
+
+		Logger& operator<<(const std::string& message);
+		Logger& operator<<(const char* message);
+		Logger& operator<<(int32_t message);
+		Logger& operator<<(uint32_t message);
+		Logger& operator<<(float message);
+		Logger& operator<<(double message);
+
+	private:
+		Level _level;
+	};
+
 	void SetLevel(Level level);
 
-	void Error(std::string message);
-	void Warning(std::string message);
-	void Verbose(std::string message);
+	Logger Error();
+	Logger Warning();
+	Logger Verbose();
 }
 
 #endif

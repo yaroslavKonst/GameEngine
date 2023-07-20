@@ -212,7 +212,7 @@ Pipeline::Pipeline(InitInfo* initInfo)
 	DestroyShaderModule(vertShaderModule);
 	DestroyShaderModule(fragShaderModule);
 
-	Logger::Verbose("Created pipeline.");
+	Logger::Verbose() << "Created pipeline.";
 }
 
 Pipeline::~Pipeline()
@@ -220,7 +220,7 @@ Pipeline::~Pipeline()
 	vkDestroyPipeline(_device, _pipeline, nullptr);
 	DestroyRenderPass();
 	vkDestroyPipelineLayout(_device, _pipelineLayout, nullptr);
-	Logger::Verbose("Destroyed pipeline.");
+	Logger::Verbose() << "Destroyed pipeline.";
 }
 
 VkShaderModule Pipeline::CreateShaderModule(const uint8_t* data, size_t size)
@@ -242,7 +242,7 @@ VkShaderModule Pipeline::CreateShaderModule(const uint8_t* data, size_t size)
 		throw std::runtime_error("Failed to create shader module.");
 	}
 
-	Logger::Verbose("Created shader module.");
+	Logger::Verbose() << "Created shader module.";
 
 	return shaderModule;
 }
@@ -250,7 +250,7 @@ VkShaderModule Pipeline::CreateShaderModule(const uint8_t* data, size_t size)
 void Pipeline::DestroyShaderModule(VkShaderModule shaderModule)
 {
 	vkDestroyShaderModule(_device, shaderModule, nullptr);
-	Logger::Verbose("Destroyed shader module.");
+	Logger::Verbose() << "Destroyed shader module.";
 }
 
 void Pipeline::CreateRenderPass()

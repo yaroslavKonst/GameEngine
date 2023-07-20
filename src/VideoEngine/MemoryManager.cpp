@@ -18,13 +18,10 @@ MemoryManager::MemoryManager(
 
 	AddPage();
 
-	Logger::Verbose(
-		std::string("Created memory manager for index ") +
-		std::to_string(_memoryTypeIndex) + ", alignment " +
-		std::to_string(_alignment));
+	Logger::Verbose() << "Created memory manager for index " <<
+		_memoryTypeIndex << ", alignment " << _alignment;
 
-	Logger::Verbose(
-		std::string("Page size ") + std::to_string(_pageSize));
+	Logger::Verbose() << "Page size " << _pageSize;
 }
 
 MemoryManager::~MemoryManager()
@@ -41,11 +38,10 @@ MemoryManager::~MemoryManager()
 		}
 	}
 
-	Logger::Verbose(
-		std::string("Destroyed memory manager for index ") +
-		std::to_string(_memoryTypeIndex) + ", alignment " +
-		std::to_string(_alignment) + ". Leaks: " +
-		std::to_string(leakedSectors));
+	Logger::Verbose() <<
+		"Destroyed memory manager for index " << _memoryTypeIndex <<
+		", alignment " << _alignment <<
+		". Leaks: " << leakedSectors;
 }
 
 void MemoryManager::AddPage()
@@ -70,10 +66,9 @@ void MemoryManager::AddPage()
 
 	_pages.push_back(page);
 
-	Logger::Verbose(
-		std::string("New page for memory manager with index ") +
-		std::to_string(_memoryTypeIndex) + ", alignment " +
-		std::to_string(_alignment));
+	Logger::Verbose() <<
+		"New page for memory manager with index " <<
+		_memoryTypeIndex << ", alignment " << _alignment;
 }
 
 MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
