@@ -19,32 +19,32 @@ public:
 	Rectangle();
 	virtual ~Rectangle();
 
-	virtual glm::vec4 GetPosition()
+	virtual glm::vec4 GetRectanglePosition()
 	{
 		return _position;
 	}
 
-	virtual void SetPosition(glm::vec4 position)
+	virtual void SetRectanglePosition(glm::vec4 position)
 	{
 		_position = position;
 	}
 
-	virtual glm::vec4 GetTexCoords()
+	virtual glm::vec4 GetRectangleTexCoords()
 	{
 		return _texCoords;
 	}
 
-	virtual void SetTexCoords(glm::vec4 texCoords)
+	virtual void SetRectangleTexCoords(glm::vec4 texCoords)
 	{
 		_texCoords = texCoords;
 	}
 
-	virtual float GetDepth()
+	virtual float GetRectangleDepth()
 	{
 		return _depth;
 	}
 
-	virtual void SetDepth(float depth)
+	virtual void SetRectangleDepth(float depth)
 	{
 		_depth = depth;
 	}

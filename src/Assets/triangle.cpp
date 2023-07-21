@@ -18,7 +18,7 @@ Triangle::Triangle()
 			{-0.5f, 0.5f, -0.5f}
 		});
 
-	SetTexCoords(
+	SetModelTexCoords(
 		{
 			{1.0f, 0.0f},
 			{0.0f, 0.0f},
@@ -32,7 +32,7 @@ Triangle::Triangle()
 
 	SetModelIndices({0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4});
 
-	SetActive(true);
+	SetDrawEnabled(true);
 
 	_angle = 0;
 
@@ -51,7 +51,7 @@ Triangle::Triangle()
 	SetModelMatrix(glm::mat4(1.0f));
 	SetModelInnerMatrix(glm::mat4(1.0f));
 
-	SetInstances({
+	SetModelInstances({
 		glm::mat4(1.0f),
 		glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, -0.2f)),
 		glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.2f))

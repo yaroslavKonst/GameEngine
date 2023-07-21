@@ -17,33 +17,33 @@ public:
 		float y1;
 	};
 
-	HandlerArea Area;
+	HandlerArea InputArea;
 
-	virtual bool InArea(float x, float y)
+	virtual bool InInputArea(float x, float y)
 	{
-		return Area.x0 <= x && x <= Area.x1 &&
-			Area.y0 <= y && y <= Area.y1;
+		return InputArea.x0 <= x && x <= InputArea.x1 &&
+			InputArea.y0 <= y && y <= InputArea.y1;
 	}
 
 	InputHandler();
 	virtual ~InputHandler();
 
-	virtual bool IsMute()
+	virtual bool IsInputEnabled()
 	{
-		return _mute;
+		return _inputEnabled;
 	}
 
-	virtual void SetMute(bool mute)
+	virtual void SetInputEnabled(bool enabled)
 	{
-		_mute = mute;
+		_inputEnabled = enabled;
 	}
 
-	virtual float GetLayer()
+	virtual float GetInputLayer()
 	{
 		return _layer;
 	}
 
-	virtual void SetLayer(float layer)
+	virtual void SetInputLayer(float layer)
 	{
 		_layer = layer;
 	}
@@ -80,7 +80,7 @@ public:
 	}
 
 private:
-	bool _mute;
+	bool _inputEnabled;
 	float _layer;
 };
 

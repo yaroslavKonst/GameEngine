@@ -16,6 +16,7 @@
 #include "ModelDescriptor.h"
 #include "BufferHelper.h"
 #include "InputControl.h"
+#include "skybox.h"
 
 class Video
 {
@@ -45,15 +46,31 @@ public:
 		_fov = fov;
 	}
 
-	void SetViewMatrix(const glm::mat4& matrix)
+	void SetCameraPosition(const glm::vec3& value)
 	{
-		_viewMatrix = matrix;
+		_cameraPosition = value;
+	}
+
+	void SetCameraDirection(const glm::vec3& value)
+	{
+		_cameraDirection = value;
+	}
+
+	void SetCameraUp(const glm::vec3& value)
+	{
+		_cameraUp = value;
 	}
 
 	InputControl* GetInputControl()
 	{
 		return _inputControl;
 	}
+
+	void CreateSkybox(
+		uint32_t texWidth,
+		uint32_t texHeight,
+		const std::vector<uint8_t>& texData);
+	void DestroySkybox();
 
 private:
 	Window _window;
@@ -96,9 +113,13 @@ private:
 	void DestroyRectangleDescriptor(ModelDescriptor descriptor);
 	void RemoveAllRectangles();
 
+	Skybox _skybox;
+
 	ImageHelper::Image CreateTextureImage(
 		Texturable* model,
-		uint32_t& mipLevels);
+		uint32_t& mipLevels,
+		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
+		uint32_t layerCount = 1);
 	VkSampler CreateTextureSampler(float mipLevels);
 	void DestroyTextureSampler(VkSampler sampler);
 	void CreateDescriptorSets(ModelDescriptor* descriptor);
@@ -114,7 +135,9 @@ private:
 	void DestroyDescriptorSetLayout();
 
 	double _fov;
-	glm::mat4 _viewMatrix;
+	glm::vec3 _cameraPosition;
+	glm::vec3 _cameraDirection;
+	glm::vec3 _cameraUp;
 
 	InputControl* _inputControl;
 };

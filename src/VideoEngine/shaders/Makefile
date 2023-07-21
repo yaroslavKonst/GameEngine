@@ -6,10 +6,12 @@ SC_OPTS=--target-env=vulkan1.0
 shaders: \
 	outdir \
 	../../../build/converter \
-	spir-v/Shader_vert.spv \
-	spir-v/Shader_frag.spv \
+	spir-v/ObjectShader_vert.spv \
+	spir-v/ObjectShader_frag.spv \
 	spir-v/RectangleShader_vert.spv \
-	spir-v/RectangleShader_frag.spv
+	spir-v/RectangleShader_frag.spv \
+	spir-v/SkyboxShader_vert.spv \
+	spir-v/SkyboxShader_frag.spv
 
 outdir:
 	mkdir -p spir-v

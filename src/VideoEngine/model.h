@@ -49,22 +49,22 @@ public:
 		_modelIndexBuffer = indices;
 	}
 
-	const std::vector<glm::vec2>& GetTexCoords()
+	const std::vector<glm::vec2>& GetModelTexCoords()
 	{
 		return _modelTexCoordBuffer;
 	}
 
-	void SetTexCoords(const std::vector<glm::vec2>& coords)
+	void SetModelTexCoords(const std::vector<glm::vec2>& coords)
 	{
 		_modelTexCoordBuffer = coords;
 	}
 
-	const std::vector<glm::mat4>& GetInstances()
+	const std::vector<glm::mat4>& GetModelInstances()
 	{
 		return _modelInstances;
 	}
 
-	void SetInstances(const std::vector<glm::mat4>& instances)
+	void SetModelInstances(const std::vector<glm::mat4>& instances)
 	{
 		_modelInstances = instances;
 	}

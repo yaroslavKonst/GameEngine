@@ -15,6 +15,7 @@
 #include "model.h"
 #include "rectangle.h"
 #include "ModelDescriptor.h"
+#include "skybox.h"
 
 class Swapchain
 {
@@ -30,7 +31,10 @@ public:
 		VkQueue presentQueue,
 		std::map<Model*, ModelDescriptor>* models,
 		std::map<Rectangle*, ModelDescriptor>* rectangles,
-		glm::mat4* viewMatrix,
+		Skybox* skybox,
+		glm::vec3* cameraPosition,
+		glm::vec3* cameraDirection,
+		glm::vec3* cameraUp,
 		double* fov,
 		VkDescriptorSetLayout descriptorSetLayout);
 
@@ -56,6 +60,7 @@ private:
 
 	std::map<Model*, ModelDescriptor>* _models;
 	std::map<Rectangle*, ModelDescriptor>* _rectangles;
+	Skybox* _skybox;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 
@@ -88,6 +93,7 @@ private:
 
 	Pipeline* _pipeline;
 	Pipeline* _rectanglePipeline;
+	Pipeline* _skyboxPipeline;
 	void CreatePipelines();
 	void DestroyPipelines();
 
@@ -110,7 +116,9 @@ private:
 	void CreateSyncObjects();
 	void DestroySyncObjects();
 
-	glm::mat4* _viewMatrix;
+	glm::vec3* _cameraPosition;
+	glm::vec3* _cameraDirection;
+	glm::vec3* _cameraUp;
 	double* _fov;
 };
 

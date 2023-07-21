@@ -8,6 +8,8 @@
 #include "../Logger/logger.h"
 #include "../Assets/triangle.h"
 #include "../Assets/square.h"
+#include "../Assets/loader.h"
+#include "../Assets/camera.h"
 
 void UniverseThread(Universe* universe)
 {
@@ -20,12 +22,23 @@ int main(int argc, char** argv)
 
 	Video window(800, 600, "Window Title", "Application");
 
-	window.SetViewMatrix(glm::lookAt(
-		glm::vec3(2.0f, 2.0f, 2.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 1.0f)));
+	window.SetFOV(90);
+	window.SetCameraPosition(glm::vec3(2.0f, 2.0f, 2.0f));
+	window.SetCameraDirection(glm::vec3(-1.0f, -1.0f, -1.0f));
+	window.SetCameraUp(glm::vec3(0.0f, 0.0f, 1.0f));
 
-	window.SetFOV(45);
+	Camera camera(&window);
+
+	int skTexWidth;
+	int skTexHeight;
+	auto skTexData = Loader::LoadImage(
+		"../src/Assets/Resources/skybox.png",
+		skTexWidth,
+		skTexHeight);
+
+	skTexWidth /= 6;
+
+	window.CreateSkybox(skTexWidth, skTexHeight, skTexData);
 
 	Universe universe(20);
 
@@ -46,6 +59,8 @@ int main(int argc, char** argv)
 	window.RegisterRectangle(&square2);
 	universe.RegisterActor(&square2);
 
+	universe.RegisterActor(&camera);
+
 	window.MainLoop();
 
 	window.RemoveModel(&triangle);
@@ -54,6 +69,8 @@ int main(int argc, char** argv)
 	universe.RemoveActor(&triangle);
 	universe.RemoveActor(&square);
 	universe.RemoveActor(&square2);
+
+	universe.RemoveActor(&camera);
 
 	universe.Stop();
 	universeThread.join();

@@ -5,11 +5,14 @@
 #include "../Logger/logger.h"
 #include "mvp.h"
 
-#include "shaders/spir-v/Shader_vert.spv"
-#include "shaders/spir-v/Shader_frag.spv"
+#include "shaders/spir-v/ObjectShader_vert.spv"
+#include "shaders/spir-v/ObjectShader_frag.spv"
 
 #include "shaders/spir-v/RectangleShader_vert.spv"
 #include "shaders/spir-v/RectangleShader_frag.spv"
+
+#include "shaders/spir-v/SkyboxShader_vert.spv"
+#include "shaders/spir-v/SkyboxShader_frag.spv"
 
 Swapchain::Swapchain(
 	VkDevice device,
@@ -22,7 +25,10 @@ Swapchain::Swapchain(
 	VkQueue presentQueue,
 	std::map<Model*, ModelDescriptor>* models,
 	std::map<Rectangle*, ModelDescriptor>* rectangles,
-	glm::mat4* viewMatrix,
+	Skybox* skybox,
+	glm::vec3* cameraPosition,
+	glm::vec3* cameraDirection,
+	glm::vec3* cameraUp,
 	double* fov,
 	VkDescriptorSetLayout descriptorSetLayout)
 {
@@ -35,8 +41,11 @@ Swapchain::Swapchain(
 	_graphicsQueue = graphicsQueue;
 	_presentQueue = presentQueue;
 	_models = models;
+	_skybox = skybox;
 	_rectangles = rectangles;
-	_viewMatrix = viewMatrix;
+	_cameraPosition = cameraPosition;
+	_cameraDirection = cameraDirection;
+	_cameraUp = cameraUp;
 	_fov = fov;
 	_descriptorSetLayout = descriptorSetLayout;
 
@@ -346,10 +355,10 @@ void Swapchain::CreatePipelines()
 	initInfo.DepthAttachmentFormat = _depthImage.Format;
 	initInfo.DescriptorSetLayout = _descriptorSetLayout;
 	initInfo.MsaaSamples = _msaaSamples;
-	initInfo.VertexShaderCode = ShaderVert;
-	initInfo.VertexShaderSize = sizeof(ShaderVert);
-	initInfo.FragmentShaderCode = ShaderFrag;
-	initInfo.FragmentShaderSize = sizeof(ShaderFrag);
+	initInfo.VertexShaderCode = ObjectShaderVert;
+	initInfo.VertexShaderSize = sizeof(ObjectShaderVert);
+	initInfo.FragmentShaderCode = ObjectShaderFrag;
+	initInfo.FragmentShaderSize = sizeof(ObjectShaderFrag);
 	initInfo.VertexBindingDescriptions =
 		ModelDescriptor::GetVertexBindingDescription();
 	initInfo.VertexAttributeDescriptions =
@@ -360,7 +369,7 @@ void Swapchain::CreatePipelines()
 	initInfo.PushConstant.offset = 0;
 	initInfo.PushConstant.size = sizeof(MVP);
 	initInfo.ResolveImage = false;
-	initInfo.ClearInputBuffer = true;
+	initInfo.ClearInputBuffer = false;
 
 	_pipeline = new Pipeline(&initInfo);
 	_pipeline->CreateFramebuffers(
@@ -385,10 +394,29 @@ void Swapchain::CreatePipelines()
 		_colorImageView,
 		_depthImageView);
 
+	initInfo.DepthTestEnabled = VK_FALSE;
+	initInfo.PushConstant.size = sizeof(Skybox::ShaderData);
+	initInfo.ResolveImage = false;
+	initInfo.VertexBindingDescriptions.clear();
+	initInfo.VertexAttributeDescriptions.clear();
+	initInfo.VertexShaderCode = SkyboxShaderVert;
+	initInfo.VertexShaderSize = sizeof(SkyboxShaderVert);
+	initInfo.FragmentShaderCode = SkyboxShaderFrag;
+	initInfo.FragmentShaderSize = sizeof(SkyboxShaderFrag);
+	initInfo.ClearInputBuffer = true;
+
+	_skyboxPipeline = new Pipeline(&initInfo);
+	_skyboxPipeline->CreateFramebuffers(
+		_imageViews,
+		_colorImageView,
+		_depthImageView);
 }
 
 void Swapchain::DestroyPipelines()
 {
+	_skyboxPipeline->DestroyFramebuffers();
+	delete _skyboxPipeline;
+
 	_rectanglePipeline->DestroyFramebuffers();
 	delete _rectanglePipeline;
 
@@ -414,9 +442,19 @@ void Swapchain::RecordCommandBuffer(
 			"Failed to begin recording command buffer.");
 	}
 
-	// Object pipeline.
-	_pipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+	// MVP.
+	MVP mvp;
+	mvp.View = glm::lookAt(
+		*_cameraPosition,
+		*_cameraPosition + *_cameraDirection,
+		*_cameraUp);
+	mvp.Proj = glm::perspective(
+		glm::radians((float)*_fov),
+		(float)_extent.width / (float)_extent.height,
+		0.1f,
+		10.0f);
 
+	// ViewPort and scissor.
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -424,25 +462,55 @@ void Swapchain::RecordCommandBuffer(
 	viewport.height = static_cast<float>(_extent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = {0, 0};
 	scissor.extent = _extent;
+
+	// Skybox pipeline.
+	_skyboxPipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	MVP mvp;
-	mvp.View = *_viewMatrix;
-	mvp.Proj = glm::perspective(
-		glm::radians((float)*_fov),
-		(float)_extent.width / (float)_extent.height,
-		0.1f,
-		10.0f);
+	if (_skybox->IsDrawEnabled()) {
+		Skybox::ShaderData shaderData;
+		shaderData.Direction = *_cameraDirection;
+		shaderData.Up = *_cameraUp;
+		shaderData.FOV = glm::radians((float)*_fov);
+		shaderData.Ratio = (float)_extent.width / (float)_extent.height;
 
-	mvp.Proj[1][1] *= -1;
+		vkCmdPushConstants(
+			commandBuffer,
+			_skyboxPipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_VERTEX_BIT,
+			0,
+			sizeof(Skybox::ShaderData),
+			&shaderData);
+
+		vkCmdBindDescriptorSets(
+			commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			_skyboxPipeline->GetPipelineLayout(),
+			0,
+			1,
+			&_skybox->Descriptor.DescriptorSet,
+			0,
+			nullptr);
+
+		vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+	}
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	// Object pipeline.
+	_pipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	for (auto& model : *_models) {
-		if (!model.first->IsActive()) {
+		if (!model.first->IsDrawEnabled()) {
 			continue;
 		}
 
@@ -500,16 +568,7 @@ void Swapchain::RecordCommandBuffer(
 	// Rectangle pipeline.
 	_rectanglePipeline->RecordCommandBuffer(commandBuffer, imageIndex);
 
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(_extent.width);
-	viewport.height = static_cast<float>(_extent.height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-	scissor.offset = {0, 0};
-	scissor.extent = _extent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	std::vector<glm::vec4> rectData(2);
@@ -517,11 +576,11 @@ void Swapchain::RecordCommandBuffer(
 	std::map<float, Rectangle*> orderedRectangles;
 
 	for (auto& rectangle : *_rectangles) {
-		if (!rectangle.first->IsActive()) {
+		if (!rectangle.first->IsDrawEnabled()) {
 			continue;
 		}
 
-		orderedRectangles[rectangle.first->GetDepth()] =
+		orderedRectangles[rectangle.first->GetRectangleDepth()] =
 			rectangle.first;
 	}
 
@@ -530,12 +589,12 @@ void Swapchain::RecordCommandBuffer(
 			rect.second,
 			(*_rectangles)[rect.second]);
 
-		rectData[0] = rectangle.first->GetPosition();
-		rectData[1] = rectangle.first->GetTexCoords();
+		rectData[0] = rectangle.first->GetRectanglePosition();
+		rectData[1] = rectangle.first->GetRectangleTexCoords();
 
 		vkCmdPushConstants(
 			commandBuffer,
-			_pipeline->GetPipelineLayout(),
+			_rectanglePipeline->GetPipelineLayout(),
 			VK_SHADER_STAGE_VERTEX_BIT,
 			0,
 			sizeof(glm::vec4) * 2,
@@ -544,7 +603,7 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdBindDescriptorSets(
 			commandBuffer,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			_pipeline->GetPipelineLayout(),
+			_rectanglePipeline->GetPipelineLayout(),
 			0,
 			1,
 			&rectangle.second.DescriptorSet,

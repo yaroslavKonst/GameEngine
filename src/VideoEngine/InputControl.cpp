@@ -47,7 +47,7 @@ void InputControl::KeyCallback(
 		glfwGetWindowUserPointer(window));
 
 	for (auto handler : control->_handlers) {
-		if (!handler->IsMute()) {
+		if (handler->IsInputEnabled()) {
 			handler->Key(key, scancode, action, mods);
 		}
 	}
@@ -74,23 +74,25 @@ void InputControl::CursorPositionCallback(
 	std::map<float, InputHandler*> orderedHandlers;
 
 	for (auto handler : control->_handlers) {
-		if (handler->IsMute()) {
+		if (!handler->IsInputEnabled()) {
 			continue;
 		}
 
-		if (!handler->InArea(x, y)) {
+		if (!handler->InInputArea(x, y)) {
 			handler->MouseMove(0, 0, false);
 			continue;
 		}
 
-		orderedHandlers[handler->GetLayer()] = handler;
+		orderedHandlers[handler->GetInputLayer()] = handler;
 	}
 
 	for (auto handler : orderedHandlers) {
-		float locX = (x - handler.second->Area.x0) /
-			(handler.second->Area.x1 - handler.second->Area.x0);
-		float locY = (y - handler.second->Area.y0) /
-			(handler.second->Area.y1 - handler.second->Area.y0);
+		float locX = (x - handler.second->InputArea.x0) /
+			(handler.second->InputArea.x1 -
+			handler.second->InputArea.x0);
+		float locY = (y - handler.second->InputArea.y0) /
+			(handler.second->InputArea.y1 -
+			handler.second->InputArea.y0);
 
 		bool processed = handler.second->MouseMove(locX, locY, true);
 
@@ -115,15 +117,15 @@ void InputControl::MouseButtonCallback(
 	std::map<float, InputHandler*> orderedHandlers;
 
 	for (auto handler : control->_handlers) {
-		if (handler->IsMute()) {
+		if (!handler->IsInputEnabled()) {
 			continue;
 		}
 
-		if (!handler->InArea(x, y)) {
+		if (!handler->InInputArea(x, y)) {
 			continue;
 		}
 
-		orderedHandlers[handler->GetLayer()] = handler;
+		orderedHandlers[handler->GetInputLayer()] = handler;
 	}
 
 	for (auto handler : orderedHandlers) {
@@ -150,15 +152,15 @@ void InputControl::ScrollCallback(
 	std::map<float, InputHandler*> orderedHandlers;
 
 	for (auto handler : control->_handlers) {
-		if (handler->IsMute()) {
+		if (!handler->IsInputEnabled()) {
 			continue;
 		}
 
-		if (!handler->InArea(x, y)) {
+		if (!handler->InInputArea(x, y)) {
 			continue;
 		}
 
-		orderedHandlers[handler->GetLayer()] = handler;
+		orderedHandlers[handler->GetInputLayer()] = handler;
 	}
 
 	for (auto handler : orderedHandlers) {
@@ -174,7 +176,7 @@ void InputControl::ScrollCallback(
 // Handler methods.
 InputHandler::InputHandler()
 {
-	_mute = true;
+	_inputEnabled = false;
 }
 
 InputHandler::~InputHandler()

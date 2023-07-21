@@ -26,7 +26,9 @@ namespace ImageHelper
 		VkImageUsageFlags usage,
 		VkMemoryPropertyFlags properties,
 		MemorySystem* memorySystem,
-		PhysicalDeviceSupport* deviceSupport);
+		PhysicalDeviceSupport* deviceSupport,
+		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
+		uint32_t layerCount = 1);
 
 	void DestroyImage(
 		VkDevice device,
@@ -38,7 +40,9 @@ namespace ImageHelper
 		VkImage image,
 		VkFormat format,
 		VkImageAspectFlags aspectFlags,
-		uint32_t mipLevels);
+		uint32_t mipLevels,
+		VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D,
+		uint32_t layerCount = 1);
 
 	void DestroyImageView(
 		VkDevice device,
@@ -50,7 +54,8 @@ namespace ImageHelper
 		VkImageLayout newLayout,
 		uint32_t mipLevels,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue);
+		VkQueue graphicsQueue,
+		uint32_t layerCount = 1);
 
 	void CopyBufferToImage(
 		BufferHelper::Buffer buffer,
@@ -58,7 +63,8 @@ namespace ImageHelper
 		uint32_t width,
 		uint32_t height,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue);
+		VkQueue graphicsQueue,
+		uint32_t layerCount = 1);
 }
 
 #endif

@@ -7,17 +7,17 @@ public:
 	Drawable();
 	virtual ~Drawable();
 
-	virtual bool IsActive()
+	virtual bool IsDrawEnabled()
 	{
 		return _active && _ready;
 	}
 
-	virtual void SetActive(bool active)
+	virtual void SetDrawEnabled(bool active)
 	{
 		_active = active;
 	}
 
-	virtual void SetReady(bool ready)
+	virtual void _SetDrawReady(bool ready)
 	{
 		_ready = ready;
 	}

@@ -33,6 +33,7 @@ Video::~Video()
 	DestroySwapchain();
 
 	RemoveAllModels();
+	DestroySkybox();
 
 	DestroyDescriptorSetLayout();
 	DestroyCommandPools();
@@ -324,7 +325,10 @@ void Video::CreateSwapchain()
 		_presentQueue,
 		&_models,
 		&_rectangles,
-		&_viewMatrix,
+		&_skybox,
+		&_cameraPosition,
+		&_cameraDirection,
+		&_cameraUp,
 		&_fov,
 		_descriptorSetLayout);
 
@@ -350,12 +354,12 @@ void Video::Stop()
 void Video::RegisterModel(Model* model)
 {
 	_models[model] = CreateModelDescriptor(model);
-	model->SetReady(true);
+	model->_SetDrawReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
-	model->SetReady(false);
+	model->_SetDrawReady(false);
 	vkQueueWaitIdle(_graphicsQueue);
 
 	DestroyModelDescriptor(_models[model]);
@@ -367,7 +371,7 @@ void Video::RemoveAllModels()
 	vkQueueWaitIdle(_graphicsQueue);
 
 	for (auto& model : _models) {
-		model.first->SetReady(false);
+		model.first->_SetDrawReady(false);
 		DestroyModelDescriptor(model.second);
 	}
 
@@ -380,7 +384,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	// Vertex buffer creation.
 	auto& vertices = model->GetModelVertices();
-	auto& texCoords = model->GetTexCoords();
+	auto& texCoords = model->GetModelTexCoords();
 
 	std::vector<ModelDescriptor::Vertex> vertexData(vertices.size());
 
@@ -435,7 +439,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 	descriptor.IndexCount = indices.size();
 
 	// Instance buffer.
-	auto& instances = model->GetInstances();
+	auto& instances = model->GetModelInstances();
 
 	descriptor.InstanceBuffer = BufferHelper::CreateBuffer(
 		_device,
@@ -466,7 +470,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		descriptor.TextureImage.Image,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_ASPECT_COLOR_BIT,
-		1);
+		mipLevels);
 	descriptor.TextureSampler = CreateTextureSampler(mipLevels);
 
 	CreateDescriptorSets(&descriptor);
@@ -508,12 +512,12 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
 	_rectangles[rectangle] = CreateRectangleDescriptor(rectangle);
-	rectangle->SetReady(true);
+	rectangle->_SetDrawReady(true);
 }
 
 void Video::RemoveRectangle(Rectangle* rectangle)
 {
-	rectangle->SetReady(false);
+	rectangle->_SetDrawReady(false);
 	vkQueueWaitIdle(_graphicsQueue);
 
 	DestroyRectangleDescriptor(_rectangles[rectangle]);
@@ -525,7 +529,7 @@ void Video::RemoveAllRectangles()
 	vkQueueWaitIdle(_graphicsQueue);
 
 	for (auto& rectangle : _rectangles) {
-		rectangle.first->SetReady(false);
+		rectangle.first->_SetDrawReady(false);
 		DestroyRectangleDescriptor(rectangle.second);
 	}
 
@@ -544,7 +548,7 @@ ModelDescriptor Video::CreateRectangleDescriptor(Rectangle* rectangle)
 		descriptor.TextureImage.Image,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_ASPECT_COLOR_BIT,
-		1);
+		mipLevels);
 	descriptor.TextureSampler = CreateTextureSampler(mipLevels);
 
 	CreateDescriptorSets(&descriptor);
@@ -568,9 +572,90 @@ void Video::DestroyRectangleDescriptor(ModelDescriptor descriptor)
 		_memorySystem);
 }
 
+void Video::CreateSkybox(
+	uint32_t texWidth,
+	uint32_t texHeight,
+	const std::vector<uint8_t>& texData)
+{
+	uint32_t mipLevels;
+	uint32_t layerCount = 6;
+
+	// Texture layout transformation.
+	texWidth /= layerCount;
+	std::vector<uint8_t> texDataTransformed(texData.size());
+
+	for (uint32_t layer = 0; layer < layerCount; ++layer) {
+		for (uint32_t y = 0; y < texHeight; ++y) {
+			for (uint32_t x = 0; x < texWidth; ++x) {
+				for (uint32_t c = 0; c < 4; ++c) {
+					texDataTransformed[
+						(texWidth * texHeight * layer +
+						texWidth * y +
+						x) * 4 + c] =
+					texData[(texWidth * layer +
+						x +
+						texWidth * layerCount * y) *
+						4 + c];
+				}
+			}
+		}
+	}
+
+	_skybox.SetTexWidth(texWidth);
+	_skybox.SetTexHeight(texHeight);
+	_skybox.SetTexData(texDataTransformed);
+
+	_skybox.Descriptor.TextureImage = CreateTextureImage(
+		&_skybox,
+		mipLevels,
+		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+		layerCount);
+	_skybox.Descriptor.TextureImageView = ImageHelper::CreateImageView(
+		_device,
+		_skybox.Descriptor.TextureImage.Image,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		mipLevels,
+		VK_IMAGE_VIEW_TYPE_CUBE,
+		layerCount);
+	_skybox.Descriptor.TextureSampler = CreateTextureSampler(mipLevels);
+	CreateDescriptorSets(&_skybox.Descriptor);
+
+	_skybox._SetDrawReady(true);
+	_skybox.SetDrawEnabled(true);
+}
+
+void Video::DestroySkybox()
+{
+	if (!_skybox.IsDrawEnabled())
+	{
+		return;
+	}
+
+	_skybox._SetDrawReady(false);
+	vkQueueWaitIdle(_graphicsQueue);
+
+	DestroyDescriptorSets(&_skybox.Descriptor);
+
+	DestroyTextureSampler(_skybox.Descriptor.TextureSampler);
+
+	ImageHelper::DestroyImageView(
+		_device,
+		_skybox.Descriptor.TextureImageView);
+
+	ImageHelper::DestroyImage(
+		_device,
+		_skybox.Descriptor.TextureImage,
+		_memorySystem);
+
+	_skybox.SetTexData(std::vector<uint8_t>());
+}
+
 ImageHelper::Image Video::CreateTextureImage(
 	Texturable* model,
-	uint32_t& mipLevels)
+	uint32_t& mipLevels,
+	VkImageCreateFlagBits flags,
+	uint32_t layerCount)
 {
 	uint32_t texWidth = model->GetTexWidth();
 	uint32_t texHeight = model->GetTexHeight();
@@ -579,6 +664,10 @@ ImageHelper::Image Video::CreateTextureImage(
 
 	mipLevels = static_cast<uint32_t>(
 		std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+
+	if (layerCount > 1) {
+		mipLevels = 1;
+	}
 
 	ImageHelper::Image textureImage = ImageHelper::CreateImage(
 		_device,
@@ -593,11 +682,13 @@ ImageHelper::Image Video::CreateTextureImage(
 		VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		_memorySystem,
-		&_deviceSupport);
+		&_deviceSupport,
+		flags,
+		layerCount);
 
 	BufferHelper::Buffer stagingBuffer = BufferHelper::CreateBuffer(
 		_device,
-		imageSize,
+		imageSize * layerCount,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -626,7 +717,8 @@ ImageHelper::Image Video::CreateTextureImage(
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		mipLevels,
 		_transferCommandPool,
-		_graphicsQueue);
+		_graphicsQueue,
+		layerCount);
 
 	ImageHelper::CopyBufferToImage(
 		stagingBuffer,
@@ -634,19 +726,30 @@ ImageHelper::Image Video::CreateTextureImage(
 		texWidth,
 		texHeight,
 		_transferCommandPool,
-		_graphicsQueue);
+		_graphicsQueue,
+		layerCount);
 
 	BufferHelper::DestroyBuffer(
 		_device,
 		stagingBuffer,
 		_memorySystem);
 
-
-	GenerateMipmaps(
-		textureImage,
-		texWidth,
-		texHeight,
-		mipLevels);
+	if (layerCount == 1) {
+		GenerateMipmaps(
+			textureImage,
+			texWidth,
+			texHeight,
+			mipLevels);
+	} else {
+		ImageHelper::ChangeImageLayout(
+			textureImage,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			mipLevels,
+			_transferCommandPool,
+			_graphicsQueue,
+			layerCount);
+	}
 
 	return textureImage;
 }

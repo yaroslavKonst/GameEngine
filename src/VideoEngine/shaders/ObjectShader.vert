@@ -19,5 +19,7 @@ void main() {
 		mvp.Proj * mvp.View *
 		mvp.Model * instanceTransform * mvp.InnerModel *
 		vec4(inPosition, 1.0);
+
+	gl_Position.y *= -1;
 	texCoord = inTexCoord;
 }
