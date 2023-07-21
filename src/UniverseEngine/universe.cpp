@@ -56,9 +56,11 @@ void Universe::MainLoop()
 		if (_tickDelayMS > spentTimeMS) {
 			uint32_t timeToSleepMS = _tickDelayMS - spentTimeMS;
 
-			if (timeToSleepMS < _tickDelayMS / 3) {
-				Logger::Verbose() <<
-					"Sleeping " << timeToSleepMS << " ms.";
+			if (timeToSleepMS < _tickDelayMS / 4) {
+				Logger::Warning() << "Delay " <<
+					_tickDelayMS <<
+					". Sleeping " <<
+					timeToSleepMS << " ms.";
 			}
 
 			std::this_thread::sleep_for(
