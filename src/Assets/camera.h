@@ -22,7 +22,7 @@ public:
 		_video->SetCameraDirection(glm::vec3(
 			sinf(angleInRad),
 			cosf(angleInRad),
-			-0.7f));
+			sinf(angleInRad * 8)));
 
 		Logger::Verbose() << "Angle: " << _angle;
 

@@ -1,5 +1,7 @@
 #include "ImageHelper.h"
 
+#include <cstring>
+
 namespace ImageHelper
 {
 	Image CreateImage(
@@ -260,5 +262,102 @@ namespace ImageHelper
 			&region);
 
 		commandPool->EndOneTimeBuffer(commandBuffer, graphicsQueue);
+	}
+
+	void RotateClockWise(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height)
+	{
+		std::vector<uint8_t> buffer(width * height * 4);
+
+		for (uint32_t y = 0; y < height; ++y) {
+			for (uint32_t x = 0; x < width; ++x) {
+				for (uint32_t c = 0; c < 4; ++c) {
+					buffer[(height * x + height - 1 - y) *
+						4 + c] =
+					image[(width * y + x) * 4 + c];
+				}
+			}
+		}
+
+		memcpy(image, buffer.data(), width * height * 4);
+	}
+
+	void RotateCounterClockWise(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height)
+	{
+		std::vector<uint8_t> buffer(width * height * 4);
+
+		for (uint32_t y = 0; y < height; ++y) {
+			for (uint32_t x = 0; x < width; ++x) {
+				for (uint32_t c = 0; c < 4; ++c) {
+					buffer[(height * (width - 1 - x) + y) *
+						4 + c] =
+					image[(width * y + x) * 4 + c];
+				}
+			}
+		}
+
+		memcpy(image, buffer.data(), width * height * 4);
+	}
+
+	void FlipVertically(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height)
+	{
+		for (uint32_t y = 0; y < height / 2; ++y) {
+			for (uint32_t x = 0; x < width; ++x) {
+				for (uint32_t c = 0; c < 4; ++c) {
+					uint32_t upIndex = (width * y + x) *
+						4 + c;
+					uint32_t downIndex =
+						(width * (height - 1 - y) + x) *
+						4 + c;
+
+					uint8_t tmp = image[downIndex];
+					image[downIndex] = image[upIndex];
+					image[upIndex] = tmp;
+				}
+			}
+		}
+	}
+
+	void FlipHorizontally(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height)
+	{
+		for (uint32_t y = 0; y < height; ++y) {
+			for (uint32_t x = 0; x < width / 2; ++x) {
+				for (uint32_t c = 0; c < 4; ++c) {
+					uint32_t leftIndex = (width * y + x) *
+						4 + c;
+					uint32_t rightIndex =
+						(width * y + width - 1 - x) *
+						4 + c;
+
+					uint8_t tmp = image[rightIndex];
+					image[rightIndex] = image[leftIndex];
+					image[leftIndex] = tmp;
+				}
+			}
+		}
+	}
+
+	void Swap(
+		uint8_t* image1,
+		uint8_t* image2,
+		uint32_t width,
+		uint32_t height)
+	{
+		std::vector<uint8_t> buffer(width * height * 4);
+
+		memcpy(buffer.data(), image1, buffer.size());
+		memcpy(image1, image2, buffer.size());
+		memcpy(image2, buffer.data(), buffer.size());
 	}
 }

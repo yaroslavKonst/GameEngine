@@ -582,7 +582,7 @@ void Video::CreateSkybox(
 
 	// Texture layout transformation.
 	texWidth /= layerCount;
-	std::vector<uint8_t> texDataTransformed(texData.size());
+	std::vector<uint8_t> texDataTransformed(texData.size(), 100);
 
 	for (uint32_t layer = 0; layer < layerCount; ++layer) {
 		for (uint32_t y = 0; y < texHeight; ++y) {
@@ -600,6 +600,55 @@ void Video::CreateSkybox(
 			}
 		}
 	}
+
+	// 1.
+	ImageHelper::RotateClockWise(
+		texDataTransformed.data(),
+		texWidth,
+		texHeight);
+	ImageHelper::FlipHorizontally(
+		texDataTransformed.data(),
+		texHeight,
+		texWidth);
+
+	// 2.
+	ImageHelper::FlipHorizontally(
+		texDataTransformed.data() + texWidth * texHeight * 4,
+		texHeight,
+		texWidth);
+
+	// 3.
+	ImageHelper::RotateCounterClockWise(
+		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
+		texWidth,
+		texHeight);
+	ImageHelper::FlipHorizontally(
+		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
+		texHeight,
+		texWidth);
+
+	// 4.
+	ImageHelper::FlipVertically(
+		texDataTransformed.data() + texWidth * texHeight * 4 * 3,
+		texHeight,
+		texWidth);
+
+	// Ordering.
+	ImageHelper::Swap(
+		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
+		texDataTransformed.data() + texWidth * texHeight * 4,
+		texWidth,
+		texHeight);
+	ImageHelper::Swap(
+		texDataTransformed.data() + texWidth * texHeight * 4 * 3,
+		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
+		texWidth,
+		texHeight);
+	ImageHelper::Swap(
+		texDataTransformed.data() + texWidth * texHeight * 4 * 4,
+		texDataTransformed.data() + texWidth * texHeight * 4 * 5,
+		texWidth,
+		texHeight);
 
 	_skybox.SetTexWidth(texWidth);
 	_skybox.SetTexHeight(texHeight);

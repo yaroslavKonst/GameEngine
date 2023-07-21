@@ -65,6 +65,32 @@ namespace ImageHelper
 		CommandPool* commandPool,
 		VkQueue graphicsQueue,
 		uint32_t layerCount = 1);
+
+	void RotateClockWise(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height);
+
+	void RotateCounterClockWise(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height);
+
+	void FlipVertically(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height);
+
+	void FlipHorizontally(
+		uint8_t* image,
+		uint32_t width,
+		uint32_t height);
+
+	void Swap(
+		uint8_t* image1,
+		uint8_t* image2,
+		uint32_t width,
+		uint32_t height);
 }
 
 #endif

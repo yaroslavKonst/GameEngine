@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 
 	Video window(800, 600, "Window Title", "Application");
 
-	window.SetFOV(90);
+	window.SetFOV(60);
 	window.SetCameraPosition(glm::vec3(2.0f, 2.0f, 2.0f));
 	window.SetCameraDirection(glm::vec3(-1.0f, -1.0f, -1.0f));
 	window.SetCameraUp(glm::vec3(0.0f, 0.0f, 1.0f));
@@ -35,8 +35,6 @@ int main(int argc, char** argv)
 		"../src/Assets/Resources/skybox.png",
 		skTexWidth,
 		skTexHeight);
-
-	skTexWidth /= 6;
 
 	window.CreateSkybox(skTexWidth, skTexHeight, skTexData);
 
