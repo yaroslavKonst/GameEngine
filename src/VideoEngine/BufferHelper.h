@@ -21,12 +21,14 @@ namespace BufferHelper
 		VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags properties,
 		MemorySystem* memorySystem,
-		PhysicalDeviceSupport* deviceSupport);
+		PhysicalDeviceSupport* deviceSupport,
+		uint32_t domain = 0);
 
 	void DestroyBuffer(
 		VkDevice device,
 		Buffer buffer,
-		MemorySystem* memorySystem);
+		MemorySystem* memorySystem,
+		uint32_t domain = 0);
 
 	void CopyBuffer(
 		Buffer src,

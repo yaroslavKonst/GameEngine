@@ -15,17 +15,34 @@ MemorySystem::~MemorySystem()
 	for (auto& manager : _managers) {
 		delete manager.second;
 	}
+
+	for (auto& managers : _domains) {
+		for (auto& manager : managers.second) {
+			delete manager.second;
+		}
+	}
 }
 
 MemorySystem::Allocation MemorySystem::Allocate(
 	uint32_t size,
-	AllocationProperties properties)
+	AllocationProperties properties,
+	uint32_t domain)
 {
-	if (_managers.find(properties) == _managers.end()) {
+	Domain* managers = &_managers;
+
+	if (domain > 0) {
+		if (_domains.find(domain) == _domains.end()) {
+			_domains[domain] = Domain();
+		}
+
+		managers = &_domains[domain];
+	}
+
+	if (managers->find(properties) == managers->end()) {
 		Logger::Verbose() <<
 			"Requested alignment " << properties.Alignment;
 
-		_managers[properties] = new MemoryManager(
+		(*managers)[properties] = new MemoryManager(
 			_device,
 			PAGE_SIZE,
 			properties.MemoryTypeIndex,
@@ -35,7 +52,7 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	Allocation allocation;
 
 	MemoryManager::Allocation alloc =
-		_managers[properties]->Allocate(size);
+		(*managers)[properties]->Allocate(size);
 
 	allocation.Memory = alloc.Memory;
 	allocation.Size = alloc.Size;
@@ -45,12 +62,18 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	return allocation;
 }
 
-void MemorySystem::Free(Allocation allocation)
+void MemorySystem::Free(Allocation allocation, uint32_t domain)
 {
+	Domain* managers = &_managers;
+
+	if (domain > 0) {
+		managers = &_domains[domain];
+	}
+
 	MemoryManager::Allocation alloc;
 	alloc.Memory = allocation.Memory;
 	alloc.Size = allocation.Size;
 	alloc.Offset = allocation.Offset;
 
-	_managers[allocation.Properties]->Free(alloc);
+	(*managers)[allocation.Properties]->Free(alloc);
 }

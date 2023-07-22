@@ -14,6 +14,7 @@
 #include "pipeline.h"
 #include "ModelDescriptor.h"
 #include "SceneDescriptor.h"
+#include "LightDescriptor.h"
 
 class Swapchain
 {
@@ -28,7 +29,8 @@ public:
 		VkQueue graphicsQueue,
 		VkQueue presentQueue,
 		SceneDescriptor* scene,
-		VkDescriptorSetLayout descriptorSetLayout);
+		VkDescriptorSetLayout descriptorSetLayout,
+		uint32_t maxLightCount);
 
 	~Swapchain();
 
@@ -69,6 +71,15 @@ private:
 	VkSwapchainKHR _swapchain;
 	std::vector<VkImage> _images;
 	VkFormat _imageFormat;
+
+	std::vector<BufferHelper::Buffer> _lightBuffers;
+	VkDescriptorPool _lightDescriptorPool;
+	VkDescriptorSetLayout _lightDescriptorSetLayout;
+	std::vector<VkDescriptorSet> _lightDescriptorSets;
+	std::vector<void*> _lightBufferMappings;
+	uint32_t _maxLightCount;
+	void CreateLightBuffers();
+	void DestroyLightBuffers();
 
 	ImageHelper::Image _colorImage;
 	VkImageView _colorImageView;

@@ -9,8 +9,7 @@ layout(push_constant) uniform MVP
 {
 	mat4 Model;
 	mat4 InnerModel;
-	mat4 View;
-	mat4 Proj;
+	mat4 ProjView;
 } mvp;
 
 layout(location = 0) out vec2 texCoord;
@@ -21,7 +20,7 @@ void main() {
 	mat4 toWorldTransform = mvp.Model * instanceTransform * mvp.InnerModel;
 
 	gl_Position =
-		mvp.Proj * mvp.View * toWorldTransform * vec4(inPosition, 1.0);
+		mvp.ProjView * toWorldTransform * vec4(inPosition, 1.0);
 
 	gl_Position.y *= -1;
 	texCoord = inTexCoord;

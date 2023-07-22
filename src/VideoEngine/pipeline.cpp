@@ -158,8 +158,9 @@ Pipeline::Pipeline(InitInfo* initInfo)
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType =
 		VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &initInfo->DescriptorSetLayout;
+	pipelineLayoutInfo.setLayoutCount =
+		static_cast<uint32_t>(initInfo->DescriptorSetLayouts.size());
+	pipelineLayoutInfo.pSetLayouts = initInfo->DescriptorSetLayouts.data();
 
 	pipelineLayoutInfo.pushConstantRangeCount =
 		initInfo->PushConstantRangeCount;

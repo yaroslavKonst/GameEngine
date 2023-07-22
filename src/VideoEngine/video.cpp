@@ -129,6 +129,8 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 	Logger::Verbose() << deviceProperties.deviceName;
+	Logger::Verbose() << "Push constant size: " <<
+		deviceProperties.limits.maxPushConstantsSize;
 
 	bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
@@ -324,7 +326,8 @@ void Video::CreateSwapchain()
 		_graphicsQueue,
 		_presentQueue,
 		&_scene,
-		_descriptorSetLayout);
+		_descriptorSetLayout,
+		10);
 
 	_swapchain->Create();
 }
@@ -997,6 +1000,7 @@ void Video::CreateDescriptorSets(ModelDescriptor* descriptor)
 		&poolInfo,
 		nullptr,
 		&descriptor->DescriptorPool);
+
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create descriptor pool.");
 	}
@@ -1055,8 +1059,8 @@ void Video::CreateDescriptorSetLayout()
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::array<VkDescriptorSetLayoutBinding, 1> bindings = {
-		samplerLayoutBinding
+	std::vector<VkDescriptorSetLayoutBinding> bindings = {
+		samplerLayoutBinding,
 	};
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -1079,4 +1083,14 @@ void Video::CreateDescriptorSetLayout()
 void Video::DestroyDescriptorSetLayout()
 {
 	vkDestroyDescriptorSetLayout(_device, _descriptorSetLayout, nullptr);
+}
+
+void Video::RegisterLight(Light* light)
+{
+	_scene.Lights.insert(light);
+}
+
+void Video::RemoveLight(Light* light)
+{
+	_scene.Lights.erase(light);
 }

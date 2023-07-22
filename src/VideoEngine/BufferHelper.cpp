@@ -9,7 +9,8 @@ namespace BufferHelper
 		VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags properties,
 		MemorySystem* memorySystem,
-		PhysicalDeviceSupport* deviceSupport)
+		PhysicalDeviceSupport* deviceSupport,
+		uint32_t domain)
 	{
 		Buffer buffer;
 
@@ -44,7 +45,8 @@ namespace BufferHelper
 
 		buffer.Allocation = memorySystem->Allocate(
 			memRequirements.size,
-			allocProps);
+			allocProps,
+			domain);
 
 		vkBindBufferMemory(
 			device,
@@ -58,10 +60,11 @@ namespace BufferHelper
 	void DestroyBuffer(
 		VkDevice device,
 		Buffer buffer,
-		MemorySystem* memorySystem)
+		MemorySystem* memorySystem,
+		uint32_t domain)
 	{
 		vkDestroyBuffer(device, buffer.Buffer, nullptr);
-		memorySystem->Free(buffer.Allocation);
+		memorySystem->Free(buffer.Allocation, domain);
 	}
 
 	void CopyBuffer(

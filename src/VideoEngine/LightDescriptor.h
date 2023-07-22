@@ -1,5 +1,5 @@
-#ifndef _MVP_H
-#define _MVP_H
+#ifndef _LIGHT_DESCRIPTOR_H
+#define _LIGHT_DESCRIPTOR_H
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -9,11 +9,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
-struct MVP
+struct LightDescriptor
 {
-	glm::mat4 Model;
-	glm::mat4 InnerModel;
-	glm::mat4 ProjView;
+	alignas(16) glm::vec3 Position;
+	alignas(16) glm::vec3 Color;
+	uint32_t Type;
 };
 
 #endif

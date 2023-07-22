@@ -38,12 +38,16 @@ public:
 
 	Allocation Allocate(
 		uint32_t size,
-		AllocationProperties properties);
-	void Free(Allocation allocation);
+		AllocationProperties properties,
+		uint32_t domain = 0);
+	void Free(Allocation allocation, uint32_t domain = 0);
 
 private:
+	typedef std::map<AllocationProperties, MemoryManager*> Domain;
 	VkDevice _device;
-	std::map<AllocationProperties, MemoryManager*> _managers;
+
+	std::map<uint32_t, Domain> _domains;
+	Domain _managers;
 };
 
 #endif

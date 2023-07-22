@@ -16,7 +16,7 @@ public:
 		VkExtent2D Extent;
 		VkFormat ColorAttachmentFormat;
 		VkFormat DepthAttachmentFormat;
-		VkDescriptorSetLayout DescriptorSetLayout;
+		std::vector<VkDescriptorSetLayout> DescriptorSetLayouts;
 		VkSampleCountFlagBits MsaaSamples;
 		const uint8_t* VertexShaderCode;
 		size_t VertexShaderSize;

@@ -39,6 +39,9 @@ public:
 	void RegisterRectangle(Rectangle* rectangle);
 	void RemoveRectangle(Rectangle* rectangle);
 
+	void RegisterLight(Light* light);
+	void RemoveLight(Light* light);
+
 	void SetFOV(double fov)
 	{
 		_scene.FOV = fov;

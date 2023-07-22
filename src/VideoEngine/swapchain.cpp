@@ -24,7 +24,8 @@ Swapchain::Swapchain(
 	VkQueue graphicsQueue,
 	VkQueue presentQueue,
 	SceneDescriptor* scene,
-	VkDescriptorSetLayout descriptorSetLayout)
+	VkDescriptorSetLayout descriptorSetLayout,
+	uint32_t maxLightCount)
 {
 	_device = device;
 	_surface = surface;
@@ -36,6 +37,7 @@ Swapchain::Swapchain(
 	_presentQueue = presentQueue;
 	_scene = scene;
 	_descriptorSetLayout = descriptorSetLayout;
+	_maxLightCount = maxLightCount;
 
 	Logger::Verbose() << "Swapchain constructor called.";
 
@@ -200,6 +202,7 @@ void Swapchain::Create()
 
 	CreateRenderingImages();
 	CreateImageViews();
+	CreateLightBuffers();
 	CreatePipelines();
 
 	_commandPool = new CommandPool(
@@ -224,6 +227,7 @@ void Swapchain::Destroy()
 	DestroySyncObjects();
 	delete _commandPool;
 	DestroyPipelines();
+	DestroyLightBuffers();
 	DestroyImageViews();
 	DestroyRenderingImages();
 
@@ -343,7 +347,10 @@ void Swapchain::CreatePipelines()
 	initInfo.Extent = _extent;
 	initInfo.ColorAttachmentFormat = _imageFormat;
 	initInfo.DepthAttachmentFormat = _depthImage.Format;
-	initInfo.DescriptorSetLayout = _descriptorSetLayout;
+	initInfo.DescriptorSetLayouts = {
+		_descriptorSetLayout,
+		_lightDescriptorSetLayout
+	};
 	initInfo.MsaaSamples = _msaaSamples;
 	initInfo.VertexShaderCode = ObjectShaderVert;
 	initInfo.VertexShaderSize = sizeof(ObjectShaderVert);
@@ -357,12 +364,15 @@ void Swapchain::CreatePipelines()
 	initInfo.ResolveImage = false;
 	initInfo.ClearInputBuffer = false;
 
-	VkPushConstantRange pushConstant;
-	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	pushConstant.offset = 0;
-	pushConstant.size = sizeof(MVP);
+	VkPushConstantRange pushConstants[2];
+	pushConstants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstants[0].offset = 0;
+	pushConstants[0].size = sizeof(MVP);
+	pushConstants[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushConstants[1].offset = sizeof(MVP);
+	pushConstants[1].size = sizeof(glm::vec3);
 	initInfo.PushConstantRangeCount = 1;
-	initInfo.PushConstants = &pushConstant;
+	initInfo.PushConstants = pushConstants;
 
 	_pipeline = new Pipeline(&initInfo);
 	_pipeline->CreateFramebuffers(
@@ -380,7 +390,8 @@ void Swapchain::CreatePipelines()
 	initInfo.FragmentShaderSize = sizeof(RectangleShaderFrag);
 	initInfo.ClearInputBuffer = false;
 
-	pushConstant.size = sizeof(glm::vec4) * 2;
+	initInfo.PushConstantRangeCount = 1;
+	pushConstants[0].size = sizeof(glm::vec4) * 2;
 
 	_rectanglePipeline = new Pipeline(&initInfo);
 	_rectanglePipeline->CreateFramebuffers(
@@ -398,7 +409,8 @@ void Swapchain::CreatePipelines()
 	initInfo.FragmentShaderSize = sizeof(SkyboxShaderFrag);
 	initInfo.ClearInputBuffer = true;
 
-	pushConstant.size = sizeof(Skybox::ShaderData);
+	initInfo.PushConstantRangeCount = 1;
+	pushConstants[0].size = sizeof(Skybox::ShaderData);
 
 	_skyboxPipeline = new Pipeline(&initInfo);
 	_skyboxPipeline->CreateFramebuffers(
@@ -417,6 +429,151 @@ void Swapchain::DestroyPipelines()
 
 	_pipeline->DestroyFramebuffers();
 	delete _pipeline;
+}
+
+void Swapchain::CreateLightBuffers()
+{
+	VkDescriptorSetLayoutBinding lightBufferLayoutBinding{};
+	lightBufferLayoutBinding.binding = 1;
+	lightBufferLayoutBinding.descriptorCount = 1;
+	lightBufferLayoutBinding.descriptorType =
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	lightBufferLayoutBinding.pImmutableSamplers = nullptr;
+	lightBufferLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::vector<VkDescriptorSetLayoutBinding> bindings = {
+		lightBufferLayoutBinding,
+	};
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	layoutInfo.pBindings = bindings.data();
+
+	VkResult res = vkCreateDescriptorSetLayout(
+		_device,
+		&layoutInfo,
+		nullptr,
+		&_lightDescriptorSetLayout);
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error(
+			"Failed to create light descriptor set layout.");
+	}
+
+	_lightBuffers.resize(_images.size());
+	_lightDescriptorSets.resize(_images.size());
+	_lightBufferMappings.resize(_images.size());
+
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = _images.size();
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = _images.size();
+
+	res = vkCreateDescriptorPool(
+		_device,
+		&poolInfo,
+		nullptr,
+		&_lightDescriptorPool);
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error(
+			"Failed to create light descriptor pool.");
+	}
+
+	std::vector<VkDescriptorSetLayout> layouts(
+		_images.size(),
+		_lightDescriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = _lightDescriptorPool;
+	allocInfo.descriptorSetCount = _images.size();
+	allocInfo.pSetLayouts = layouts.data();
+
+	res = vkAllocateDescriptorSets(
+		_device,
+		&allocInfo,
+		_lightDescriptorSets.data());
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error(
+			"Failed to allocate light descriptor sets.");
+	}
+
+	uint32_t bufferSize = sizeof(LightDescriptor) * _maxLightCount + 16;
+
+	for (size_t i = 0; i < _images.size(); ++i) {
+		_lightBuffers[i] = BufferHelper::CreateBuffer(
+			_device,
+			bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			_memorySystem,
+			_deviceSupport,
+			i + 1);
+
+		vkMapMemory(
+			_device,
+			_lightBuffers[i].Allocation.Memory,
+			0,
+			bufferSize,
+			0,
+			&_lightBufferMappings[i]);
+	}
+
+	for (size_t i = 0; i < _images.size(); ++i) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = _lightBuffers[i].Buffer;
+		bufferInfo.offset = 0;
+		bufferInfo.range = bufferSize;
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = _lightDescriptorSets[i];
+		descriptorWrite.dstBinding = 1;
+		descriptorWrite.dstArrayElement = 0;
+
+		descriptorWrite.descriptorType =
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+
+		descriptorWrite.pBufferInfo = &bufferInfo;
+		descriptorWrite.pImageInfo = nullptr; // Optional
+		descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+		vkUpdateDescriptorSets(
+			_device,
+			1,
+			&descriptorWrite,
+			0,
+			nullptr);
+	}
+}
+
+void Swapchain::DestroyLightBuffers()
+{
+	vkDestroyDescriptorPool(_device, _lightDescriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(
+		_device,
+		_lightDescriptorSetLayout,
+		nullptr);
+
+	for (size_t i = 0; i < _images.size(); ++i) {
+		vkUnmapMemory(_device, _lightBuffers[i].Allocation.Memory);
+
+		BufferHelper::DestroyBuffer(
+			_device,
+			_lightBuffers[i],
+			_memorySystem,
+			i + 1);
+	}
 }
 
 void Swapchain::RecordCommandBuffer(
@@ -439,15 +596,15 @@ void Swapchain::RecordCommandBuffer(
 
 	// MVP.
 	MVP mvp;
-	mvp.View = glm::lookAt(
+	glm::mat4 view = glm::lookAt(
 		_scene->CameraPosition,
 		_scene->CameraPosition + _scene->CameraDirection,
 		_scene->CameraUp);
-	mvp.Proj = glm::perspective(
+	mvp.ProjView = glm::perspective(
 		glm::radians((float)_scene->FOV),
 		(float)_extent.width / (float)_extent.height,
 		0.1f,
-		100.0f);
+		100.0f) * view;
 
 	// ViewPort and scissor.
 	VkViewport viewport{};
@@ -504,6 +661,39 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+	std::map<float, Light*> orderedLights;
+
+	for (auto light : _scene->Lights) {
+		orderedLights[glm::length(
+			light->GetLightPosition() - _scene->CameraPosition)] =
+				light;
+	}
+
+	uint32_t selectedLights = 0;
+
+	LightDescriptor* lightDescriptors = reinterpret_cast<LightDescriptor*>(
+		(char*)_lightBufferMappings[imageIndex] + 16);
+	uint32_t* lightCountData = reinterpret_cast<uint32_t*>(
+		_lightBufferMappings[imageIndex]);
+
+	for (auto& light : orderedLights) {
+		lightDescriptors[selectedLights].Position =
+			light.second->GetLightPosition();
+		lightDescriptors[selectedLights].Color =
+			light.second->GetLightColor();
+		lightDescriptors[selectedLights].Type = 0;
+
+		++selectedLights;
+
+		if (selectedLights >= _maxLightCount) {
+			break;
+		}
+	}
+
+	Logger::Verbose() << "light count: " << selectedLights;
+
+	*lightCountData = selectedLights;
+
 	for (auto& model : _scene->Models) {
 		if (!model.first->IsDrawEnabled()) {
 			continue;
@@ -539,13 +729,26 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(MVP),
 			&mvp);
 
+		vkCmdPushConstants(
+			commandBuffer,
+			_pipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			sizeof(MVP),
+			sizeof(glm::vec3),
+			&_scene->CameraPosition);
+
+		std::vector<VkDescriptorSet> descriptorSets = {
+			model.second.DescriptorSet,
+			_lightDescriptorSets[imageIndex]
+		};
+
 		vkCmdBindDescriptorSets(
 			commandBuffer,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			_pipeline->GetPipelineLayout(),
 			0,
-			1,
-			&model.second.DescriptorSet,
+			descriptorSets.size(),
+			descriptorSets.data(),
 			0,
 			nullptr);
 
