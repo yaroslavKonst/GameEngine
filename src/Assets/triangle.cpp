@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "loader.h"
+#include "../Utils/loader.h"
 
 Triangle::Triangle()
 {

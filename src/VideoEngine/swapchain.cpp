@@ -249,6 +249,7 @@ void Swapchain::Destroy()
 void Swapchain::CreateRenderingImages()
 {
 	Logger::Verbose() << "Swapchain image format: " << _imageFormat;
+
 	_colorImage = ImageHelper::CreateImage(
 		_device,
 		_extent.width,
@@ -453,7 +454,7 @@ void Swapchain::RecordCommandBuffer(
 		glm::radians((float)*_fov),
 		(float)_extent.width / (float)_extent.height,
 		0.1f,
-		10.0f);
+		40.0f);
 
 	// ViewPort and scissor.
 	VkViewport viewport{};

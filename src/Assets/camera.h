@@ -19,10 +19,11 @@ public:
 	void Tick()
 	{
 		float angleInRad = glm::radians(_angle);
-		_video->SetCameraDirection(glm::vec3(
-			sinf(angleInRad),
-			cosf(angleInRad),
-			sinf(angleInRad * 8)));
+		_video->SetCameraPosition(glm::vec3(
+			sinf(angleInRad) * 6,
+			cosf(angleInRad) * 6,
+			4));
+		_video->SetCameraTarget(glm::vec3(0.0f, 0.0f, 0.0f));
 
 		_angle += 0.1;
 

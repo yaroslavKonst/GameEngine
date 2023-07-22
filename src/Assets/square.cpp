@@ -4,7 +4,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "loader.h"
+#include "../Utils/loader.h"
 
 Square::Square(const char* texturePath, float depthMod)
 {

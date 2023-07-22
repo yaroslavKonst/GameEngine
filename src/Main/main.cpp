@@ -8,8 +8,9 @@
 #include "../Logger/logger.h"
 #include "../Assets/triangle.h"
 #include "../Assets/square.h"
-#include "../Assets/loader.h"
+#include "../Utils/loader.h"
 #include "../Assets/camera.h"
+#include "../Assets/ExternModel.h"
 
 void UniverseThread(Universe* universe)
 {
@@ -20,10 +21,16 @@ int main(int argc, char** argv)
 {
 	Logger::SetLevel(Logger::Level::Verbose);
 
+	ExternModel mesh(
+		"../src/Assets/Resources/Models/field.obj",
+		"../src/Assets/Resources/Models/field.png");
+	mesh.SetDrawEnabled(true);
+	mesh.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)));
+
 	Video window(800, 600, "Window Title", "Application");
 
-	window.SetFOV(60);
-	window.SetCameraPosition(glm::vec3(2.0f, 2.0f, 2.0f));
+	window.SetFOV(70);
+	window.SetCameraPosition(glm::vec3(2.0f, 0.0f, 2.0f));
 	window.SetCameraDirection(glm::vec3(-1.0f, -1.0f, -1.0f));
 	window.SetCameraUp(glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -43,30 +50,20 @@ int main(int argc, char** argv)
 	std::thread universeThread(UniverseThread, &universe);
 
 	Triangle triangle;
-	Square square("../src/Assets/Resources/Images/texture.jpg", 1);
-	Square square2("../src/Assets/Resources/Images/transparent.png", -1);
 
-	window.GetInputControl()->Subscribe(&square);
-
-	window.RegisterModel(&triangle);
+	//window.RegisterModel(&triangle);
 	universe.RegisterActor(&triangle);
-
-	window.RegisterRectangle(&square);
-	universe.RegisterActor(&square);
-
-	window.RegisterRectangle(&square2);
-	universe.RegisterActor(&square2);
 
 	universe.RegisterActor(&camera);
 
+	window.RegisterModel(&mesh);
+
 	window.MainLoop();
 
-	window.RemoveModel(&triangle);
-	window.RemoveRectangle(&square);
-	window.RemoveRectangle(&square2);
+	window.RemoveModel(&mesh);
+
+	//window.RemoveModel(&triangle);
 	universe.RemoveActor(&triangle);
-	universe.RemoveActor(&square);
-	universe.RemoveActor(&square2);
 
 	universe.RemoveActor(&camera);
 

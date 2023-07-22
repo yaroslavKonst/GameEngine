@@ -19,6 +19,7 @@ struct ModelDescriptor
 	struct Vertex
 	{
 		alignas(16) glm::vec3 Pos;
+		alignas(16) glm::vec3 Normal;
 		alignas(8) glm::vec2 TexCoord;
 	};
 

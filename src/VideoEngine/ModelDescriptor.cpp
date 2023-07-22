@@ -27,7 +27,7 @@ std::vector<VkVertexInputAttributeDescription>
 ModelDescriptor::GetAttributeDescriptions()
 {
 	std::vector<VkVertexInputAttributeDescription>
-		attributeDescriptions(6);
+		attributeDescriptions(7);
 
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
@@ -36,28 +36,33 @@ ModelDescriptor::GetAttributeDescriptions()
 
 	attributeDescriptions[1].binding = 0;
 	attributeDescriptions[1].location = 1;
-	attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-	attributeDescriptions[1].offset = offsetof(Vertex, TexCoord);
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[1].offset = offsetof(Vertex, Normal);
 
-	attributeDescriptions[2].binding = 1;
+	attributeDescriptions[2].binding = 0;
 	attributeDescriptions[2].location = 2;
-	attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[2].offset = 0;
+	attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescriptions[2].offset = offsetof(Vertex, TexCoord);
 
 	attributeDescriptions[3].binding = 1;
 	attributeDescriptions[3].location = 3;
 	attributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[3].offset = sizeof(glm::vec4);
+	attributeDescriptions[3].offset = 0;
 
 	attributeDescriptions[4].binding = 1;
 	attributeDescriptions[4].location = 4;
 	attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[4].offset = sizeof(glm::vec4) * 2;
+	attributeDescriptions[4].offset = sizeof(glm::vec4);
 
 	attributeDescriptions[5].binding = 1;
 	attributeDescriptions[5].location = 5;
 	attributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[5].offset = sizeof(glm::vec4) * 3;
+	attributeDescriptions[5].offset = sizeof(glm::vec4) * 2;
+
+	attributeDescriptions[6].binding = 1;
+	attributeDescriptions[6].location = 6;
+	attributeDescriptions[6].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[6].offset = sizeof(glm::vec4) * 3;
 
 	return attributeDescriptions;
 }

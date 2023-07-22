@@ -61,6 +61,11 @@ public:
 		_cameraUp = value;
 	}
 
+	void SetCameraTarget(const glm::vec3& value)
+	{
+		_cameraDirection = value - _cameraPosition;
+	}
+
 	InputControl* GetInputControl()
 	{
 		return _inputControl;
