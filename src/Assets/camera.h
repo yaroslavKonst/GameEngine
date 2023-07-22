@@ -24,8 +24,6 @@ public:
 			cosf(angleInRad),
 			sinf(angleInRad * 8)));
 
-		Logger::Verbose() << "Angle: " << _angle;
-
 		_angle += 0.1;
 
 		if (_angle >= 360) {

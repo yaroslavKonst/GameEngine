@@ -40,7 +40,7 @@ Triangle::Triangle()
 	int texHeight;
 
 	std::vector<uint8_t> texData = Loader::LoadImage(
-		"../src/Assets/Resources/texture.jpg",
+		"../src/Assets/Resources/Images/texture.jpg",
 		texWidth,
 		texHeight);
 

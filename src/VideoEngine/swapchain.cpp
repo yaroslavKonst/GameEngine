@@ -248,6 +248,7 @@ void Swapchain::Destroy()
 
 void Swapchain::CreateRenderingImages()
 {
+	Logger::Verbose() << "Swapchain image format: " << _imageFormat;
 	_colorImage = ImageHelper::CreateImage(
 		_device,
 		_extent.width,

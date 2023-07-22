@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 	int skTexWidth;
 	int skTexHeight;
 	auto skTexData = Loader::LoadImage(
-		"../src/Assets/Resources/skybox.png",
+		"../src/Assets/Resources/Skybox/skybox.png",
 		skTexWidth,
 		skTexHeight);
 
@@ -43,8 +43,8 @@ int main(int argc, char** argv)
 	std::thread universeThread(UniverseThread, &universe);
 
 	Triangle triangle;
-	Square square("../src/Assets/Resources/texture.jpg", 1);
-	Square square2("../src/Assets/Resources/transparent.png", -1);
+	Square square("../src/Assets/Resources/Images/texture.jpg", 1);
+	Square square2("../src/Assets/Resources/Images/transparent.png", -1);
 
 	window.GetInputControl()->Subscribe(&square);
 
