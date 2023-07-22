@@ -23,7 +23,10 @@ public:
 			sinf(angleInRad) * 6,
 			cosf(angleInRad) * 6,
 			4));
-		_video->SetCameraTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+		_video->SetCameraTarget(glm::vec3(
+			0.0f,
+			0.0f,
+			0.0f));
 
 		_angle += 0.1;
 

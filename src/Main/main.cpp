@@ -29,13 +29,23 @@ int main(int argc, char** argv)
 	mesh.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)));
 
 	MovingLight light1(1, 0.01);
-	light1.SetLightColor({0.3f, 0.3f, 0.3f});
+	light1.SetLightColor({0.1f, 0.1f, 0.1f});
+	light1.SetLightType(Light::Type::Point);
 
 	MovingLight light2(1, -0.01);
 	light2.SetLightColor({0.0f, 0.0f, 1.0f});
+	light2.SetLightType(Light::Type::Point);
 
 	MovingLight light3(1, 0.1);
 	light3.SetLightColor({1.0f, 0.0f, 0.0f});
+	light3.SetLightType(Light::Type::Point);
+
+	MovingLight light4(4, 0.02);
+	light4.SetLightColor({0.0f, 1.0f, 0.0f});
+	light4.SetLightType(Light::Type::Spot);
+	light4.SetLightAngle(20);
+	light4.SetLightAngleFade(5);
+	light4.SetLightDirection({0.0f, 0.0f, -1.0f});
 
 	Video window(1400, 1000, "Video", "Application");
 
@@ -63,11 +73,13 @@ int main(int argc, char** argv)
 	universe.RegisterActor(&light1);
 	universe.RegisterActor(&light2);
 	universe.RegisterActor(&light3);
+	universe.RegisterActor(&light4);
 
 	window.RegisterModel(&mesh);
 	window.RegisterLight(&light1);
 	window.RegisterLight(&light2);
 	window.RegisterLight(&light3);
+	window.RegisterLight(&light4);
 
 	window.MainLoop();
 
@@ -75,11 +87,13 @@ int main(int argc, char** argv)
 	window.RemoveLight(&light1);
 	window.RemoveLight(&light2);
 	window.RemoveLight(&light3);
+	window.RemoveLight(&light4);
 
 	universe.RemoveActor(&camera);
 	universe.RemoveActor(&light1);
 	universe.RemoveActor(&light2);
 	universe.RemoveActor(&light3);
+	universe.RemoveActor(&light4);
 
 	universe.Stop();
 	universeThread.join();

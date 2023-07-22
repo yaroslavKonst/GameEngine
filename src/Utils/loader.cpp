@@ -84,16 +84,7 @@ namespace Loader
 		std::vector<glm::vec3> normals;
 		std::vector<glm::vec2> texCoords;
 
-		Logger::Verbose() << "Parsing file";
-
 		for (auto line : modelFile) {
-			{
-				auto logger = Logger::Verbose();
-				for (auto word : line) {
-					logger << word << " ";
-				}
-			}
-
 			if (line[0] == "v") {
 				glm::vec3 vertex;
 				vertex[0] = std::stof(line[1]);

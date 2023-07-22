@@ -12,6 +12,13 @@
 class Light
 {
 public:
+	enum class Type
+	{
+		Point = 0,
+		Spot = 1,
+		Direct = 2
+	};
+
 	virtual ~Light()
 	{
 	}
@@ -36,9 +43,53 @@ public:
 		_color = value;
 	}
 
+	virtual const glm::vec3& GetLightDirection()
+	{
+		return _direction;
+	}
+
+	virtual void SetLightDirection(const glm::vec3& value)
+	{
+		_direction = value;
+	}
+
+	virtual Type GetLightType()
+	{
+		return _type;
+	}
+
+	virtual void SetLightType(Type value)
+	{
+		_type = value;
+	}
+
+	virtual float GetLightAngle()
+	{
+		return _angle;
+	}
+
+	virtual void SetLightAngle(float value)
+	{
+		_angle = value;
+	}
+
+	virtual float GetLightAngleFade()
+	{
+		return _angleFade;
+	}
+
+	virtual void SetLightAngleFade(float value)
+	{
+		_angleFade = value;
+	}
+
 private:
 	glm::vec3 _position;
 	glm::vec3 _color;
+	glm::vec3 _direction;
+	Type _type;
+	float _angle;
+	float _angleFade;
 };
 
 #endif

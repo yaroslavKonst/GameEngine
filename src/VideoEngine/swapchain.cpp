@@ -681,7 +681,16 @@ void Swapchain::RecordCommandBuffer(
 			light.second->GetLightPosition();
 		lightDescriptors[selectedLights].Color =
 			light.second->GetLightColor();
-		lightDescriptors[selectedLights].Type = 0;
+		lightDescriptors[selectedLights].Direction =
+			light.second->GetLightDirection();
+		lightDescriptors[selectedLights].Type =
+			(uint32_t)light.second->GetLightType();
+		lightDescriptors[selectedLights].Angle =
+			cos(glm::radians(light.second->GetLightAngle()));
+		lightDescriptors[selectedLights].OuterAngle =
+			cos(glm::radians(
+			light.second->GetLightAngle() +
+			light.second->GetLightAngleFade()));
 
 		++selectedLights;
 
@@ -689,8 +698,6 @@ void Swapchain::RecordCommandBuffer(
 			break;
 		}
 	}
-
-	Logger::Verbose() << "light count: " << selectedLights;
 
 	*lightCountData = selectedLights;
 

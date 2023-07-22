@@ -21,6 +21,8 @@ public:
 			cosf(_angle) * _radius,
 			3.0f));
 
+		SetLightAngleFade(10.0 + sinf(_angle * 8) * 5.0);
+
 		_angle += _speed;
 	}
 
