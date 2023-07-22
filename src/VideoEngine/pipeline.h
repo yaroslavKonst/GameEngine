@@ -27,8 +27,8 @@ public:
 		std::vector<VkVertexInputAttributeDescription>
 			VertexAttributeDescriptions;
 		VkBool32 DepthTestEnabled;
-		bool PushConstantEnabled;
-		VkPushConstantRange PushConstant;
+		uint32_t PushConstantRangeCount;
+		VkPushConstantRange* PushConstants;
 		bool ResolveImage;
 		bool ClearInputBuffer;
 	};

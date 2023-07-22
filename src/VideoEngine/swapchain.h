@@ -12,10 +12,8 @@
 #include "MemorySystem.h"
 #include "ImageHelper.h"
 #include "pipeline.h"
-#include "model.h"
-#include "rectangle.h"
 #include "ModelDescriptor.h"
-#include "skybox.h"
+#include "SceneDescriptor.h"
 
 class Swapchain
 {
@@ -29,13 +27,7 @@ public:
 		VkSampleCountFlagBits msaaSamples,
 		VkQueue graphicsQueue,
 		VkQueue presentQueue,
-		std::map<Model*, ModelDescriptor>* models,
-		std::map<Rectangle*, ModelDescriptor>* rectangles,
-		Skybox* skybox,
-		glm::vec3* cameraPosition,
-		glm::vec3* cameraDirection,
-		glm::vec3* cameraUp,
-		double* fov,
+		SceneDescriptor* scene,
 		VkDescriptorSetLayout descriptorSetLayout);
 
 	~Swapchain();
@@ -58,9 +50,7 @@ private:
 	PhysicalDeviceSupport* _deviceSupport;
 	MemorySystem* _memorySystem;
 
-	std::map<Model*, ModelDescriptor>* _models;
-	std::map<Rectangle*, ModelDescriptor>* _rectangles;
-	Skybox* _skybox;
+	SceneDescriptor* _scene;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 
@@ -115,11 +105,6 @@ private:
 	std::vector<VkFence> _inFlightFences;
 	void CreateSyncObjects();
 	void DestroySyncObjects();
-
-	glm::vec3* _cameraPosition;
-	glm::vec3* _cameraDirection;
-	glm::vec3* _cameraUp;
-	double* _fov;
 };
 
 #endif

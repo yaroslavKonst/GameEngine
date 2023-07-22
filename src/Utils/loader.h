@@ -24,6 +24,7 @@ namespace Loader
 	struct VertexData
 	{
 		std::vector<glm::vec3> Vertices;
+		std::vector<glm::vec3> Normals;
 		std::vector<glm::vec2> TexCoords;
 		std::vector<uint32_t> Indices;
 	};

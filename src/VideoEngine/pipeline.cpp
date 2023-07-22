@@ -161,12 +161,12 @@ Pipeline::Pipeline(InitInfo* initInfo)
 	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pSetLayouts = &initInfo->DescriptorSetLayout;
 
-	if (initInfo->PushConstantEnabled) {
-		pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pushConstantRangeCount =
+		initInfo->PushConstantRangeCount;
+
+	if (initInfo->PushConstantRangeCount > 0) {
 		pipelineLayoutInfo.pPushConstantRanges =
-			&initInfo->PushConstant;
-	} else {
-		pipelineLayoutInfo.pushConstantRangeCount = 0;
+			initInfo->PushConstants;
 	}
 
 	VkResult res = vkCreatePipelineLayout(

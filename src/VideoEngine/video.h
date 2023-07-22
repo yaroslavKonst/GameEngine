@@ -11,12 +11,10 @@
 #include "swapchain.h"
 #include "PhysicalDeviceSupport.h"
 #include "MemorySystem.h"
-#include "model.h"
-#include "rectangle.h"
 #include "ModelDescriptor.h"
 #include "BufferHelper.h"
 #include "InputControl.h"
-#include "skybox.h"
+#include "SceneDescriptor.h"
 
 class Video
 {
@@ -43,27 +41,27 @@ public:
 
 	void SetFOV(double fov)
 	{
-		_fov = fov;
+		_scene.FOV = fov;
 	}
 
 	void SetCameraPosition(const glm::vec3& value)
 	{
-		_cameraPosition = value;
+		_scene.CameraPosition = value;
 	}
 
 	void SetCameraDirection(const glm::vec3& value)
 	{
-		_cameraDirection = value;
+		_scene.CameraDirection = value;
 	}
 
 	void SetCameraUp(const glm::vec3& value)
 	{
-		_cameraUp = value;
+		_scene.CameraUp = value;
 	}
 
 	void SetCameraTarget(const glm::vec3& value)
 	{
-		_cameraDirection = value - _cameraPosition;
+		_scene.CameraDirection = value - _scene.CameraPosition;
 	}
 
 	InputControl* GetInputControl()
@@ -108,17 +106,14 @@ private:
 	void CreateSwapchain();
 	void DestroySwapchain();
 
-	std::map<Model*, ModelDescriptor> _models;
+	SceneDescriptor _scene;
 	ModelDescriptor CreateModelDescriptor(Model* model);
 	void DestroyModelDescriptor(ModelDescriptor descriptor);
 	void RemoveAllModels();
 
-	std::map<Rectangle*, ModelDescriptor> _rectangles;
 	ModelDescriptor CreateRectangleDescriptor(Rectangle* rectangle);
 	void DestroyRectangleDescriptor(ModelDescriptor descriptor);
 	void RemoveAllRectangles();
-
-	Skybox _skybox;
 
 	ImageHelper::Image CreateTextureImage(
 		Texturable* model,
@@ -138,11 +133,6 @@ private:
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();
 	void DestroyDescriptorSetLayout();
-
-	double _fov;
-	glm::vec3 _cameraPosition;
-	glm::vec3 _cameraDirection;
-	glm::vec3 _cameraUp;
 
 	InputControl* _inputControl;
 };

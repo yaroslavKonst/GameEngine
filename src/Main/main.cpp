@@ -27,9 +27,9 @@ int main(int argc, char** argv)
 	mesh.SetDrawEnabled(true);
 	mesh.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)));
 
-	Video window(800, 600, "Window Title", "Application");
+	Video window(1400, 1000, "Video", "Application");
 
-	window.SetFOV(70);
+	window.SetFOV(60);
 	window.SetCameraPosition(glm::vec3(2.0f, 0.0f, 2.0f));
 	window.SetCameraDirection(glm::vec3(-1.0f, -1.0f, -1.0f));
 	window.SetCameraUp(glm::vec3(0.0f, 0.0f, 1.0f));
@@ -49,22 +49,12 @@ int main(int argc, char** argv)
 
 	std::thread universeThread(UniverseThread, &universe);
 
-	Triangle triangle;
-
-	//window.RegisterModel(&triangle);
-	universe.RegisterActor(&triangle);
-
 	universe.RegisterActor(&camera);
-
 	window.RegisterModel(&mesh);
 
 	window.MainLoop();
 
 	window.RemoveModel(&mesh);
-
-	//window.RemoveModel(&triangle);
-	universe.RemoveActor(&triangle);
-
 	universe.RemoveActor(&camera);
 
 	universe.Stop();

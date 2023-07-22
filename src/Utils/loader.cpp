@@ -45,6 +45,7 @@ namespace Loader
 		{
 			glm::vec3 Pos;
 			glm::vec2 Tex;
+			glm::vec3 Normal;
 
 			bool operator<(const Vertex& vertex) const
 			{
@@ -57,6 +58,13 @@ namespace Loader
 				for (int i = 0; i < 2; ++i) {
 					if (Tex[i] != vertex.Tex[i]) {
 						return Tex[i] < vertex.Tex[i];
+					}
+				}
+
+				for (int i = 0; i < 3; ++i) {
+					if (Normal[i] != vertex.Normal[i]) {
+						return Normal[i] <
+							vertex.Normal[i];
 					}
 				}
 
@@ -73,6 +81,7 @@ namespace Loader
 		std::vector<Vertex> vertices;
 
 		std::vector<glm::vec3> vertPositions;
+		std::vector<glm::vec3> normals;
 		std::vector<glm::vec2> texCoords;
 
 		Logger::Verbose() << "Parsing file";
@@ -96,21 +105,30 @@ namespace Loader
 				texCoord[0] = std::stof(line[1]);
 				texCoord[1] = 1.0 - std::stof(line[2]);
 				texCoords.push_back(texCoord);
+			} else if (line[0] == "vn") {
+				glm::vec3 normal;
+				normal[0] = std::stof(line[1]);
+				normal[1] = std::stof(line[2]);
+				normal[2] = std::stof(line[3]);
+				normals.push_back(normal);
 			} else if (line[0] == "f") {
 				Vertex vertex;
 				vertex.Pos = vertPositions[
 					std::stoi(line[1]) - 1];
 				vertex.Tex = texCoords[std::stoi(line[2]) - 1];
+				vertex.Normal = normals[std::stoi(line[3]) - 1];
 				vertices.push_back(vertex);
 
 				vertex.Pos = vertPositions[
-					std::stoi(line[3]) - 1];
-				vertex.Tex = texCoords[std::stoi(line[4]) - 1];
+					std::stoi(line[4]) - 1];
+				vertex.Tex = texCoords[std::stoi(line[5]) - 1];
+				vertex.Normal = normals[std::stoi(line[6]) - 1];
 				vertices.push_back(vertex);
 
 				vertex.Pos = vertPositions[
-					std::stoi(line[5]) - 1];
-				vertex.Tex = texCoords[std::stoi(line[6]) - 1];
+					std::stoi(line[7]) - 1];
+				vertex.Tex = texCoords[std::stoi(line[8]) - 1];
+				vertex.Normal = normals[std::stoi(line[9]) - 1];
 				vertices.push_back(vertex);
 			}
 		}
@@ -127,6 +145,7 @@ namespace Loader
 
 				data.Vertices.push_back(vertex.Pos);
 				data.TexCoords.push_back(vertex.Tex);
+				data.Normals.push_back(vertex.Normal);
 			}
 
 			data.Indices.push_back(indexedVertices[vertex]);

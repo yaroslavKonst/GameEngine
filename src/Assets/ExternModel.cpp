@@ -20,6 +20,13 @@ ExternModel::ExternModel(std::string modelFile, std::string textureFile)
 			model.Vertices[i][2];
 	}
 
+	for (uint32_t i = 0; i < model.Normals.size(); ++i) {
+		Logger::Verbose() << "Normal " << i << ": " <<
+			model.Normals[i][0] << " " <<
+			model.Normals[i][1] << " " <<
+			model.Normals[i][2];
+	}
+
 	for (uint32_t i = 0; i < model.TexCoords.size(); ++i) {
 		Logger::Verbose() << "TexCoord " << i << ": " <<
 			model.TexCoords[i][0] << " " <<
@@ -32,6 +39,7 @@ ExternModel::ExternModel(std::string modelFile, std::string textureFile)
 	}
 
 	SetModelVertices(model.Vertices);
+	SetModelNormals(model.Normals);
 	SetModelTexCoords(model.TexCoords);
 	SetModelIndices(model.Indices);
 

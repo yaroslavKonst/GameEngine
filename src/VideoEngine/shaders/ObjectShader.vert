@@ -14,13 +14,18 @@ layout(push_constant) uniform MVP
 } mvp;
 
 layout(location = 0) out vec2 texCoord;
+layout(location = 1) out vec3 outNormal;
+layout(location = 2) out vec3 outPos;
 
 void main() {
+	mat4 toWorldTransform = mvp.Model * instanceTransform * mvp.InnerModel;
+
 	gl_Position =
-		mvp.Proj * mvp.View *
-		mvp.Model * instanceTransform * mvp.InnerModel *
-		vec4(inPosition, 1.0);
+		mvp.Proj * mvp.View * toWorldTransform * vec4(inPosition, 1.0);
 
 	gl_Position.y *= -1;
 	texCoord = inTexCoord;
+
+	outNormal = (toWorldTransform * vec4(inNormal, 0.0f)).xyz;
+	outPos = (toWorldTransform * vec4(inPosition, 1.0f)).xyz;
 }

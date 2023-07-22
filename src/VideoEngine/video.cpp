@@ -323,13 +323,7 @@ void Video::CreateSwapchain()
 		_msaaSamples,
 		_graphicsQueue,
 		_presentQueue,
-		&_models,
-		&_rectangles,
-		&_skybox,
-		&_cameraPosition,
-		&_cameraDirection,
-		&_cameraUp,
-		&_fov,
+		&_scene,
 		_descriptorSetLayout);
 
 	_swapchain->Create();
@@ -353,7 +347,7 @@ void Video::Stop()
 
 void Video::RegisterModel(Model* model)
 {
-	_models[model] = CreateModelDescriptor(model);
+	_scene.Models[model] = CreateModelDescriptor(model);
 	model->_SetDrawReady(true);
 }
 
@@ -362,20 +356,20 @@ void Video::RemoveModel(Model* model)
 	model->_SetDrawReady(false);
 	vkQueueWaitIdle(_graphicsQueue);
 
-	DestroyModelDescriptor(_models[model]);
-	_models.erase(model);
+	DestroyModelDescriptor(_scene.Models[model]);
+	_scene.Models.erase(model);
 }
 
 void Video::RemoveAllModels()
 {
 	vkQueueWaitIdle(_graphicsQueue);
 
-	for (auto& model : _models) {
+	for (auto& model : _scene.Models) {
 		model.first->_SetDrawReady(false);
 		DestroyModelDescriptor(model.second);
 	}
 
-	_models.clear();
+	_scene.Models.clear();
 }
 
 ModelDescriptor Video::CreateModelDescriptor(Model* model)
@@ -385,6 +379,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 	// Vertex buffer creation.
 	auto& vertices = model->GetModelVertices();
 	auto& texCoords = model->GetModelTexCoords();
+	auto& normals = model->GetModelNormals();
 
 	std::vector<ModelDescriptor::Vertex> vertexData(vertices.size());
 
@@ -400,6 +395,7 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 	for (size_t i = 0; i < vertices.size(); ++i) {
 		vertexData[i].Pos = vertices[i];
 		vertexData[i].TexCoord = texCoords[i];
+		vertexData[i].Normal = normals[i];
 	}
 
 	BufferHelper::LoadDataToBuffer(
@@ -511,7 +507,7 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
-	_rectangles[rectangle] = CreateRectangleDescriptor(rectangle);
+	_scene.Rectangles[rectangle] = CreateRectangleDescriptor(rectangle);
 	rectangle->_SetDrawReady(true);
 }
 
@@ -520,20 +516,20 @@ void Video::RemoveRectangle(Rectangle* rectangle)
 	rectangle->_SetDrawReady(false);
 	vkQueueWaitIdle(_graphicsQueue);
 
-	DestroyRectangleDescriptor(_rectangles[rectangle]);
-	_rectangles.erase(rectangle);
+	DestroyRectangleDescriptor(_scene.Rectangles[rectangle]);
+	_scene.Rectangles.erase(rectangle);
 }
 
 void Video::RemoveAllRectangles()
 {
 	vkQueueWaitIdle(_graphicsQueue);
 
-	for (auto& rectangle : _rectangles) {
+	for (auto& rectangle : _scene.Rectangles) {
 		rectangle.first->_SetDrawReady(false);
 		DestroyRectangleDescriptor(rectangle.second);
 	}
 
-	_rectangles.clear();
+	_scene.Rectangles.clear();
 }
 
 ModelDescriptor Video::CreateRectangleDescriptor(Rectangle* rectangle)
@@ -650,54 +646,56 @@ void Video::CreateSkybox(
 		texWidth,
 		texHeight);
 
-	_skybox.SetTexWidth(texWidth);
-	_skybox.SetTexHeight(texHeight);
-	_skybox.SetTexData(texDataTransformed);
+	_scene.skybox.SetTexWidth(texWidth);
+	_scene.skybox.SetTexHeight(texHeight);
+	_scene.skybox.SetTexData(texDataTransformed);
 
-	_skybox.Descriptor.TextureImage = CreateTextureImage(
-		&_skybox,
+	_scene.skybox.Descriptor.TextureImage = CreateTextureImage(
+		&_scene.skybox,
 		mipLevels,
 		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 		layerCount);
-	_skybox.Descriptor.TextureImageView = ImageHelper::CreateImageView(
-		_device,
-		_skybox.Descriptor.TextureImage.Image,
-		VK_FORMAT_R8G8B8A8_SRGB,
-		VK_IMAGE_ASPECT_COLOR_BIT,
-		mipLevels,
-		VK_IMAGE_VIEW_TYPE_CUBE,
-		layerCount);
-	_skybox.Descriptor.TextureSampler = CreateTextureSampler(mipLevels);
-	CreateDescriptorSets(&_skybox.Descriptor);
+	_scene.skybox.Descriptor.TextureImageView =
+		ImageHelper::CreateImageView(
+			_device,
+			_scene.skybox.Descriptor.TextureImage.Image,
+			VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_ASPECT_COLOR_BIT,
+			mipLevels,
+			VK_IMAGE_VIEW_TYPE_CUBE,
+			layerCount);
+	_scene.skybox.Descriptor.TextureSampler =
+		CreateTextureSampler(mipLevels);
+	CreateDescriptorSets(&_scene.skybox.Descriptor);
 
-	_skybox._SetDrawReady(true);
-	_skybox.SetDrawEnabled(true);
+	_scene.skybox._SetDrawReady(true);
+	_scene.skybox.SetDrawEnabled(true);
 }
 
 void Video::DestroySkybox()
 {
-	if (!_skybox.IsDrawEnabled())
+	if (!_scene.skybox.IsDrawEnabled())
 	{
 		return;
 	}
 
-	_skybox._SetDrawReady(false);
+	_scene.skybox._SetDrawReady(false);
 	vkQueueWaitIdle(_graphicsQueue);
 
-	DestroyDescriptorSets(&_skybox.Descriptor);
+	DestroyDescriptorSets(&_scene.skybox.Descriptor);
 
-	DestroyTextureSampler(_skybox.Descriptor.TextureSampler);
+	DestroyTextureSampler(_scene.skybox.Descriptor.TextureSampler);
 
 	ImageHelper::DestroyImageView(
 		_device,
-		_skybox.Descriptor.TextureImageView);
+		_scene.skybox.Descriptor.TextureImageView);
 
 	ImageHelper::DestroyImage(
 		_device,
-		_skybox.Descriptor.TextureImage,
+		_scene.skybox.Descriptor.TextureImage,
 		_memorySystem);
 
-	_skybox.SetTexData(std::vector<uint8_t>());
+	_scene.skybox.SetTexData(std::vector<uint8_t>());
 }
 
 ImageHelper::Image Video::CreateTextureImage(

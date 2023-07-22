@@ -79,8 +79,19 @@ public:
 		_modelInnerMatrix = matrix;
 	}
 
+	virtual const std::vector<glm::vec3>& GetModelNormals()
+	{
+		return _modelNormalBuffer;
+	}
+
+	virtual void SetModelNormals(const std::vector<glm::vec3>& normals)
+	{
+		_modelNormalBuffer = normals;
+	}
+
 private:
 	std::vector<glm::vec3> _modelVertexBuffer;
+	std::vector<glm::vec3> _modelNormalBuffer;
 	std::vector<uint32_t> _modelIndexBuffer;
 	std::vector<glm::vec2> _modelTexCoordBuffer;
 	std::vector<glm::mat4> _modelInstances;
