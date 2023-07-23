@@ -7,6 +7,9 @@ InputControl::InputControl(GLFWwindow* window)
 	_window = window;
 	_x = 0;
 	_y = 0;
+	_rawX = 0;
+	_rawY = 0;
+	_rawMouseInput = false;
 
 	glfwSetWindowUserPointer(_window, this);
 
@@ -36,6 +39,17 @@ void InputControl::UnSubscribe(InputHandler* handler)
 	_handlers.erase(handler);
 }
 
+void InputControl::ToggleRawMouseInput()
+{
+	if (!_rawMouseInput) {
+		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		_rawMouseInput = true;
+	} else {
+		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		_rawMouseInput = false;
+	}
+}
+
 void InputControl::KeyCallback(
 	GLFWwindow* window,
 	int key,
@@ -61,12 +75,20 @@ void InputControl::CursorPositionCallback(
 	InputControl* control = reinterpret_cast<InputControl*>(
 		glfwGetWindowUserPointer(window));
 
+	if (control->_rawMouseInput) {
+		RawCursorPositionCallback(control, xpos, ypos);
+		return;
+	}
+
 	int width;
 	int height;
 	glfwGetWindowSize(window, &width, &height);
 
 	float x = (xpos / width) * 2 - 1;
 	float y = (ypos / height) * 2 - 1;
+
+	control->_rawX = xpos;
+	control->_rawY = ypos;
 
 	control->_x = x;
 	control->_y = y;
@@ -95,6 +117,36 @@ void InputControl::CursorPositionCallback(
 			handler.second->InputArea.y0);
 
 		bool processed = handler.second->MouseMove(locX, locY, true);
+
+		if (processed) {
+			break;
+		}
+	}
+}
+
+void InputControl::RawCursorPositionCallback(
+	InputControl* control,
+	double xpos,
+	double ypos)
+{
+	float xoffset = xpos - control->_rawX;
+	float yoffset = ypos - control->_rawY;
+
+	control->_rawX = xpos;
+	control->_rawY = ypos;
+
+	std::map<float, InputHandler*> orderedHandlers;
+
+	for (auto handler : control->_handlers) {
+		if (!handler->IsInputEnabled()) {
+			continue;
+		}
+
+		orderedHandlers[handler->GetInputLayer()] = handler;
+	}
+
+	for (auto handler : orderedHandlers) {
+		bool processed = handler.second->MouseMoveRaw(xoffset, yoffset);
 
 		if (processed) {
 			break;

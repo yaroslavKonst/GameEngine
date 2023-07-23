@@ -64,6 +64,13 @@ public:
 		return false;
 	}
 
+	virtual bool MouseMoveRaw(
+		double xoffset,
+		double yoffset)
+	{
+		return false;
+	}
+
 	virtual bool MouseButton(
 		int button,
 		int action,
@@ -93,6 +100,8 @@ public:
 	void Subscribe(InputHandler* handler);
 	void UnSubscribe(InputHandler* handler);
 
+	void ToggleRawMouseInput();
+
 	void NotifyWindowClose();
 
 private:
@@ -100,6 +109,11 @@ private:
 
 	float _x;
 	float _y;
+
+	float _rawX;
+	float _rawY;
+
+	bool _rawMouseInput;
 
 	std::set<InputHandler*> _handlers;
 
@@ -112,6 +126,11 @@ private:
 
 	static void CursorPositionCallback(
 		GLFWwindow* window,
+		double xpos,
+		double ypos);
+
+	static void RawCursorPositionCallback(
+		InputControl* control,
 		double xpos,
 		double ypos);
 
