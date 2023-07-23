@@ -8,6 +8,7 @@
 
 #include "ThreadPool.h"
 #include "actor.h"
+#include "../PhysicalEngine/CollisionEngine.h"
 
 class Universe
 {
@@ -18,6 +19,9 @@ public:
 	void RegisterActor(Actor* actor);
 	void RemoveActor(Actor* actor);
 
+	void RegisterCollisionEngine(CollisionEngine* engine);
+	void RemoveCollisionEngine(CollisionEngine* engine);
+
 	void MainLoop();
 	void Stop();
 
@@ -25,6 +29,7 @@ private:
 	uint32_t _tickDelayMS;
 
 	std::set<Actor*> _actors;
+	std::set<CollisionEngine*> _collisionEngines;
 	std::mutex _actorMutex;
 
 	bool _work;

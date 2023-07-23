@@ -30,6 +30,16 @@ void Universe::RemoveActor(Actor* actor)
 	_actorMutex.unlock();
 }
 
+void Universe::RegisterCollisionEngine(CollisionEngine* engine)
+{
+	_collisionEngines.insert(engine);
+}
+
+void Universe::RemoveCollisionEngine(CollisionEngine* engine)
+{
+	_collisionEngines.erase(engine);
+}
+
 void Universe::MainLoop()
 {
 	_work = true;
@@ -38,6 +48,10 @@ void Universe::MainLoop()
 	{
 		_actorMutex.lock();
 		auto start = std::chrono::high_resolution_clock::now();
+
+		for (CollisionEngine* engine : _collisionEngines) {
+			engine->Run();
+		}
 
 		for (Actor* actor : _actors) {
 			_threadPool->Enqueue(
