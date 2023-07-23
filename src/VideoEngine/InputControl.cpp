@@ -229,6 +229,10 @@ void InputControl::ScrollCallback(
 InputHandler::InputHandler()
 {
 	_inputEnabled = false;
+	InputArea.x0 = 0;
+	InputArea.y0 = 0;
+	InputArea.x1 = 0;
+	InputArea.y1 = 0;
 }
 
 InputHandler::~InputHandler()
