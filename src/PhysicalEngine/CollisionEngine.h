@@ -4,6 +4,7 @@
 #include <set>
 
 #include "object.h"
+#include "../Utils/ThreadPool.h"
 
 class CollisionEngine
 {
@@ -18,6 +19,8 @@ public:
 
 private:
 	std::set<Object*> _objects;
+
+	ThreadPool* _threadPool;
 
 	void InitializeObject(Object* object);
 	void CalculateCollision(

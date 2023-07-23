@@ -8,10 +8,12 @@ using namespace PlaneHelper;
 
 CollisionEngine::CollisionEngine()
 {
+	_threadPool = new ThreadPool(3);
 }
 
 CollisionEngine::~CollisionEngine()
 {
+	delete _threadPool;
 }
 
 void CollisionEngine::RegisterObject(Object* object)
@@ -44,7 +46,6 @@ void CollisionEngine::Run()
 		++i;
 	}
 
-	// TODO: Add thread pool.
 	for (
 		int64_t objIdx1 = 0;
 		objIdx1 < (int64_t)objects.size();
@@ -78,13 +79,24 @@ void CollisionEngine::Run()
 				continue;
 			}
 
-			CalculateCollision(
-				objects[objIdx1],
-				objects[objIdx2],
+			_threadPool->Enqueue(
+				[this,
+				&objects,
 				matrix1,
-				matrix2);
+				matrix2,
+				objIdx1,
+				objIdx2]() -> void
+			{
+				CalculateCollision(
+					objects[objIdx1],
+					objects[objIdx2],
+					matrix1,
+					matrix2);
+			});
 		}
 	}
+
+	_threadPool->Wait();
 }
 
 void CollisionEngine::InitializeObject(Object* object)

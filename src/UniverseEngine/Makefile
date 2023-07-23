@@ -2,7 +2,6 @@
 
 all: \
 	../../build/universe.o \
-	../../build/ThreadPool.o \
 	../../build/actor.o
 
 ../../build/%.o: %.cpp %.h
