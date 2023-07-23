@@ -118,11 +118,13 @@ public:
 		}
 
 		if (effect.z > 0 && _jump) {
-			_vspeed = 8;
+			_vspeed = 6;
 		}
 
-		if (effect.x * hspeed.x + effect.y * hspeed.y < 0) {
-			hspeed = glm::vec2(0, 0);
+		if (fabs(effect.x) + fabs(effect.y) > 0.0001) {
+			if (effect.x * hspeed.x + effect.y * hspeed.y < 0) {
+				hspeed = glm::vec2(0, 0);
+			}
 		}
 
 		_pos.x += hspeed.x / 20;
@@ -191,11 +193,15 @@ public:
 		int texWidth;
 		int texHeight;
 		auto texture = Loader::LoadImage(
-			"../src/Assets/Resources/Models/field.png",
+			"../src/Assets/Resources/Models/floor.jpg",
 			texWidth,
 			texHeight);
 		auto model = Loader::LoadModel(
 			"../src/Assets/Resources/Models/field.obj");
+
+		for (auto& coord : model.TexCoords) {
+			coord *= 100;
+		}
 
 		SetModelVertices(model.Vertices);
 		SetModelNormals(model.Normals);
@@ -236,6 +242,11 @@ public:
 		light.SetLightAngle(15);
 		light.SetLightAngleFade(10);
 
+		Light lightSt;
+		lightSt.SetLightType(Light::Type::Point);
+		lightSt.SetLightColor({0.9, 0.9, 0.9});
+		lightSt.SetLightPosition({0.0, 0.0, 3.0});
+
 		video.SetFOV(80);
 		video.SetCameraUp({0, 0, 1});
 		int skbTWidth;
@@ -257,6 +268,7 @@ public:
 		video.RegisterModel(&field);
 
 		video.RegisterLight(&light);
+		video.RegisterLight(&lightSt);
 
 		video.GetInputControl()->Subscribe(&player);
 
@@ -269,6 +281,7 @@ public:
 
 		video.GetInputControl()->UnSubscribe(&player);
 
+		video.RemoveLight(&lightSt);
 		video.RemoveLight(&light);
 
 		video.RemoveModel(&field);
