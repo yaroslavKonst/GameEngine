@@ -32,12 +32,16 @@ void Universe::RemoveActor(Actor* actor)
 
 void Universe::RegisterCollisionEngine(CollisionEngine* engine)
 {
+	_collisionMutex.lock();
 	_collisionEngines.insert(engine);
+	_collisionMutex.unlock();
 }
 
 void Universe::RemoveCollisionEngine(CollisionEngine* engine)
 {
+	_collisionMutex.lock();
 	_collisionEngines.erase(engine);
+	_collisionMutex.unlock();
 }
 
 void Universe::MainLoop()
@@ -46,22 +50,25 @@ void Universe::MainLoop()
 
 	while (_work)
 	{
-		_actorMutex.lock();
 		auto start = std::chrono::high_resolution_clock::now();
 
+		_collisionMutex.lock();
 		for (CollisionEngine* engine : _collisionEngines) {
 			engine->Run();
 		}
 
+		_collisionMutex.unlock();
+
+		_actorMutex.lock();
 		for (Actor* actor : _actors) {
 			_threadPool->Enqueue(
 				[actor]() -> void {actor->Tick();});
 		}
 
 		_threadPool->Wait();
+		_actorMutex.unlock();
 
 		auto stop = std::chrono::high_resolution_clock::now();
-		_actorMutex.unlock();
 
 		uint32_t spentTimeMS =
 			std::chrono::duration_cast<std::chrono::milliseconds>(

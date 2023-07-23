@@ -29,8 +29,10 @@ private:
 	uint32_t _tickDelayMS;
 
 	std::set<Actor*> _actors;
-	std::set<CollisionEngine*> _collisionEngines;
 	std::mutex _actorMutex;
+
+	std::set<CollisionEngine*> _collisionEngines;
+	std::mutex _collisionMutex;
 
 	bool _work;
 

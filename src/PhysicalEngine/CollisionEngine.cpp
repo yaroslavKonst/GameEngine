@@ -2,6 +2,8 @@
 
 #include "PlaneHelper.h"
 
+#include "../Logger/logger.h"
+
 using namespace PlaneHelper;
 
 CollisionEngine::CollisionEngine()
@@ -32,11 +34,17 @@ void CollisionEngine::Run()
 
 	size_t i = 0;
 	for (auto object : _objects) {
+		if (!object->_IsObjectInitialized()) {
+			InitializeObject(object);
+		}
+
+		object->SetObjectEffect(glm::vec3(0.0f));
+
 		objects[i] = object;
 		++i;
 	}
 
-	#pragma omp parallel for schedule(dynamic)
+	// TODO: Add thread pool.
 	for (
 		int64_t objIdx1 = 0;
 		objIdx1 < (int64_t)objects.size();
@@ -125,7 +133,7 @@ void CollisionEngine::CalculateCollision(
 
 	for (uint32_t pIdx1 = 0; pIdx1 < collisionPrimitives1.size(); ++pIdx1) {
 		for (
-			uint32_t pIdx2 = pIdx1 + 1;
+			uint32_t pIdx2 = 0;
 			pIdx2 < collisionPrimitives2.size();
 			++pIdx2)
 		{
@@ -182,68 +190,42 @@ glm::vec3 CollisionEngine::CalculateCollision(
 
 	for (uint32_t i = 0; i < 4; ++i) {
 		float pl[4];
-		pl[0] = prim1[i][0] * planes2[0][0] +
-			prim1[i][1] * planes2[0][1] +
-			prim1[i][2] * planes2[0][2] +
-			planes2[0][3];
-
-		pl[1] = prim1[i][0] * planes2[1][0] +
-			prim1[i][1] * planes2[1][1] +
-			prim1[i][2] * planes2[1][2] +
-			planes2[1][3];
-
-		pl[2] = prim1[i][0] * planes2[2][0] +
-			prim1[i][1] * planes2[2][1] +
-			prim1[i][2] * planes2[2][2] +
-			planes2[2][3];
-
-		pl[3] = prim1[i][0] * planes2[3][0] +
-			prim1[i][1] * planes2[3][1] +
-			prim1[i][2] * planes2[3][2] +
-			planes2[3][3];
+		pl[0] = SetPointToPlane(prim1[i], planes2[0]);
+		pl[1] = SetPointToPlane(prim1[i], planes2[1]);
+		pl[2] = SetPointToPlane(prim1[i], planes2[2]);
+		pl[3] = SetPointToPlane(prim1[i], planes2[3]);
 
 		bool sameSign =
-			pl[0] * pl[1] > 0 &&
-			pl[0] * pl[2] > 0 &&
-			pl[0] * pl[3] > 0 &&
-			pl[1] * pl[2] > 0 &&
-			pl[1] * pl[3] > 0 &&
-			pl[2] * pl[3] > 0;
+			pl[0] * pl[1] >= 0 &&
+			pl[0] * pl[2] >= 0 &&
+			pl[0] * pl[3] >= 0 &&
+			pl[1] * pl[2] >= 0 &&
+			pl[1] * pl[3] >= 0 &&
+			pl[2] * pl[3] >= 0;
 
 		if (!sameSign) {
 			continue;
 		}
 
 		float pc[4];
-		pc[0] = center1[0] * planes2[0][0] +
-			center1[1] * planes2[0][1] +
-			center1[2] * planes2[0][2] +
-			planes2[0][3];
-
-		pc[1] = center1[0] * planes2[1][0] +
-			center1[1] * planes2[1][1] +
-			center1[2] * planes2[1][2] +
-			planes2[1][3];
-
-		pc[2] = center1[0] * planes2[2][0] +
-			center1[1] * planes2[2][1] +
-			center1[2] * planes2[2][2] +
-			planes2[2][3];
-
-		pc[3] = center1[0] * planes2[3][0] +
-			center1[1] * planes2[3][1] +
-			center1[2] * planes2[3][2] +
-			planes2[3][3];
+		pc[0] = SetPointToPlane(center1, planes2[0]);
+		pc[1] = SetPointToPlane(center1, planes2[1]);
+		pc[2] = SetPointToPlane(center1, planes2[2]);
+		pc[3] = SetPointToPlane(center1, planes2[3]);
 
 		Plane planeDir(0.0f);
-		uint32_t planeIdx = 0;
+		int32_t planeIdx = -1;
 
 		for (uint32_t plIdx = 0; plIdx < 4; ++plIdx) {
-			if (pc[i] * pl[i] < 0) {
-				planeDir = planes2[i];
-				planeIdx = i;
+			if (pc[plIdx] * pl[plIdx] < 0) {
+				planeDir = planes2[plIdx];
+				planeIdx = plIdx;
 				break;
 			}
+		}
+
+		if (planeIdx == -1) {
+			continue;
 		}
 
 		float dist = PointToPlaneDistance(prim1[i], planeDir);
@@ -255,71 +237,45 @@ glm::vec3 CollisionEngine::CalculateCollision(
 
 	for (uint32_t i = 0; i < 4; ++i) {
 		float pl[4];
-		pl[0] = prim2[i][0] * planes1[0][0] +
-			prim2[i][1] * planes1[0][1] +
-			prim2[i][2] * planes1[0][2] +
-			planes1[0][3];
-
-		pl[1] = prim2[i][0] * planes1[1][0] +
-			prim2[i][1] * planes1[1][1] +
-			prim2[i][2] * planes1[1][2] +
-			planes1[1][3];
-
-		pl[2] = prim2[i][0] * planes1[2][0] +
-			prim2[i][1] * planes1[2][1] +
-			prim2[i][2] * planes1[2][2] +
-			planes1[2][3];
-
-		pl[3] = prim2[i][0] * planes1[3][0] +
-			prim2[i][1] * planes1[3][1] +
-			prim2[i][2] * planes1[3][2] +
-			planes1[3][3];
+		pl[0] = SetPointToPlane(prim2[i], planes1[0]);
+		pl[1] = SetPointToPlane(prim2[i], planes1[1]);
+		pl[2] = SetPointToPlane(prim2[i], planes1[2]);
+		pl[3] = SetPointToPlane(prim2[i], planes1[3]);
 
 		bool sameSign =
-			pl[0] * pl[1] > 0 &&
-			pl[0] * pl[2] > 0 &&
-			pl[0] * pl[3] > 0 &&
-			pl[1] * pl[2] > 0 &&
-			pl[1] * pl[3] > 0 &&
-			pl[2] * pl[3] > 0;
+			pl[0] * pl[1] >= 0 &&
+			pl[0] * pl[2] >= 0 &&
+			pl[0] * pl[3] >= 0 &&
+			pl[1] * pl[2] >= 0 &&
+			pl[1] * pl[3] >= 0 &&
+			pl[2] * pl[3] >= 0;
 
 		if (!sameSign) {
 			continue;
 		}
 
 		float pc[4];
-		pc[0] = center2[0] * planes1[0][0] +
-			center2[1] * planes1[0][1] +
-			center2[2] * planes1[0][2] +
-			planes1[0][3];
-
-		pc[1] = center2[0] * planes1[1][0] +
-			center2[1] * planes1[1][1] +
-			center2[2] * planes1[1][2] +
-			planes1[1][3];
-
-		pc[2] = center2[0] * planes1[2][0] +
-			center2[1] * planes1[2][1] +
-			center2[2] * planes1[2][2] +
-			planes1[2][3];
-
-		pc[3] = center2[0] * planes1[3][0] +
-			center2[1] * planes1[3][1] +
-			center2[2] * planes1[3][2] +
-			planes1[3][3];
+		pc[0] = SetPointToPlane(center2, planes1[0]);
+		pc[1] = SetPointToPlane(center2, planes1[1]);
+		pc[2] = SetPointToPlane(center2, planes1[2]);
+		pc[3] = SetPointToPlane(center2, planes1[3]);
 
 		Plane planeDir(0.0f);
-		uint32_t planeIdx = 0;
+		int32_t planeIdx = -1;
 
 		for (uint32_t plIdx = 0; plIdx < 4; ++plIdx) {
-			if (pc[i] * pl[i] < 0) {
-				planeDir = planes1[i];
-				planeIdx = i;
+			if (pc[plIdx] * pl[plIdx] < 0) {
+				planeDir = planes1[plIdx];
+				planeIdx = plIdx;
 				break;
 			}
 		}
 
-		float dist = PointToPlaneDistance(prim1[i], planeDir);
+		if (planeIdx == -1) {
+			continue;
+		}
+
+		float dist = PointToPlaneDistance(prim2[i], planeDir);
 		glm::vec3 dir(planeDir[0], planeDir[1], planeDir[2]);
 		dir = glm::normalize(dir * pc[planeIdx]);
 

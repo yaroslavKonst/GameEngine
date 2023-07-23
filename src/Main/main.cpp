@@ -12,6 +12,8 @@
 #include "../Assets/camera.h"
 #include "../Assets/ExternModel.h"
 #include "../Assets/MovingLight.h"
+#include "../Assets/tetraedr.h"
+#include "../PhysicalEngine/CollisionEngine.h"
 
 void UniverseThread(Universe* universe)
 {
@@ -21,6 +23,13 @@ void UniverseThread(Universe* universe)
 int main(int argc, char** argv)
 {
 	Logger::SetLevel(Logger::Level::Verbose);
+
+	CollisionEngine collisionEngine;
+
+	Tetraedr tetraedr;
+	collisionEngine.RegisterObject(&tetraedr);
+	Tetraedr tetraedrSt;
+	collisionEngine.RegisterObject(&tetraedrSt);
 
 	ExternModel mesh(
 		"../src/Assets/Resources/Models/field.obj",
@@ -40,7 +49,7 @@ int main(int argc, char** argv)
 	light3.SetLightColor({1.0f, 0.0f, 0.0f});
 	light3.SetLightType(Light::Type::Point);
 
-	MovingLight light4(4, 0.02);
+	MovingLight light4(0.1, 0.02);
 	light4.SetLightColor({0.0f, 1.0f, 0.0f});
 	light4.SetLightType(Light::Type::Spot);
 	light4.SetLightAngle(20);
@@ -66,6 +75,7 @@ int main(int argc, char** argv)
 	window.CreateSkybox(skTexWidth, skTexHeight, skTexData);
 
 	Universe universe(20);
+	universe.RegisterCollisionEngine(&collisionEngine);
 
 	std::thread universeThread(UniverseThread, &universe);
 
@@ -74,8 +84,11 @@ int main(int argc, char** argv)
 	universe.RegisterActor(&light2);
 	universe.RegisterActor(&light3);
 	universe.RegisterActor(&light4);
+	universe.RegisterActor(&tetraedr);
 
 	window.RegisterModel(&mesh);
+	window.RegisterModel(&tetraedr);
+	window.RegisterModel(&tetraedrSt);
 	window.RegisterLight(&light1);
 	window.RegisterLight(&light2);
 	window.RegisterLight(&light3);
@@ -84,6 +97,8 @@ int main(int argc, char** argv)
 	window.MainLoop();
 
 	window.RemoveModel(&mesh);
+	window.RemoveModel(&tetraedr);
+	window.RemoveModel(&tetraedrSt);
 	window.RemoveLight(&light1);
 	window.RemoveLight(&light2);
 	window.RemoveLight(&light3);
@@ -94,9 +109,15 @@ int main(int argc, char** argv)
 	universe.RemoveActor(&light2);
 	universe.RemoveActor(&light3);
 	universe.RemoveActor(&light4);
+	universe.RemoveActor(&tetraedr);
 
 	universe.Stop();
 	universeThread.join();
+
+	universe.RemoveCollisionEngine(&collisionEngine);
+
+	collisionEngine.RemoveObject(&tetraedr);
+	collisionEngine.RemoveObject(&tetraedrSt);
 
 	return 0;
 }

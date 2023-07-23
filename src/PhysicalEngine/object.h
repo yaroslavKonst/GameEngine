@@ -22,6 +22,7 @@ public:
 	Object()
 	{
 		_initialized = false;
+		_effect = glm::vec3(0.0f);
 	}
 
 	virtual ~Object()
@@ -44,7 +45,7 @@ public:
 		return _matrix;
 	}
 
-	virtual void GetObjectMatrix(const glm::mat4& value)
+	virtual void SetObjectMatrix(const glm::mat4& value)
 	{
 		_matrix = value;
 	}
