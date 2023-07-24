@@ -129,7 +129,12 @@ public:
 			sinf(glm::radians(_angleH)),
 			cosf(glm::radians(_angleH)));
 
-		glm::vec2 hspeed = hdir * (float)_go;
+		glm::vec2 hdirStrafe(
+			sinf(glm::radians(_angleH + 90)),
+			cosf(glm::radians(_angleH + 90)));
+
+		glm::vec2 hspeed = hdir * (float)_go +
+			hdirStrafe * (float)_strafe;
 
 		_vspeed -= 0.098 / 2;
 
@@ -278,10 +283,23 @@ public:
 		light.SetLightAngle(15);
 		light.SetLightAngleFade(10);
 
-		Light lightSt;
-		lightSt.SetLightType(Light::Type::Point);
-		lightSt.SetLightColor({0.9, 0.9, 0.9});
-		lightSt.SetLightPosition({0.0, 0.0, 3.0});
+		Light lightSt1;
+		lightSt1.SetLightType(Light::Type::Point);
+		lightSt1.SetLightColor({0.9, 0.9, 0.9});
+		lightSt1.SetLightPosition({0.0, 0.0, 3.0});
+
+		Light lightSt2;
+		lightSt2.SetLightType(Light::Type::Spot);
+		lightSt2.SetLightColor({0.9, 0.0, 0.0});
+		lightSt2.SetLightPosition({20.0, 20.0, 3.0});
+		lightSt2.SetLightDirection({0.0, 0.0, -1.0});
+		lightSt2.SetLightAngle(70);
+		lightSt2.SetLightAngleFade(10);
+
+		Light lightSt3;
+		lightSt3.SetLightType(Light::Type::Point);
+		lightSt3.SetLightColor({4000.0, 4000.0, 4000.0});
+		lightSt3.SetLightPosition({0.0, 0.0, 400.0});
 
 		video.SetFOV(80);
 		video.SetCameraUp({0, 0, 1});
@@ -304,7 +322,9 @@ public:
 		video.RegisterModel(&field);
 
 		video.RegisterLight(&light);
-		video.RegisterLight(&lightSt);
+		video.RegisterLight(&lightSt1);
+		video.RegisterLight(&lightSt2);
+		video.RegisterLight(&lightSt3);
 
 		video.GetInputControl()->Subscribe(&player);
 
@@ -317,7 +337,9 @@ public:
 
 		video.GetInputControl()->UnSubscribe(&player);
 
-		video.RemoveLight(&lightSt);
+		video.RemoveLight(&lightSt1);
+		video.RemoveLight(&lightSt2);
+		video.RemoveLight(&lightSt3);
 
 		video.RemoveModel(&field);
 
