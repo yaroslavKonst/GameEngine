@@ -149,6 +149,7 @@ public:
 		SetObjectMatrix(
 			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
 				glm::radians(_angleH), glm::vec3(0, 0, 1)));
+		SetObjectSpeed(glm::vec3(0.0, 0.0, _vspeed / 200));
 
 		_video->SetCameraPosition(_pos + glm::vec3(0, 0, 1.85));
 		_video->SetCameraDirection(glm::vec3(
@@ -186,7 +187,7 @@ public:
 			{-200, -200, 0.251981},
 			{-200, 200, 0.251981},
 			{200, 200, 0.251981},
-			{100, -100, 0.251981},
+			{200, -200, 0.251981},
 			{0, 0, -300},
 		};
 		// 2 pyramids.

@@ -23,6 +23,7 @@ public:
 	{
 		_initialized = false;
 		_effect = glm::vec3(0.0f);
+		_speed = glm::vec3(0.0f);
 	}
 
 	virtual ~Object()
@@ -95,9 +96,20 @@ public:
 		_effect += value;
 	}
 
+	virtual const glm::vec3& GetObjectSpeed()
+	{
+		return _speed;
+	}
+
+	virtual void SetObjectSpeed(const glm::vec3& value)
+	{
+		_speed = value;
+	}
+
 private:
 	std::vector<CollisionPrimitive> _collisionPrimitives;
 	glm::mat4 _matrix;
+	glm::vec3 _speed;
 	glm::vec3 _center;
 	float _radius;
 	bool _initialized;

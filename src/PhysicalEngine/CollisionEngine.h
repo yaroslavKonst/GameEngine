@@ -33,7 +33,9 @@ private:
 		const Object::CollisionPrimitive& primitive1,
 		const Object::CollisionPrimitive& primitive2,
 		const glm::mat4& matrix1,
-		const glm::mat4& matrix2);
+		const glm::mat4& matrix2,
+		const glm::vec3& speed1,
+		const glm::vec3& speed2);
 };
 
 #endif

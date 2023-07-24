@@ -141,6 +141,9 @@ void CollisionEngine::CalculateCollision(
 	auto& collisionPrimitives1 = object1->GetCollisionPrimitives();
 	auto& collisionPrimitives2 = object2->GetCollisionPrimitives();
 
+	auto& speed1 = object1->GetObjectSpeed();
+	auto& speed2 = object2->GetObjectSpeed();
+
 	glm::vec3 effect(0.0f);
 
 	for (uint32_t pIdx1 = 0; pIdx1 < collisionPrimitives1.size(); ++pIdx1) {
@@ -153,7 +156,9 @@ void CollisionEngine::CalculateCollision(
 				collisionPrimitives1[pIdx1],
 				collisionPrimitives2[pIdx2],
 				matrix1,
-				matrix2);
+				matrix2,
+				speed1,
+				speed2);
 		}
 	}
 
@@ -165,7 +170,9 @@ glm::vec3 CollisionEngine::CalculateCollision(
 	const Object::CollisionPrimitive& primitive1,
 	const Object::CollisionPrimitive& primitive2,
 	const glm::mat4& matrix1,
-	const glm::mat4& matrix2)
+	const glm::mat4& matrix2,
+	const glm::vec3& speed1,
+	const glm::vec3& speed2)
 {
 	glm::vec3 prim1[4];
 	glm::vec3 prim2[4];
@@ -179,6 +186,9 @@ glm::vec3 CollisionEngine::CalculateCollision(
 
 		center1 += prim1[i];
 		center2 += prim2[i];
+
+		prim1[i] += speed1;
+		prim2[i] += speed2;
 	}
 
 	center1 /= 4;
