@@ -4,6 +4,7 @@
 
 Universe::Universe(uint32_t tickDelayMS)
 {
+	_sceneMutex = nullptr;
 	_tickDelayMS = tickDelayMS;
 	_threadPool = new ThreadPool(3);
 
@@ -13,6 +14,7 @@ Universe::Universe(uint32_t tickDelayMS)
 Universe::~Universe()
 {
 	delete _threadPool;
+	_sceneMutex = nullptr;
 	Logger::Verbose() << "Universe destroyed.";
 }
 
@@ -60,12 +62,22 @@ void Universe::MainLoop()
 		_collisionMutex.unlock();
 
 		_actorMutex.lock();
+
+		if (_sceneMutex) {
+			_sceneMutex->lock();
+		}
+
 		for (Actor* actor : _actors) {
 			_threadPool->Enqueue(
 				[actor]() -> void {actor->Tick();});
 		}
 
 		_threadPool->Wait();
+
+		if (_sceneMutex) {
+			_sceneMutex->unlock();
+		}
+
 		_actorMutex.unlock();
 
 		auto stop = std::chrono::high_resolution_clock::now();

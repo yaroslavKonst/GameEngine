@@ -43,39 +43,51 @@ public:
 	{
 		if (key == GLFW_KEY_C) {
 			if (action == GLFW_PRESS) {
+				_mutex.lock();
 				_video->GetInputControl()->
 					ToggleRawMouseInput();
+				_mutex.unlock();
 			}
 		} else if (key == GLFW_KEY_W) {
+			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_go += 1;
 			} else if (action == GLFW_RELEASE) {
 				_go -= 1;
 			}
+			_mutex.unlock();
 		} else if (key == GLFW_KEY_S) {
+			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_go -= 1;
 			} else if (action == GLFW_RELEASE) {
 				_go += 1;
 			}
+			_mutex.unlock();
 		} else if (key == GLFW_KEY_D) {
+			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_strafe += 1;
 			} else if (action == GLFW_RELEASE) {
 				_strafe -= 1;
 			}
+			_mutex.unlock();
 		} else if (key == GLFW_KEY_A) {
+			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_strafe -= 1;
 			} else if (action == GLFW_RELEASE) {
 				_strafe += 1;
 			}
+			_mutex.unlock();
 		} else if (key == GLFW_KEY_SPACE) {
+			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_jump = true;
 			} else if (action == GLFW_RELEASE) {
 				_jump = false;
 			}
+			_mutex.unlock();
 		}
 	}
 
@@ -83,6 +95,7 @@ public:
 		double xoffset,
 		double yoffset)
 	{
+		_mutex.lock();
 		_angleH += xoffset * 0.1;
 		_angleV += yoffset * 0.1;
 
@@ -93,12 +106,14 @@ public:
 		}
 
 		_angleV = std::clamp(_angleV, -85.0f, 85.0f);
+		_mutex.unlock();
 
 		return true;
 	}
 
 	void Tick()
 	{
+		_mutex.lock();
 		glm::vec2 hdir(
 			sinf(glm::radians(_angleH)),
 			cosf(glm::radians(_angleH)));
@@ -144,6 +159,7 @@ public:
 		_light->SetLightDirection(glm::vec3(
 				hdir,
 				sinf(glm::radians(_angleV))));
+		_mutex.unlock();
 	}
 
 private:
@@ -157,6 +173,8 @@ private:
 	int _strafe;
 	bool _jump;
 	Light* _light;
+
+	std::mutex _mutex;
 };
 
 class Field : public Model, public Object
@@ -229,10 +247,15 @@ class Demo
 public:
 	static void Run()
 	{
-		// 5 ms between universe ticks.
+		std::mutex sceneMutex;
+
 		CollisionEngine collisionEngine;
+		// 5 ms between universe ticks.
 		Universe universe(5);
 		Video video(1400, 1000, "Demo", "Application");
+
+		video.SetSceneMutex(&sceneMutex);
+		universe.SetSceneMutex(&sceneMutex);
 
 		universe.RegisterCollisionEngine(&collisionEngine);
 

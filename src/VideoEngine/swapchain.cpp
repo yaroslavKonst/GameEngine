@@ -876,7 +876,23 @@ void Swapchain::DrawFrame()
 	vkResetFences(_device, 1, &_inFlightFences[_currentFrame]);
 	vkResetCommandBuffer(_commandBuffers[_currentFrame], 0);
 
-	RecordCommandBuffer(_commandBuffers[_currentFrame], imageIndex);
+	if (_scene->SceneMutex) {
+		_scene->SceneMutex->lock();
+	}
+
+	try {
+		RecordCommandBuffer(_commandBuffers[_currentFrame], imageIndex);
+	}
+	catch(...)
+	{
+		if (_scene->SceneMutex) {
+			_scene->SceneMutex->unlock();
+		}
+	}
+
+	if (_scene->SceneMutex) {
+		_scene->SceneMutex->unlock();
+	}
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

@@ -78,6 +78,11 @@ public:
 		const std::vector<uint8_t>& texData);
 	void DestroySkybox();
 
+	void SetSceneMutex(std::mutex* mutex)
+	{
+		_scene.SceneMutex = mutex;
+	}
+
 private:
 	Window _window;
 

@@ -13,6 +13,8 @@ Video::Video(
 	std::string applicationName)
 	: _window(width, height, name)
 {
+	_scene.SceneMutex = nullptr;
+
 	VkInstanceHandler::SetApplicationName(applicationName);
 	VkInstanceHandler::IncRef();
 
@@ -42,6 +44,8 @@ Video::~Video()
 	DestroySurface();
 
 	VkInstanceHandler::DecRef();
+
+	_scene.SceneMutex = nullptr;
 }
 
 void Video::CreateSurface()

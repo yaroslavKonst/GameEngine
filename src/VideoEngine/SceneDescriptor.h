@@ -2,6 +2,7 @@
 #define _SCENE_DESCRIPTOR_H
 
 #include <set>
+#include <mutex>
 
 #include "model.h"
 #include "ModelDescriptor.h"
@@ -20,6 +21,8 @@ struct SceneDescriptor
 	glm::vec3 CameraPosition;
 	glm::vec3 CameraDirection;
 	glm::vec3 CameraUp;
+
+	std::mutex* SceneMutex;
 };
 
 #endif

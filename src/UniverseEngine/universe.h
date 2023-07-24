@@ -25,8 +25,15 @@ public:
 	void MainLoop();
 	void Stop();
 
+	void SetSceneMutex(std::mutex* mutex)
+	{
+		_sceneMutex = mutex;
+	}
+
 private:
 	uint32_t _tickDelayMS;
+
+	std::mutex* _sceneMutex;
 
 	std::set<Actor*> _actors;
 	std::mutex _actorMutex;
