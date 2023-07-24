@@ -21,6 +21,7 @@ public:
 		_jump = false;
 		_vspeed = 0;
 		_light = light;
+		_lightActive = true;
 
 		// Pyramid
 		Object::CollisionPrimitive primitive;
@@ -88,6 +89,16 @@ public:
 				_jump = false;
 			}
 			_mutex.unlock();
+		} else if (key == GLFW_KEY_L) {
+			if (action == GLFW_PRESS) {
+				if (_lightActive) {
+					_video->RemoveLight(_light);
+					_lightActive = false;
+				} else {
+					_video->RegisterLight(_light);
+					_lightActive = true;
+				}
+			}
 		}
 	}
 
@@ -174,6 +185,7 @@ private:
 	int _strafe;
 	bool _jump;
 	Light* _light;
+	bool _lightActive;
 
 	std::mutex _mutex;
 };
@@ -306,7 +318,6 @@ public:
 		video.GetInputControl()->UnSubscribe(&player);
 
 		video.RemoveLight(&lightSt);
-		video.RemoveLight(&light);
 
 		video.RemoveModel(&field);
 

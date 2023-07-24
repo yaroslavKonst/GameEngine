@@ -18,7 +18,6 @@ layout(location = 0) out vec4 outColor;
 
 layout(set = 0, binding = 0) uniform sampler2D texSampler;
 
-
 layout(set = 1, binding = 1) uniform Light
 {
 	int LightCount;
@@ -46,7 +45,7 @@ vec3 ProcessPointLight(
 	vec3 diffuse = lightColor * diff;
 
 	float specularStrength = 0.5;
-	float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 32);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32);
 	vec3 specular = specularStrength * spec * lightColor;
 
 	float distance = length(lightPos - fragPos);
@@ -86,7 +85,7 @@ vec3 ProcessSpotLight(
 		vec3 diffuse = lightColor * diff;
 
 		float specularStrength = 0.5;
-		float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 32);
+		float spec = pow(max(dot(normal, halfwayDir), 0.0), 32);
 		vec3 specular = specularStrength * spec * lightColor;
 
 		return (ambient + (diffuse + specular) * intensity) *

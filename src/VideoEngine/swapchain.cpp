@@ -369,7 +369,7 @@ void Swapchain::CreatePipelines()
 	pushConstants[0].offset = 0;
 	pushConstants[0].size = sizeof(MVP);
 	pushConstants[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	pushConstants[1].offset = sizeof(MVP);
+	pushConstants[1].offset = 192;
 	pushConstants[1].size = sizeof(glm::vec3);
 	initInfo.PushConstantRangeCount = 1;
 	initInfo.PushConstants = pushConstants;
@@ -740,7 +740,7 @@ void Swapchain::RecordCommandBuffer(
 			commandBuffer,
 			_pipeline->GetPipelineLayout(),
 			VK_SHADER_STAGE_FRAGMENT_BIT,
-			sizeof(MVP),
+			192,
 			sizeof(glm::vec3),
 			&_scene->CameraPosition);
 
