@@ -250,14 +250,43 @@ public:
 
 		SetDrawEnabled(true);
 	}
-
-private:
 };
 
-class Column : public Model, public Object
+class Brick : public Model
 {
 public:
-private:
+	Brick()
+	{
+		SetModelMatrix(glm::translate(
+			glm::mat4(1.0),
+			glm::vec3(0, 50, 5)));
+		SetModelInnerMatrix(glm::mat4(1.0));
+		SetModelInstances({glm::mat4(1.0)});
+
+		int texWidth;
+		int texHeight;
+		auto texture = Loader::LoadImage(
+			"../src/Assets/Resources/Models/floor.jpg",
+			texWidth,
+			texHeight);
+		auto model = Loader::LoadModel(
+			"../src/Assets/Resources/Models/field.obj");
+
+		for (auto& coord : model.TexCoords) {
+			coord *= 100;
+		}
+
+		SetModelVertices(model.Vertices);
+		SetModelNormals(model.Normals);
+		SetModelTexCoords(model.TexCoords);
+		SetModelIndices(model.Indices);
+
+		SetTexWidth(texWidth);
+		SetTexHeight(texHeight);
+		SetTexData(texture);
+
+		SetDrawEnabled(true);
+	}
 };
 
 class Demo
@@ -313,6 +342,7 @@ public:
 
 		Player player(&video, &light);
 		Field field;
+		Brick brick;
 
 		universe.RegisterActor(&player);
 
@@ -320,6 +350,7 @@ public:
 		collisionEngine.RegisterObject(&field);
 
 		video.RegisterModel(&field);
+		video.RegisterModel(&brick);
 
 		video.RegisterLight(&light);
 		video.RegisterLight(&lightSt1);
@@ -342,6 +373,7 @@ public:
 		video.RemoveLight(&lightSt3);
 
 		video.RemoveModel(&field);
+		video.RemoveModel(&brick);
 
 		collisionEngine.RemoveObject(&field);
 		collisionEngine.RemoveObject(&player);
