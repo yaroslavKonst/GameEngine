@@ -890,10 +890,6 @@ void Swapchain::DrawFrame()
 		}
 	}
 
-	if (_scene->SceneMutex) {
-		_scene->SceneMutex->unlock();
-	}
-
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -924,7 +920,11 @@ void Swapchain::DrawFrame()
 		1,
 		&submitInfo,
 		_inFlightFences[_currentFrame]);
-	
+
+	if (_scene->SceneMutex) {
+		_scene->SceneMutex->unlock();
+	}
+
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error(
 			"Failed to submit draw command buffer.");

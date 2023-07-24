@@ -354,17 +354,46 @@ void Video::Stop()
 
 void Video::RegisterModel(Model* model)
 {
-	_scene.Models[model] = CreateModelDescriptor(model);
+	auto descriptor = CreateModelDescriptor(model);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
+	_scene.Models[model] = descriptor;
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
+
 	model->_SetDrawReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
 	model->_SetDrawReady(false);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
+
 	vkQueueWaitIdle(_graphicsQueue);
 
 	DestroyModelDescriptor(_scene.Models[model]);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
 	_scene.Models.erase(model);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
 }
 
 void Video::RemoveAllModels()
@@ -514,17 +543,46 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
-	_scene.Rectangles[rectangle] = CreateRectangleDescriptor(rectangle);
+	auto descriptor = CreateRectangleDescriptor(rectangle);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
+	_scene.Rectangles[rectangle] = descriptor;
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
+
 	rectangle->_SetDrawReady(true);
 }
 
 void Video::RemoveRectangle(Rectangle* rectangle)
 {
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
 	rectangle->_SetDrawReady(false);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
+
 	vkQueueWaitIdle(_graphicsQueue);
 
 	DestroyRectangleDescriptor(_scene.Rectangles[rectangle]);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
 	_scene.Rectangles.erase(rectangle);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
 }
 
 void Video::RemoveAllRectangles()
@@ -580,6 +638,8 @@ void Video::CreateSkybox(
 	uint32_t texHeight,
 	const std::vector<uint8_t>& texData)
 {
+	DestroySkybox();
+
 	uint32_t mipLevels;
 	uint32_t layerCount = 6;
 
@@ -686,7 +746,16 @@ void Video::DestroySkybox()
 		return;
 	}
 
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
 	_scene.skybox._SetDrawReady(false);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
+
 	vkQueueWaitIdle(_graphicsQueue);
 
 	DestroyDescriptorSets(&_scene.skybox.Descriptor);
@@ -1091,10 +1160,26 @@ void Video::DestroyDescriptorSetLayout()
 
 void Video::RegisterLight(Light* light)
 {
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
 	_scene.Lights.insert(light);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
 }
 
 void Video::RemoveLight(Light* light)
 {
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
 	_scene.Lights.erase(light);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
 }
