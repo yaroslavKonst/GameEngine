@@ -30,24 +30,51 @@ layout(push_constant) uniform ViewPos {
 	layout(offset = 192) vec3 Pos;
 } viewPos;
 
-float CalculateShadow(vec3 fragPos, int lightIndex)
+float CalculateShadow(vec3 fragPos, vec3 viewPos, int lightIndex)
 {
 	float farPlane = 500;
 	vec3 lightPos = light.Lights[lightIndex].Position;
 
 	vec3 fragToLight = fragPos - lightPos;
-	float closestDepth = texture(shadowSampler[lightIndex], fragToLight).r;
-
-	if (closestDepth == 1.0) {
-		return 0.0;
-	}
-
-	closestDepth *= farPlane;
-
 	float currentDepth = length(fragToLight);
 
-	float bias = 0.05;
-	float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	vec3 sampleOffsetDirections[20] = vec3[]
+	(
+		vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1),
+		vec3(-1,  1,  1),
+		vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1),
+		vec3(-1,  1, -1),
+		vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0),
+		vec3(-1,  1,  0),
+		vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1),
+		vec3(-1,  0, -1),
+		vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1),
+		vec3( 0,  1, -1)
+	);
+
+	float shadow = 0.0;
+	float bias   = 0.05;
+	int samples  = 20;
+	float viewDistance = length(viewPos - fragPos);
+	float diskRadius = 0.01;
+
+	for (int i = 0; i < samples; ++i) {
+		float closestDepth = texture(
+			shadowSampler[lightIndex],
+			fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+
+		if (closestDepth == 1.0) {
+			continue;
+		}
+
+		closestDepth *= farPlane;
+
+		if (currentDepth - bias > closestDepth) {
+			shadow += 1.0;
+		}
+	}
+
+	shadow /= float(samples);
 
 	return shadow;
 }
@@ -77,7 +104,7 @@ vec3 ProcessPointLight(
 	float attenuation = 1.0f / (1.0f + 0.09f * distance +
 		0.32f * (distance * distance));
 
-	float shadow = CalculateShadow(fragPos, index);
+	float shadow = CalculateShadow(fragPos, viewPos, index);
 	return (ambient + (diffuse + specular) * (1.0 - shadow)) * attenuation;
 }
 
@@ -115,7 +142,7 @@ vec3 ProcessSpotLight(
 		float spec = pow(max(dot(normal, halfwayDir), 0.0), 32);
 		vec3 specular = specularStrength * spec * lightColor;
 
-		float shadow = CalculateShadow(fragPos, index);
+		float shadow = CalculateShadow(fragPos, viewPos, index);
 		return (ambient + (diffuse + specular) * intensity *
 			(1.0 - shadow)) * attenuation;
 	} else {
