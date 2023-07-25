@@ -172,7 +172,8 @@ public:
 				hdir,
 				sinf(glm::radians(_angleV))));
 
-		_light->SetLightPosition(_pos + glm::vec3(0, 0, 1.85));
+		_light->SetLightPosition(_pos + glm::vec3(0, 0, 1.2) +
+				glm::vec3(hdirStrafe * 0.3f, 0.0f));
 		_light->SetLightDirection(glm::vec3(
 				hdir,
 				sinf(glm::radians(_angleV))));
@@ -255,11 +256,11 @@ public:
 class Brick : public Model
 {
 public:
-	Brick()
+	Brick(glm::vec3 pos)
 	{
 		SetModelMatrix(glm::translate(
 			glm::mat4(1.0),
-			glm::vec3(0, 50, 5)));
+			pos));
 		SetModelInnerMatrix(glm::mat4(1.0));
 		SetModelInstances({glm::mat4(1.0)});
 
@@ -342,7 +343,8 @@ public:
 
 		Player player(&video, &light);
 		Field field;
-		Brick brick;
+		Brick brick1({0, 50, 5});
+		Brick brick2({0, 60, 0.5});
 
 		universe.RegisterActor(&player);
 
@@ -350,7 +352,8 @@ public:
 		collisionEngine.RegisterObject(&field);
 
 		video.RegisterModel(&field);
-		video.RegisterModel(&brick);
+		video.RegisterModel(&brick1);
+		video.RegisterModel(&brick2);
 
 		video.RegisterLight(&light);
 		video.RegisterLight(&lightSt1);
@@ -373,7 +376,8 @@ public:
 		video.RemoveLight(&lightSt3);
 
 		video.RemoveModel(&field);
-		video.RemoveModel(&brick);
+		video.RemoveModel(&brick1);
+		video.RemoveModel(&brick2);
 
 		collisionEngine.RemoveObject(&field);
 		collisionEngine.RemoveObject(&player);
