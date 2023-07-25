@@ -91,6 +91,15 @@ namespace ImageHelper
 		uint8_t* image2,
 		uint32_t width,
 		uint32_t height);
+
+	VkSampler CreateImageSampler(
+		VkDevice device,
+		VkPhysicalDevice physicalDevice,
+		float mipLevels,
+		VkSamplerAddressMode modeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		VkSamplerAddressMode modeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		VkSamplerAddressMode modeW = VK_SAMPLER_ADDRESS_MODE_REPEAT);
+	void DestroyImageSampler(VkDevice device, VkSampler sampler);
 }
 
 #endif

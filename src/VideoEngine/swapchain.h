@@ -30,7 +30,8 @@ public:
 		VkQueue presentQueue,
 		SceneDescriptor* scene,
 		VkDescriptorSetLayout descriptorSetLayout,
-		uint32_t maxLightCount);
+		uint32_t maxLightCount,
+		uint32_t shadowSize);
 
 	~Swapchain();
 
@@ -78,6 +79,7 @@ private:
 	std::vector<VkDescriptorSet> _lightDescriptorSets;
 	std::vector<void*> _lightBufferMappings;
 	uint32_t _maxLightCount;
+	uint32_t _shadowSize;
 	void CreateLightBuffers();
 	void DestroyLightBuffers();
 
@@ -85,6 +87,11 @@ private:
 	VkImageView _colorImageView;
 	ImageHelper::Image _depthImage;
 	VkImageView _depthImageView;
+	std::vector<ImageHelper::Image> _shadowMapImages;
+	std::vector<VkImageView> _shadowMapCubeImageViews;
+	std::vector<VkImageView> _shadowMap2DImageViews;
+	std::vector<VkSampler> _shadowMapSamplers;
+	VkFormat _shadowFormat;
 	void CreateRenderingImages();
 	void DestroyRenderingImages();
 
@@ -95,6 +102,7 @@ private:
 	Pipeline* _pipeline;
 	Pipeline* _rectanglePipeline;
 	Pipeline* _skyboxPipeline;
+	Pipeline* _shadowPipeline;
 	void CreatePipelines();
 	void DestroyPipelines();
 

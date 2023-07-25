@@ -2,8 +2,10 @@
 
 #include "../Logger/logger.h"
 
-// 16 MB for page.
-#define PAGE_SIZE 1048576 * 64
+// 128 MB for page.
+// 1 MB for domain page.
+#define PAGE_SIZE 1048576 * 64 * 2
+#define DOMAIN_PAGE_SIZE 1048576
 
 MemorySystem::MemorySystem(VkDevice device)
 {
@@ -17,6 +19,8 @@ MemorySystem::~MemorySystem()
 	}
 
 	for (auto& managers : _domains) {
+		Logger::Verbose() << "Destroying domain " << managers.first;
+
 		for (auto& manager : managers.second) {
 			delete manager.second;
 		}
@@ -30,12 +34,15 @@ MemorySystem::Allocation MemorySystem::Allocate(
 {
 	Domain* managers = &_managers;
 
+	uint32_t pageSize = PAGE_SIZE;
+
 	if (domain > 0) {
 		if (_domains.find(domain) == _domains.end()) {
 			_domains[domain] = Domain();
 		}
 
 		managers = &_domains[domain];
+		pageSize = DOMAIN_PAGE_SIZE;
 	}
 
 	if (managers->find(properties) == managers->end()) {
@@ -44,7 +51,7 @@ MemorySystem::Allocation MemorySystem::Allocate(
 
 		(*managers)[properties] = new MemoryManager(
 			_device,
-			PAGE_SIZE,
+			pageSize,
 			properties.MemoryTypeIndex,
 			properties.Alignment);
 	}

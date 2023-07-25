@@ -11,7 +11,10 @@ shaders: \
 	spir-v/RectangleShader_vert.spv \
 	spir-v/RectangleShader_frag.spv \
 	spir-v/SkyboxShader_vert.spv \
-	spir-v/SkyboxShader_frag.spv
+	spir-v/SkyboxShader_frag.spv \
+	spir-v/ShadowShader_vert.spv \
+	spir-v/ShadowShader_geom.spv \
+	spir-v/ShadowShader_frag.spv
 
 outdir:
 	mkdir -p spir-v
@@ -27,4 +30,9 @@ spir-v/%_vert.spv: %.vert
 spir-v/%_frag.spv: %.frag
 	$(SC) $(SC_OPTS) $< -o $@_raw
 	../../../build/converter $*Frag $@_raw $@
+	rm $@_raw
+
+spir-v/%_geom.spv: %.geom
+	$(SC) $(SC_OPTS) $< -o $@_raw
+	../../../build/converter $*Geom $@_raw $@
 	rm $@_raw

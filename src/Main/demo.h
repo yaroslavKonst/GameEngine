@@ -327,8 +327,8 @@ public:
 
 		Light lightSt3;
 		lightSt3.SetLightType(Light::Type::Point);
-		lightSt3.SetLightColor({4000.0, 4000.0, 4000.0});
-		lightSt3.SetLightPosition({0.0, 0.0, 400.0});
+		lightSt3.SetLightColor({2000.0, 2000.0, 2000.0});
+		lightSt3.SetLightPosition({0.0, 0.0, 200.0});
 
 		video.SetFOV(80);
 		video.SetCameraUp({0, 0, 1});

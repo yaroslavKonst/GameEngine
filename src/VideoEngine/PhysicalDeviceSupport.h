@@ -37,6 +37,11 @@ public:
 		VkImageTiling tiling,
 		VkFormatFeatureFlags features);
 
+	VkPhysicalDevice GetPhysicalDevice()
+	{
+		return _device;
+	}
+
 private:
 	VkPhysicalDevice _device;
 	VkSurfaceKHR _surface;

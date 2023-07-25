@@ -22,6 +22,8 @@ public:
 		size_t VertexShaderSize;
 		const uint8_t* FragmentShaderCode;
 		size_t FragmentShaderSize;
+		const uint8_t* GeometryShaderCode;
+		size_t GeometryShaderSize;
 		std::vector<VkVertexInputBindingDescription>
 			VertexBindingDescriptions;
 		std::vector<VkVertexInputAttributeDescription>
@@ -29,8 +31,12 @@ public:
 		VkBool32 DepthTestEnabled;
 		uint32_t PushConstantRangeCount;
 		VkPushConstantRange* PushConstants;
+		bool ColorImage;
+		bool DepthImage;
+		VkImageLayout DepthImageFinalLayout;
 		bool ResolveImage;
-		bool ClearInputBuffer;
+		bool ClearColorImage;
+		bool InvertFace;
 	};
 
 	Pipeline(InitInfo* initInfo);
@@ -40,7 +46,8 @@ public:
 	void CreateFramebuffers(
 		const std::vector<VkImageView>& imageViews,
 		VkImageView colorImageView,
-		VkImageView depthImageView);
+		const std::vector<VkImageView>& depthImageViews,
+		uint32_t layerCount = 1);
 	void DestroyFramebuffers();
 
 	void RecordCommandBuffer(
@@ -59,14 +66,16 @@ private:
 	VkFormat _depthAttachmentFormat;
 	VkSampleCountFlagBits _msaaSamples;
 	bool _resolve;
-	bool _clearInputBuffer;
+	bool _color;
+	bool _depth;
+	bool _clearColorImage;
 
 	VkShaderModule CreateShaderModule(const uint8_t* data, size_t size);
 	void DestroyShaderModule(VkShaderModule shaderModule);
 
 	VkPipelineLayout _pipelineLayout;
 	VkRenderPass _renderPass;
-	void CreateRenderPass();
+	void CreateRenderPass(InitInfo* initInfo);
 	void DestroyRenderPass();
 
 	VkPipeline _pipeline;

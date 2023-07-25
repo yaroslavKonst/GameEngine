@@ -128,8 +128,6 @@ private:
 		uint32_t& mipLevels,
 		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
 		uint32_t layerCount = 1);
-	VkSampler CreateTextureSampler(float mipLevels);
-	void DestroyTextureSampler(VkSampler sampler);
 	void CreateDescriptorSets(ModelDescriptor* descriptor);
 	void DestroyDescriptorSets(ModelDescriptor* descriptor);
 	void GenerateMipmaps(

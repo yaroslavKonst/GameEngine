@@ -82,7 +82,6 @@ namespace ImageHelper
 		memorySystem->Free(image.Allocation);
 	}
 
-
 	VkImageView CreateImageView(
 		VkDevice device,
 		VkImage image,
@@ -359,5 +358,60 @@ namespace ImageHelper
 		memcpy(buffer.data(), image1, buffer.size());
 		memcpy(image1, image2, buffer.size());
 		memcpy(image2, buffer.data(), buffer.size());
+	}
+
+	VkSampler CreateImageSampler(
+		VkDevice device,
+		VkPhysicalDevice physicalDevice,
+		float mipLevels,
+		VkSamplerAddressMode modeU,
+		VkSamplerAddressMode modeV,
+		VkSamplerAddressMode modeW)
+	{
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter = VK_FILTER_LINEAR;
+		samplerInfo.minFilter = VK_FILTER_LINEAR;
+
+		samplerInfo.addressModeU = modeU;
+		samplerInfo.addressModeV = modeV;
+		samplerInfo.addressModeW = modeW;
+
+		VkPhysicalDeviceProperties properties{};
+		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+		samplerInfo.anisotropyEnable = VK_TRUE;
+		samplerInfo.maxAnisotropy =
+			properties.limits.maxSamplerAnisotropy;
+
+		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+
+		samplerInfo.compareEnable = VK_FALSE;
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.mipLodBias = 0.0f;
+		samplerInfo.minLod = 0.0f;
+		samplerInfo.maxLod = mipLevels;
+
+		VkSampler sampler;
+
+		VkResult res = vkCreateSampler(
+			device,
+			&samplerInfo,
+			nullptr,
+			&sampler);
+
+		if (res != VK_SUCCESS) {
+			throw std::runtime_error(
+				"Failed to create image sampler.");
+		}
+
+		return sampler;
+	}
+
+	void DestroyImageSampler(VkDevice device, VkSampler sampler)
+	{
+		vkDestroySampler(device, sampler, nullptr);
 	}
 }

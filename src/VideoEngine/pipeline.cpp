@@ -10,7 +10,11 @@ Pipeline::Pipeline(InitInfo* initInfo)
 	_depthAttachmentFormat = initInfo->DepthAttachmentFormat;
 	_msaaSamples = initInfo->MsaaSamples;
 	_resolve = initInfo->ResolveImage;
-	_clearInputBuffer = initInfo->ClearInputBuffer;
+	_color = initInfo->ColorImage;
+	_depth = initInfo->DepthImage;
+	_clearColorImage = initInfo->ClearColorImage;
+
+	bool geometry = initInfo->GeometryShaderSize > 0;
 
 	VkShaderModule vertShaderModule = CreateShaderModule(
 		initInfo->VertexShaderCode,
@@ -34,10 +38,26 @@ Pipeline::Pipeline(InitInfo* initInfo)
 	fragShaderStageInfo.module = fragShaderModule;
 	fragShaderStageInfo.pName = "main";
 
-	VkPipelineShaderStageCreateInfo shaderStages[] = {
-		vertShaderStageInfo,
-		fragShaderStageInfo
-	};
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	shaderStages.push_back(vertShaderStageInfo);
+	shaderStages.push_back(fragShaderStageInfo);
+
+	VkShaderModule geomShaderModule;
+
+	if (geometry) {
+		geomShaderModule = CreateShaderModule(
+			initInfo->GeometryShaderCode,
+			initInfo->GeometryShaderSize);
+
+		VkPipelineShaderStageCreateInfo geometryStageInfo{};
+		geometryStageInfo.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		geometryStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+		geometryStageInfo.module = geomShaderModule;
+		geometryStageInfo.pName = "main";
+
+		shaderStages.push_back(geometryStageInfo);
+	}
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType =
@@ -100,6 +120,11 @@ Pipeline::Pipeline(InitInfo* initInfo)
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+	if (initInfo->InvertFace) {
+		rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+	}
+
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f; // Optional
 	rasterizer.depthBiasClamp = 0.0f; // Optional
@@ -180,12 +205,12 @@ Pipeline::Pipeline(InitInfo* initInfo)
 		throw std::runtime_error("Failed to create pipeline layout.");
 	}
 
-	CreateRenderPass();
+	CreateRenderPass(initInfo);
 
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2;
-	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+	pipelineInfo.pStages = shaderStages.data();
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
@@ -213,6 +238,10 @@ Pipeline::Pipeline(InitInfo* initInfo)
 
 	DestroyShaderModule(vertShaderModule);
 	DestroyShaderModule(fragShaderModule);
+
+	if (geometry) {
+		DestroyShaderModule(geomShaderModule);
+	}
 
 	Logger::Verbose() << "Created pipeline.";
 }
@@ -255,7 +284,7 @@ void Pipeline::DestroyShaderModule(VkShaderModule shaderModule)
 	Logger::Verbose() << "Destroyed shader module.";
 }
 
-void Pipeline::CreateRenderPass()
+void Pipeline::CreateRenderPass(InitInfo* initInfo)
 {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = _colorAttachmentFormat;
@@ -265,7 +294,7 @@ void Pipeline::CreateRenderPass()
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	if (_clearInputBuffer) {
+	if (_clearColorImage) {
 		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	} else {
@@ -274,23 +303,32 @@ void Pipeline::CreateRenderPass()
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
+	uint32_t attachmentIndex = 0;
+
 	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
+	if (_color) {
+		colorAttachmentRef.attachment = attachmentIndex;
+		++attachmentIndex;
+	}
+
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = _depthAttachmentFormat;
 	depthAttachment.samples = _msaaSamples;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout =
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthAttachment.finalLayout = initInfo->DepthImageFinalLayout;
 
 	VkAttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
+	if (_depth) {
+		depthAttachmentRef.attachment = attachmentIndex;
+		++attachmentIndex;
+	}
+
 	depthAttachmentRef.layout =
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
@@ -306,15 +344,21 @@ void Pipeline::CreateRenderPass()
 	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	VkAttachmentReference colorAttachmentResolveRef{};
-	colorAttachmentResolveRef.attachment = 2;
+	colorAttachmentResolveRef.attachment = attachmentIndex;
 	colorAttachmentResolveRef.layout =
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+	subpass.colorAttachmentCount = _color ? 1 : 0;
+
+	if (_color) {
+		subpass.pColorAttachments = &colorAttachmentRef;
+	}
+
+	if (_depth) {
+		subpass.pDepthStencilAttachment = &depthAttachmentRef;
+	}
 
 	if (_resolve) {
 		subpass.pResolveAttachments = &colorAttachmentResolveRef;
@@ -336,17 +380,16 @@ void Pipeline::CreateRenderPass()
 
 	std::vector<VkAttachmentDescription> attachments;
 
+	if (_color) {
+		attachments.push_back(colorAttachment);
+	}
+
+	if (_depth) {
+		attachments.push_back(depthAttachment);
+	}
+
 	if (_resolve) {
-		attachments = {
-			colorAttachment,
-			depthAttachment,
-			colorAttachmentResolve
-		};
-	} else {
-		attachments = {
-			colorAttachment,
-			depthAttachment
-		};
+		attachments.push_back(colorAttachmentResolve);
 	}
 
 	VkRenderPassCreateInfo renderPassInfo{};
@@ -364,6 +407,7 @@ void Pipeline::CreateRenderPass()
 		&renderPassInfo,
 		nullptr,
 		&_renderPass);
+
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create render pass.");
 	}
@@ -377,46 +421,49 @@ void Pipeline::DestroyRenderPass()
 void Pipeline::CreateFramebuffers(
 	const std::vector<VkImageView>& imageViews,
 	VkImageView colorImageView,
-	VkImageView depthImageView)
+	const std::vector<VkImageView>& depthImageViews,
+	uint32_t layerCount)
 {
-	_framebuffers.resize(imageViews.size());
+	_framebuffers.resize(imageViews.size() * depthImageViews.size());
 
 	for (size_t i = 0; i < imageViews.size(); ++i) {
-		std::vector<VkImageView> attachments;
+		for (size_t d = 0; d < depthImageViews.size(); ++d) {
+			std::vector<VkImageView> attachments;
 
-		if (_resolve) {
-			attachments = {
-				colorImageView,
-				depthImageView,
-				imageViews[i]
-			};
-		} else {
-			attachments = {
-				colorImageView,
-				depthImageView,
-			};
-		}
+			if (_color) {
+				attachments.push_back(colorImageView);
+			}
 
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType =
-			VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = _renderPass;
-		framebufferInfo.attachmentCount =
-			static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = _extent.width;
-		framebufferInfo.height = _extent.height;
-		framebufferInfo.layers = 1;
+			if (_depth) {
+				attachments.push_back(depthImageViews[d]);
+			}
 
-		VkResult res = vkCreateFramebuffer(
-			_device,
-			&framebufferInfo,
-			nullptr,
-			&_framebuffers[i]);
-		
-		if (res != VK_SUCCESS) {
-			throw std::runtime_error(
-				"Failed to create framebuffer.");
+			if (_resolve) {
+				attachments.push_back(imageViews[i]);
+			}
+
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType =
+				VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = _renderPass;
+			framebufferInfo.attachmentCount =
+				static_cast<uint32_t>(attachments.size());
+			framebufferInfo.pAttachments = attachments.data();
+			framebufferInfo.width = _extent.width;
+			framebufferInfo.height = _extent.height;
+			framebufferInfo.layers = layerCount;
+
+			VkResult res = vkCreateFramebuffer(
+				_device,
+				&framebufferInfo,
+				nullptr,
+				&_framebuffers[
+					i * depthImageViews.size() + d]);
+
+			if (res != VK_SUCCESS) {
+				throw std::runtime_error(
+					"Failed to create framebuffer.");
+			}
 		}
 	}
 }
@@ -439,9 +486,19 @@ void Pipeline::RecordCommandBuffer(
 	renderPassInfo.renderArea.offset = {0, 0};
 	renderPassInfo.renderArea.extent = _extent;
 
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-	clearValues[1].depthStencil = {1.0f, 0};
+	std::vector<VkClearValue> clearValues;
+
+	if (_color) {
+		VkClearValue clearValue{};
+		clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+		clearValues.push_back(clearValue);
+	}
+
+	if (_depth) {
+		VkClearValue clearValue{};
+		clearValue.depthStencil = {1.0f, 0};
+		clearValues.push_back(clearValue);
+	}
 
 	renderPassInfo.clearValueCount =
 		static_cast<uint32_t>(clearValues.size());

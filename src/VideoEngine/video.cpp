@@ -331,7 +331,8 @@ void Video::CreateSwapchain()
 		_presentQueue,
 		&_scene,
 		_descriptorSetLayout,
-		10);
+		10,
+		256);
 
 	_swapchain->Create();
 }
@@ -503,7 +504,10 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		mipLevels);
-	descriptor.TextureSampler = CreateTextureSampler(mipLevels);
+	descriptor.TextureSampler = ImageHelper::CreateImageSampler(
+		_device,
+		_physicalDevice,
+		mipLevels);
 
 	CreateDescriptorSets(&descriptor);
 
@@ -529,7 +533,7 @@ void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
 		descriptor.InstanceBuffer,
 		_memorySystem);
 
-	DestroyTextureSampler(descriptor.TextureSampler);
+	ImageHelper::DestroyImageSampler(_device, descriptor.TextureSampler);
 
 	ImageHelper::DestroyImageView(
 		_device,
@@ -610,7 +614,10 @@ ModelDescriptor Video::CreateRectangleDescriptor(Rectangle* rectangle)
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		mipLevels);
-	descriptor.TextureSampler = CreateTextureSampler(mipLevels);
+	descriptor.TextureSampler = ImageHelper::CreateImageSampler(
+		_device,
+		_physicalDevice,
+		mipLevels);
 
 	CreateDescriptorSets(&descriptor);
 
@@ -621,7 +628,7 @@ void Video::DestroyRectangleDescriptor(ModelDescriptor descriptor)
 {
 	DestroyDescriptorSets(&descriptor);
 
-	DestroyTextureSampler(descriptor.TextureSampler);
+	ImageHelper::DestroyImageSampler(_device, descriptor.TextureSampler);
 
 	ImageHelper::DestroyImageView(
 		_device,
@@ -732,7 +739,10 @@ void Video::CreateSkybox(
 			VK_IMAGE_VIEW_TYPE_CUBE,
 			layerCount);
 	_scene.skybox.Descriptor.TextureSampler =
-		CreateTextureSampler(mipLevels);
+		ImageHelper::CreateImageSampler(
+			_device,
+			_physicalDevice,
+			mipLevels);
 	CreateDescriptorSets(&_scene.skybox.Descriptor);
 
 	_scene.skybox._SetDrawReady(true);
@@ -760,7 +770,9 @@ void Video::DestroySkybox()
 
 	DestroyDescriptorSets(&_scene.skybox.Descriptor);
 
-	DestroyTextureSampler(_scene.skybox.Descriptor.TextureSampler);
+	ImageHelper::DestroyImageSampler(
+		_device,
+		_scene.skybox.Descriptor.TextureSampler);
 
 	ImageHelper::DestroyImageView(
 		_device,
@@ -1007,53 +1019,6 @@ void Video::GenerateMipmaps(
 		&barrier);
 
 	_transferCommandPool->EndOneTimeBuffer(commandBuffer, _graphicsQueue);
-}
-
-VkSampler Video::CreateTextureSampler(float mipLevels)
-{
-	VkSamplerCreateInfo samplerInfo{};
-	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
-
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-	VkPhysicalDeviceProperties properties{};
-	vkGetPhysicalDeviceProperties(_physicalDevice, &properties);
-
-	samplerInfo.anisotropyEnable = VK_TRUE;
-	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-
-	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerInfo.mipLodBias = 0.0f;
-	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = mipLevels;
-
-	VkSampler sampler;
-
-	VkResult res = vkCreateSampler(
-		_device,
-		&samplerInfo,
-		nullptr,
-		&sampler);
-
-	if (res != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create texture sampler.");
-	}
-
-	return sampler;
-}
-
-void Video::DestroyTextureSampler(VkSampler sampler)
-{
-	vkDestroySampler(_device, sampler, nullptr);
 }
 
 void Video::CreateDescriptorSets(ModelDescriptor* descriptor)
