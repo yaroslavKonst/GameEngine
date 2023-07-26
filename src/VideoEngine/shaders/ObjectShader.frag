@@ -28,6 +28,7 @@ layout(set = 1, binding = 1) uniform samplerCube shadowSampler[100];
 
 layout(push_constant) uniform ViewPos {
 	layout(offset = 192) vec3 Pos;
+	layout(offset = 204) int isLight;
 } viewPos;
 
 float CalculateShadow(vec3 fragPos, vec3 viewPos, int lightIndex)
@@ -151,7 +152,14 @@ vec3 ProcessSpotLight(
 }
 
 void main() {
-	vec3 objectColor = (texture(texSampler, texCoord)).rgb;
+	vec4 objectColorAlpha = texture(texSampler, texCoord);
+	vec3 objectColor = objectColorAlpha.rgb;
+
+	if (viewPos.isLight != 0) {
+		outColor = objectColorAlpha;
+		return;
+	}
+
 	vec3 normal = normalize(inNormal);
 
 	vec3 sumLight = vec3(0.0f);
@@ -182,5 +190,5 @@ void main() {
 	}
 
 	vec3 result = sumLight * objectColor;
-	outColor = vec4(result, 1.0f);
+	outColor = vec4(result, objectColorAlpha.a);
 }

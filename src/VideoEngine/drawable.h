@@ -22,9 +22,20 @@ public:
 		_ready = ready;
 	}
 
+	virtual bool DrawLight()
+	{
+		return _isLight;
+	}
+
+	virtual void SetDrawLight(bool value)
+	{
+		_isLight = value;
+	}
+
 private:
 	bool _active;
 	bool _ready;
+	bool _isLight;
 };
 
 #endif
