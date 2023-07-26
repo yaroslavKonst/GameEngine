@@ -33,6 +33,7 @@ public:
 		VkPushConstantRange* PushConstants;
 		bool ColorImage;
 		bool DepthImage;
+		VkImageLayout ColorImageFinalLayout;
 		VkImageLayout DepthImageFinalLayout;
 		bool ResolveImage;
 		bool ClearColorImage;
@@ -44,8 +45,8 @@ public:
 	~Pipeline();
 
 	void CreateFramebuffers(
-		const std::vector<VkImageView>& imageViews,
-		VkImageView colorImageView,
+		const std::vector<VkImageView>& resolveImageViews,
+		const std::vector<VkImageView>& colorImageViews,
 		const std::vector<VkImageView>& depthImageViews,
 		uint32_t layerCount = 1);
 	void DestroyFramebuffers();

@@ -14,7 +14,9 @@ shaders: \
 	spir-v/SkyboxShader_frag.spv \
 	spir-v/ShadowShader_vert.spv \
 	spir-v/ShadowShader_geom.spv \
-	spir-v/ShadowShader_frag.spv
+	spir-v/ShadowShader_frag.spv \
+	spir-v/PostprocessingShader_vert.spv \
+	spir-v/PostprocessingShader_frag.spv \
 
 outdir:
 	mkdir -p spir-v

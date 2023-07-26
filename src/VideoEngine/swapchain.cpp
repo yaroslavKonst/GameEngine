@@ -18,6 +18,9 @@
 #include "shaders/spir-v/ShadowShader_geom.spv"
 #include "shaders/spir-v/ShadowShader_frag.spv"
 
+#include "shaders/spir-v/PostprocessingShader_vert.spv"
+#include "shaders/spir-v/PostprocessingShader_frag.spv"
+
 Swapchain::Swapchain(
 	VkDevice device,
 	VkSurfaceKHR surface,
@@ -44,6 +47,8 @@ Swapchain::Swapchain(
 	_descriptorSetLayout = descriptorSetLayout;
 	_maxLightCount = maxLightCount;
 	_shadowSize = shadowSize;
+
+	_hdrImageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 
 	Logger::Verbose() << "Swapchain constructor called.";
 
@@ -207,6 +212,7 @@ void Swapchain::Create()
 	_imageFormat = surfaceFormat.format;
 
 	CreateRenderingImages();
+	CreateHDRResources();
 	CreateImageViews();
 	CreateLightBuffers();
 	CreatePipelines();
@@ -235,6 +241,7 @@ void Swapchain::Destroy()
 	DestroyPipelines();
 	DestroyLightBuffers();
 	DestroyImageViews();
+	DestroyHDRResources();
 	DestroyRenderingImages();
 
 	delete _transferCommandPool;
@@ -254,7 +261,7 @@ void Swapchain::CreateRenderingImages()
                 _extent.height,
                 1,
                 _msaaSamples,
-                _imageFormat,
+                _hdrImageFormat,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -265,7 +272,7 @@ void Swapchain::CreateRenderingImages()
 	_colorImageView = ImageHelper::CreateImageView(
 		_device,
 		_colorImage.Image,
-		_imageFormat,
+		_hdrImageFormat,
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		1);
 
@@ -376,6 +383,7 @@ void Swapchain::CreateRenderingImages()
 void Swapchain::DestroyRenderingImages()
 {
 	ImageHelper::DestroyImageView(_device, _depthImageView);
+	ImageHelper::DestroyImageView(_device, _colorImageView);
 
 	ImageHelper::DestroyImage(
 		_device,
@@ -405,6 +413,157 @@ void Swapchain::DestroyRenderingImages()
 			_shadowMapImages[i],
 			_memorySystem);
 	}
+}
+
+void Swapchain::CreateHDRResources()
+{
+	_hdrImage = ImageHelper::CreateImage(
+		_device,
+		_extent.width,
+                _extent.height,
+                1,
+                VK_SAMPLE_COUNT_1_BIT,
+                _hdrImageFormat,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+		VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                _memorySystem,
+                _deviceSupport);
+
+	_hdrImageView = ImageHelper::CreateImageView(
+		_device,
+		_hdrImage.Image,
+		_hdrImageFormat,
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		1);
+
+	_hdrImageSampler = ImageHelper::CreateImageSampler(
+		_device,
+		_deviceSupport->GetPhysicalDevice(),
+		1,
+		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+
+	VkDescriptorSetLayoutBinding hdrSamplerLayoutBinding{};
+	hdrSamplerLayoutBinding.binding = 0;
+	hdrSamplerLayoutBinding.descriptorCount = 1;
+	hdrSamplerLayoutBinding.descriptorType =
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	hdrSamplerLayoutBinding.pImmutableSamplers = nullptr;
+	hdrSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::vector<VkDescriptorSetLayoutBinding> bindings = {
+		hdrSamplerLayoutBinding,
+	};
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	layoutInfo.pBindings = bindings.data();
+
+	VkResult res = vkCreateDescriptorSetLayout(
+		_device,
+		&layoutInfo,
+		nullptr,
+		&_hdrDescriptorSetLayout);
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error(
+			"Failed to create HDR descriptor set layout.");
+	}
+
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSize.descriptorCount = 1;
+
+	std::vector<VkDescriptorPoolSize> poolSizes = {
+		poolSize
+	};
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = poolSizes.size();
+	poolInfo.pPoolSizes = poolSizes.data();
+	poolInfo.maxSets = 1;
+
+	res = vkCreateDescriptorPool(
+		_device,
+		&poolInfo,
+		nullptr,
+		&_hdrDescriptorPool);
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error(
+			"Failed to create HDR descriptor pool.");
+	}
+
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = _hdrDescriptorPool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &_hdrDescriptorSetLayout;
+
+	res = vkAllocateDescriptorSets(
+		_device,
+		&allocInfo,
+		&_hdrDescriptorSet);
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error(
+			"Failed to allocate HDR descriptor set.");
+	}
+
+	std::vector<VkWriteDescriptorSet> descriptorWrites;
+
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout =
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = _hdrImageView;
+	imageInfo.sampler = _hdrImageSampler;
+
+	VkWriteDescriptorSet descriptorSamplerWrite{};
+	descriptorSamplerWrite.sType =
+		VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorSamplerWrite.dstSet = _hdrDescriptorSet;
+	descriptorSamplerWrite.dstBinding = 0;
+	descriptorSamplerWrite.dstArrayElement = 0;
+
+	descriptorSamplerWrite.descriptorType =
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorSamplerWrite.descriptorCount = 1;
+	descriptorSamplerWrite.pImageInfo = &imageInfo;
+
+	descriptorWrites.push_back(descriptorSamplerWrite);
+
+	vkUpdateDescriptorSets(
+		_device,
+		descriptorWrites.size(),
+		descriptorWrites.data(),
+		0,
+		nullptr);
+}
+
+void Swapchain::DestroyHDRResources()
+{
+	vkDestroyDescriptorPool(_device, _hdrDescriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(
+		_device,
+		_hdrDescriptorSetLayout,
+		nullptr);
+
+	ImageHelper::DestroyImageView(_device, _hdrImageView);
+
+	ImageHelper::DestroyImageSampler(
+		_device,
+		_hdrImageSampler);
+
+	ImageHelper::DestroyImage(
+		_device,
+		_hdrImage,
+		_memorySystem);
 }
 
 void Swapchain::CreateImageViews()
@@ -437,7 +596,7 @@ void Swapchain::CreatePipelines()
 	// Object pipeline
 	initInfo.Device = _device;
 	initInfo.Extent = _extent;
-	initInfo.ColorAttachmentFormat = _imageFormat;
+	initInfo.ColorAttachmentFormat = _hdrImageFormat;
 	initInfo.DepthAttachmentFormat = _depthImage.Format;
 	initInfo.DescriptorSetLayouts = {
 		_descriptorSetLayout,
@@ -460,6 +619,8 @@ void Swapchain::CreatePipelines()
 	initInfo.InvertFace = false;
 	initInfo.DepthImageFinalLayout =
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	initInfo.ColorImageFinalLayout =
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkPushConstantRange pushConstants[2];
 	pushConstants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -473,8 +634,8 @@ void Swapchain::CreatePipelines()
 
 	_pipeline = new Pipeline(&initInfo);
 	_pipeline->CreateFramebuffers(
-		_imageViews,
-		_colorImageView,
+		{_imageViews[0]},
+		{_colorImageView},
 		{_depthImageView});
 
 	// Rectangle pipeline
@@ -493,8 +654,8 @@ void Swapchain::CreatePipelines()
 
 	_rectanglePipeline = new Pipeline(&initInfo);
 	_rectanglePipeline->CreateFramebuffers(
-		_imageViews,
-		_colorImageView,
+		{_hdrImageView},
+		{_colorImageView},
 		{_depthImageView});
 
 	// Skybox pipeline
@@ -513,8 +674,8 @@ void Swapchain::CreatePipelines()
 
 	_skyboxPipeline = new Pipeline(&initInfo);
 	_skyboxPipeline->CreateFramebuffers(
-		_imageViews,
-		_colorImageView,
+		{_imageViews[0]},
+		{_colorImageView},
 		{_depthImageView});
 
 	// Shadow pipeline
@@ -558,13 +719,58 @@ void Swapchain::CreatePipelines()
 	_shadowPipeline = new Pipeline(&initInfo);
 	_shadowPipeline->CreateFramebuffers(
 		{_imageViews[0]},
-		_colorImageView,
+		{_colorImageView},
 		_shadowMap2DImageViews,
 		6);
+
+	// Postprocessing pipeline.
+	initInfo.Device = _device;
+	initInfo.Extent = _extent;
+	initInfo.ColorAttachmentFormat = _imageFormat;
+	initInfo.DepthAttachmentFormat = _depthImage.Format;
+	initInfo.DescriptorSetLayouts = {
+		_hdrDescriptorSetLayout
+	};
+	initInfo.MsaaSamples = VK_SAMPLE_COUNT_1_BIT;
+	initInfo.VertexShaderCode = PostprocessingShaderVert;
+	initInfo.VertexShaderSize = sizeof(PostprocessingShaderVert);
+	initInfo.FragmentShaderCode = PostprocessingShaderFrag;
+	initInfo.FragmentShaderSize = sizeof(PostprocessingShaderFrag);
+	initInfo.GeometryShaderSize = 0;
+	initInfo.VertexBindingDescriptions.clear();
+	initInfo.VertexAttributeDescriptions.clear();
+	initInfo.DepthTestEnabled = VK_FALSE;
+	initInfo.ResolveImage = false;
+	initInfo.ClearColorImage = true;
+	initInfo.ColorImage = true;
+	initInfo.DepthImage = false;
+	initInfo.InvertFace = false;
+	initInfo.DepthImageFinalLayout =
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	initInfo.ColorImageFinalLayout =
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	pushConstants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstants[0].offset = 0;
+	pushConstants[0].size = sizeof(MVP);
+	pushConstants[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushConstants[1].offset = 192;
+	pushConstants[1].size = sizeof(glm::vec3) + sizeof(uint32_t);
+	initInfo.PushConstantRangeCount = 0;
+	initInfo.PushConstants = pushConstants;
+
+	_postprocessingPipeline = new Pipeline(&initInfo);
+	_postprocessingPipeline->CreateFramebuffers(
+		{_colorImageView},
+		_imageViews,
+		{_depthImageView});
 }
 
 void Swapchain::DestroyPipelines()
 {
+	_postprocessingPipeline->DestroyFramebuffers();
+	delete _postprocessingPipeline;
+
 	_shadowPipeline->DestroyFramebuffers();
 	delete _shadowPipeline;
 
@@ -818,7 +1024,7 @@ void Swapchain::RecordCommandBuffer(
 	scissor.extent = _extent;
 
 	// Skybox pipeline.
-	_skyboxPipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+	_skyboxPipeline->RecordCommandBuffer(commandBuffer, 0);
 
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -1054,7 +1260,7 @@ void Swapchain::RecordCommandBuffer(
 	}
 
 	// Object pass.
-	_pipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+	_pipeline->RecordCommandBuffer(commandBuffer, 0);
 
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -1139,7 +1345,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdEndRenderPass(commandBuffer);
 
 	// Rectangle pipeline.
-	_rectanglePipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+	_rectanglePipeline->RecordCommandBuffer(commandBuffer, 0);
 
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -1188,6 +1394,27 @@ void Swapchain::RecordCommandBuffer(
 
 	vkCmdEndRenderPass(commandBuffer);
 
+	// Postprocessing pipeline
+	_postprocessingPipeline->RecordCommandBuffer(commandBuffer, imageIndex);
+
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	vkCmdBindDescriptorSets(
+		commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		_postprocessingPipeline->GetPipelineLayout(),
+		0,
+		1,
+		&_hdrDescriptorSet,
+		0,
+		nullptr);
+
+	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	// End buffer
 	res = vkEndCommandBuffer(commandBuffer);
 	
 	if (res != VK_SUCCESS) {

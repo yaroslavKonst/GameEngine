@@ -292,7 +292,7 @@ void Pipeline::CreateRenderPass(InitInfo* initInfo)
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachment.finalLayout = initInfo->ColorImageFinalLayout;
 
 	if (_clearColorImage) {
 		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -341,7 +341,8 @@ void Pipeline::CreateRenderPass(InitInfo* initInfo)
 	colorAttachmentResolve.stencilStoreOp =
 		VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachmentResolve.finalLayout =
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	VkAttachmentReference colorAttachmentResolveRef{};
 	colorAttachmentResolveRef.attachment = attachmentIndex;
@@ -419,50 +420,62 @@ void Pipeline::DestroyRenderPass()
 }
 
 void Pipeline::CreateFramebuffers(
-	const std::vector<VkImageView>& imageViews,
-	VkImageView colorImageView,
+	const std::vector<VkImageView>& resolveImageViews,
+	const std::vector<VkImageView>& colorImageViews,
 	const std::vector<VkImageView>& depthImageViews,
 	uint32_t layerCount)
 {
-	_framebuffers.resize(imageViews.size() * depthImageViews.size());
+	_framebuffers.resize(
+		resolveImageViews.size() *
+		depthImageViews.size() *
+		colorImageViews.size());
 
-	for (size_t i = 0; i < imageViews.size(); ++i) {
+	for (size_t i = 0; i < resolveImageViews.size(); ++i) {
 		for (size_t d = 0; d < depthImageViews.size(); ++d) {
-			std::vector<VkImageView> attachments;
+			for (size_t c = 0; c < colorImageViews.size(); ++c) {
+				std::vector<VkImageView> attachments;
 
-			if (_color) {
-				attachments.push_back(colorImageView);
-			}
+				if (_color) {
+					attachments.push_back(
+						colorImageViews[c]);
+				}
 
-			if (_depth) {
-				attachments.push_back(depthImageViews[d]);
-			}
+				if (_depth) {
+					attachments.push_back(
+						depthImageViews[d]);
+				}
 
-			if (_resolve) {
-				attachments.push_back(imageViews[i]);
-			}
+				if (_resolve) {
+					attachments.push_back(
+						resolveImageViews[i]);
+				}
 
-			VkFramebufferCreateInfo framebufferInfo{};
-			framebufferInfo.sType =
-				VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = _renderPass;
-			framebufferInfo.attachmentCount =
-				static_cast<uint32_t>(attachments.size());
-			framebufferInfo.pAttachments = attachments.data();
-			framebufferInfo.width = _extent.width;
-			framebufferInfo.height = _extent.height;
-			framebufferInfo.layers = layerCount;
+				VkFramebufferCreateInfo framebufferInfo{};
+				framebufferInfo.sType =
+					VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+				framebufferInfo.renderPass = _renderPass;
+				framebufferInfo.attachmentCount =
+					static_cast<uint32_t>(
+						attachments.size());
+				framebufferInfo.pAttachments =
+					attachments.data();
+				framebufferInfo.width = _extent.width;
+				framebufferInfo.height = _extent.height;
+				framebufferInfo.layers = layerCount;
 
-			VkResult res = vkCreateFramebuffer(
-				_device,
-				&framebufferInfo,
-				nullptr,
-				&_framebuffers[
-					i * depthImageViews.size() + d]);
+				VkResult res = vkCreateFramebuffer(
+					_device,
+					&framebufferInfo,
+					nullptr,
+					&_framebuffers[
+						i * depthImageViews.size() *
+						colorImageViews.size() + d *
+						colorImageViews.size() + c]);
 
-			if (res != VK_SUCCESS) {
-				throw std::runtime_error(
-					"Failed to create framebuffer.");
+				if (res != VK_SUCCESS) {
+					throw std::runtime_error(
+						"Failed to create framebuffer.");
+				}
 			}
 		}
 	}

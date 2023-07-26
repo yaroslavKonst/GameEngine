@@ -83,6 +83,16 @@ private:
 	void CreateLightBuffers();
 	void DestroyLightBuffers();
 
+	VkFormat _hdrImageFormat;
+	VkDescriptorPool _hdrDescriptorPool;
+	VkDescriptorSetLayout _hdrDescriptorSetLayout;
+	VkDescriptorSet _hdrDescriptorSet;
+	ImageHelper::Image _hdrImage;
+	VkImageView _hdrImageView;
+	VkSampler _hdrImageSampler;
+	void CreateHDRResources();
+	void DestroyHDRResources();
+
 	ImageHelper::Image _colorImage;
 	VkImageView _colorImageView;
 	ImageHelper::Image _depthImage;
@@ -103,6 +113,7 @@ private:
 	Pipeline* _rectanglePipeline;
 	Pipeline* _skyboxPipeline;
 	Pipeline* _shadowPipeline;
+	Pipeline* _postprocessingPipeline;
 	void CreatePipelines();
 	void DestroyPipelines();
 
