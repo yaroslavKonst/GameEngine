@@ -87,9 +87,11 @@ private:
 	VkDescriptorPool _hdrDescriptorPool;
 	VkDescriptorSetLayout _hdrDescriptorSetLayout;
 	VkDescriptorSet _hdrDescriptorSet;
-	ImageHelper::Image _hdrImage;
-	VkImageView _hdrImageView;
+	std::vector<ImageHelper::Image> _hdrImages;
+	std::vector<VkImageView> _hdrImageViews;
 	VkSampler _hdrImageSampler;
+	uint32_t _currentHdrImage;
+	uint32_t _maxHdrImage;
 	void CreateHDRResources();
 	void DestroyHDRResources();
 

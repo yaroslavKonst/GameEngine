@@ -315,7 +315,7 @@ public:
 
 		Light lightSt1;
 		lightSt1.SetLightType(Light::Type::Point);
-		lightSt1.SetLightColor({0.9, 0.9, 0.9});
+		lightSt1.SetLightColor({40.0, 40.0, 40.0});
 		lightSt1.SetLightPosition({0.0, 0.0, 3.0});
 
 		Light lightSt2;

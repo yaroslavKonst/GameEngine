@@ -48,7 +48,7 @@ Swapchain::Swapchain(
 	_maxLightCount = maxLightCount;
 	_shadowSize = shadowSize;
 
-	_hdrImageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+	_hdrImageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
 	Logger::Verbose() << "Swapchain constructor called.";
 
@@ -417,27 +417,35 @@ void Swapchain::DestroyRenderingImages()
 
 void Swapchain::CreateHDRResources()
 {
-	_hdrImage = ImageHelper::CreateImage(
-		_device,
-		_extent.width,
-                _extent.height,
-                1,
-                VK_SAMPLE_COUNT_1_BIT,
-                _hdrImageFormat,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-		VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                _memorySystem,
-                _deviceSupport);
+	_maxHdrImage = 1;
+	_currentHdrImage = 0;
 
-	_hdrImageView = ImageHelper::CreateImageView(
-		_device,
-		_hdrImage.Image,
-		_hdrImageFormat,
-		VK_IMAGE_ASPECT_COLOR_BIT,
-		1);
+	_hdrImages.resize(_maxHdrImage);
+	_hdrImageViews.resize(_maxHdrImage);
+
+	for (uint32_t i = 0; i < _maxHdrImage; ++i) {
+		_hdrImages[i] = ImageHelper::CreateImage(
+			_device,
+			_extent.width,
+			_extent.height,
+			1,
+			VK_SAMPLE_COUNT_1_BIT,
+			_hdrImageFormat,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+			VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			_memorySystem,
+			_deviceSupport);
+
+		_hdrImageViews[i] = ImageHelper::CreateImageView(
+			_device,
+			_hdrImages[i].Image,
+			_hdrImageFormat,
+			VK_IMAGE_ASPECT_COLOR_BIT,
+			1);
+	}
 
 	_hdrImageSampler = ImageHelper::CreateImageSampler(
 		_device,
@@ -449,7 +457,7 @@ void Swapchain::CreateHDRResources()
 
 	VkDescriptorSetLayoutBinding hdrSamplerLayoutBinding{};
 	hdrSamplerLayoutBinding.binding = 0;
-	hdrSamplerLayoutBinding.descriptorCount = 1;
+	hdrSamplerLayoutBinding.descriptorCount = _maxHdrImage;
 	hdrSamplerLayoutBinding.descriptorType =
 		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	hdrSamplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -477,7 +485,7 @@ void Swapchain::CreateHDRResources()
 
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize.descriptorCount = 1;
+	poolSize.descriptorCount = _maxHdrImage;
 
 	std::vector<VkDescriptorPoolSize> poolSizes = {
 		poolSize
@@ -518,11 +526,17 @@ void Swapchain::CreateHDRResources()
 
 	std::vector<VkWriteDescriptorSet> descriptorWrites;
 
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout =
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = _hdrImageView;
-	imageInfo.sampler = _hdrImageSampler;
+	std::vector<VkDescriptorImageInfo> imageInfos;
+
+	for (uint32_t i = 0; i < _maxHdrImage; ++i) {
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageLayout =
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = _hdrImageViews[i];
+		imageInfo.sampler = _hdrImageSampler;
+
+		imageInfos.push_back(imageInfo);
+	}
 
 	VkWriteDescriptorSet descriptorSamplerWrite{};
 	descriptorSamplerWrite.sType =
@@ -533,8 +547,8 @@ void Swapchain::CreateHDRResources()
 
 	descriptorSamplerWrite.descriptorType =
 		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorSamplerWrite.descriptorCount = 1;
-	descriptorSamplerWrite.pImageInfo = &imageInfo;
+	descriptorSamplerWrite.descriptorCount = imageInfos.size();
+	descriptorSamplerWrite.pImageInfo = imageInfos.data();
 
 	descriptorWrites.push_back(descriptorSamplerWrite);
 
@@ -554,16 +568,18 @@ void Swapchain::DestroyHDRResources()
 		_hdrDescriptorSetLayout,
 		nullptr);
 
-	ImageHelper::DestroyImageView(_device, _hdrImageView);
-
 	ImageHelper::DestroyImageSampler(
 		_device,
 		_hdrImageSampler);
 
-	ImageHelper::DestroyImage(
-		_device,
-		_hdrImage,
-		_memorySystem);
+	for (uint32_t i = 0; i < _maxHdrImage; ++i) {
+		ImageHelper::DestroyImageView(_device, _hdrImageViews[i]);
+
+		ImageHelper::DestroyImage(
+			_device,
+			_hdrImages[i],
+			_memorySystem);
+	}
 }
 
 void Swapchain::CreateImageViews()
@@ -654,7 +670,7 @@ void Swapchain::CreatePipelines()
 
 	_rectanglePipeline = new Pipeline(&initInfo);
 	_rectanglePipeline->CreateFramebuffers(
-		{_hdrImageView},
+		_hdrImageViews,
 		{_colorImageView},
 		{_depthImageView});
 
@@ -750,13 +766,13 @@ void Swapchain::CreatePipelines()
 	initInfo.ColorImageFinalLayout =
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	pushConstants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstants[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushConstants[0].offset = 0;
 	pushConstants[0].size = sizeof(MVP);
 	pushConstants[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushConstants[1].offset = 192;
 	pushConstants[1].size = sizeof(glm::vec3) + sizeof(uint32_t);
-	initInfo.PushConstantRangeCount = 0;
+	initInfo.PushConstantRangeCount = 1;
 	initInfo.PushConstants = pushConstants;
 
 	_postprocessingPipeline = new Pipeline(&initInfo);
@@ -1345,7 +1361,9 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdEndRenderPass(commandBuffer);
 
 	// Rectangle pipeline.
-	_rectanglePipeline->RecordCommandBuffer(commandBuffer, 0);
+	_rectanglePipeline->RecordCommandBuffer(
+		commandBuffer,
+		_currentHdrImage);
 
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -1399,6 +1417,16 @@ void Swapchain::RecordCommandBuffer(
 
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	float exposure = 0.7;
+
+	vkCmdPushConstants(
+		commandBuffer,
+		_rectanglePipeline->GetPipelineLayout(),
+		VK_SHADER_STAGE_FRAGMENT_BIT,
+		0,
+		sizeof(float),
+		&exposure);
 
 	vkCmdBindDescriptorSets(
 		commandBuffer,
@@ -1553,6 +1581,7 @@ void Swapchain::DrawFrame()
 	vkQueuePresentKHR(_presentQueue, &presentInfo);
 
 	_currentFrame = (_currentFrame + 1) % _maxFramesInFlight;
+	_currentHdrImage = (_currentHdrImage + 1) % _maxHdrImage;
 }
 
 void Swapchain::CreateSyncObjects()
