@@ -1186,9 +1186,23 @@ void Swapchain::MainLoop() {
 
 	_work = true;
 
+	uint32_t frameCount = 0;
+	auto refTime = std::chrono::high_resolution_clock::now();
+
 	while (!glfwWindowShouldClose(_window) && _work) {
 		glfwPollEvents();
 		DrawFrame();
+
+		++frameCount;
+		auto currTime = std::chrono::high_resolution_clock::now();
+		uint32_t dur = std::chrono::duration_cast
+			<std::chrono::milliseconds>(currTime - refTime).count();
+
+		if (dur >= 1000) {
+			refTime = currTime;
+			Logger::Verbose() << "FPS " << frameCount;
+			frameCount = 0;
+		}
 	}
 
 	vkDeviceWaitIdle(_device);
