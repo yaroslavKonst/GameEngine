@@ -1,6 +1,7 @@
 #include "swapchain.h"
 
 #include <algorithm>
+#include <cstring>
 
 #include "../Logger/logger.h"
 #include "mvp.h"
@@ -460,6 +461,16 @@ void Swapchain::CreateHDRResources()
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 
+	uint32_t hdrBufferSize = sizeof(float) * 2;
+
+	_hdrBuffer = BufferHelper::CreateBuffer(
+		_device,
+		hdrBufferSize,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		_memorySystem,
+		_deviceSupport);
+
 	VkDescriptorSetLayoutBinding hdrSamplerLayoutBinding{};
 	hdrSamplerLayoutBinding.binding = 0;
 	hdrSamplerLayoutBinding.descriptorCount = _maxHdrImage;
@@ -468,8 +479,17 @@ void Swapchain::CreateHDRResources()
 	hdrSamplerLayoutBinding.pImmutableSamplers = nullptr;
 	hdrSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorSetLayoutBinding hdrBufferLayoutBinding{};
+	hdrBufferLayoutBinding.binding = 1;
+	hdrBufferLayoutBinding.descriptorCount = 1;
+	hdrBufferLayoutBinding.descriptorType =
+		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	hdrBufferLayoutBinding.pImmutableSamplers = nullptr;
+	hdrBufferLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	std::vector<VkDescriptorSetLayoutBinding> bindings = {
 		hdrSamplerLayoutBinding,
+		hdrBufferLayoutBinding
 	};
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -492,8 +512,13 @@ void Swapchain::CreateHDRResources()
 	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSize.descriptorCount = _maxHdrImage;
 
+	VkDescriptorPoolSize bufferPoolSize{};
+	bufferPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	bufferPoolSize.descriptorCount = 1;
+
 	std::vector<VkDescriptorPoolSize> poolSizes = {
-		poolSize
+		poolSize,
+		bufferPoolSize
 	};
 
 	VkDescriptorPoolCreateInfo poolInfo{};
@@ -557,6 +582,26 @@ void Swapchain::CreateHDRResources()
 
 	descriptorWrites.push_back(descriptorSamplerWrite);
 
+	memset(&descriptorSamplerWrite, 0, sizeof(VkWriteDescriptorSet));
+
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = _hdrBuffer.Buffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = hdrBufferSize;
+
+	descriptorSamplerWrite.sType =
+		VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorSamplerWrite.dstSet = _hdrDescriptorSet;
+	descriptorSamplerWrite.dstBinding = 1;
+	descriptorSamplerWrite.dstArrayElement = 0;
+
+	descriptorSamplerWrite.descriptorType =
+		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptorSamplerWrite.descriptorCount = 1;
+	descriptorSamplerWrite.pBufferInfo = &bufferInfo;
+
+	descriptorWrites.push_back(descriptorSamplerWrite);
+
 	vkUpdateDescriptorSets(
 		_device,
 		descriptorWrites.size(),
@@ -585,6 +630,8 @@ void Swapchain::DestroyHDRResources()
 			_hdrImages[i],
 			_memorySystem);
 	}
+
+	BufferHelper::DestroyBuffer(_device, _hdrBuffer, _memorySystem);
 }
 
 void Swapchain::CreateImageViews()
@@ -1438,15 +1485,29 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	float exposure = 0.7;
+	float exposure[2];
+	exposure[0] = 0.3;
+	exposure[1] = 1.5;
+
+	static uint32_t expIdx = 0;
 
 	vkCmdPushConstants(
 		commandBuffer,
 		_rectanglePipeline->GetPipelineLayout(),
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		0,
-		sizeof(float),
-		&exposure);
+		sizeof(exposure),
+		exposure);
+
+	vkCmdPushConstants(
+		commandBuffer,
+		_rectanglePipeline->GetPipelineLayout(),
+		VK_SHADER_STAGE_FRAGMENT_BIT,
+		8,
+		sizeof(uint32_t),
+		&expIdx);
+
+	expIdx = (expIdx + 1) % 2;
 
 	vkCmdBindDescriptorSets(
 		commandBuffer,

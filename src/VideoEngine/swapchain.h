@@ -96,6 +96,7 @@ private:
 	std::vector<VkImageView> _hdrImageViews;
 	VkSampler _hdrImageSampler;
 	uint32_t _maxHdrImage;
+	BufferHelper::Buffer _hdrBuffer;
 	void CreateHDRResources();
 	void DestroyHDRResources();
 

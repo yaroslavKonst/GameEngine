@@ -6,8 +6,14 @@ layout(location = 0) out vec4 outColor;
 
 layout(binding = 0) uniform sampler2D texSampler[2];
 
+layout(binding = 1) buffer ExposureBuffer {
+	float Values[2];
+} exposureBuffer;
+
 layout(push_constant) uniform HDR {
-	float Exposure;
+	float MinExposure;
+	float MaxExposure;
+	int Index;
 } hdr;
 
 vec3 LightThr(vec3 color, float threshold)
@@ -81,6 +87,46 @@ vec3 GetBlur(vec2 texCoords, float threshold)
 	return result;
 }
 
+void CorrectExposure(float exposure)
+{
+	vec2 texSize = textureSize(texSampler[0], 0);
+
+	if (ivec2(gl_FragCoord.xy) == ivec2(texSize / 2)) {
+		vec3 avgLight = vec3(0.0f);
+
+		float coords[9] = float[] (
+			0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+		);
+
+		for (int i = 0; i < 9; ++i) {
+			for (int j = 0; j < 9; ++j) {
+				vec3 color = texture(
+					texSampler[0],
+					vec2(coords[i], coords[j])).rgb;
+
+				avgLight += vec3(1.0) -
+					exp(-color * exposure);
+			}
+		}
+
+		avgLight /= 81.0f;
+
+		float value = max(max(avgLight.r, avgLight.g), avgLight.b);
+
+		if (value > 0.9) {
+			exposure -= 0.005;
+		}
+
+		if (value < 0.9) {
+			exposure += 0.005;
+		}
+
+		exposure = clamp(exposure, hdr.MinExposure, hdr.MaxExposure);
+
+		exposureBuffer.Values[(hdr.Index + 1) % 2] = exposure;
+	}
+}
+
 void main()
 {
 	const float gamma = 2.2;
@@ -89,7 +135,13 @@ void main()
 
 	hdrColor += GetBlur(texCoord, 5.0f);
 
-	vec3 mapped = vec3(1.0) - exp(-hdrColor * hdr.Exposure);
+	float exposure = clamp(
+		exposureBuffer.Values[hdr.Index],
+		hdr.MinExposure,
+		hdr.MaxExposure);
+
+	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
+	CorrectExposure(exposure);
 
 	// gamma correction
 	//mapped = pow(mapped, vec3(1.0 / gamma));
@@ -98,4 +150,22 @@ void main()
 		hdrInterface.rgb * hdrInterface.a;
 
 	outColor = vec4(mapped, 1.0);
+
+	if (int(gl_FragCoord.y) == int(exposure * 40.0f) &&
+		gl_FragCoord.x < 20)
+	{
+		outColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+	}
+
+	if (int(gl_FragCoord.y) == int(exposure * 40.0f) + 1 &&
+		gl_FragCoord.x < 20)
+	{
+		outColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	}
+
+	if (int(gl_FragCoord.y) == int(exposure * 40.0f) + 2 &&
+		gl_FragCoord.x < 20)
+	{
+		outColor = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	}
 }
