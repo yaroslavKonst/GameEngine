@@ -25,13 +25,17 @@ public:
 		_lightActive = true;
 
 		// Pyramid
-		Object::CollisionPrimitive primitive;
-		primitive.Vertices[0] = glm::vec3(0.1, -0.1, 0.0);
-		primitive.Vertices[1] = glm::vec3(0.1, 0.1, 0.0);
-		primitive.Vertices[2] = glm::vec3(-0.1, 0.0, 0.0);
-		primitive.Vertices[3] = glm::vec3(0.0, 0.0, 2.0);
+		std::vector<glm::vec3> vertices;
+		vertices.push_back(glm::vec3(0.1, -0.1, 0.0));
+		vertices.push_back(glm::vec3(0.1, 0.1, 0.0));
+		vertices.push_back(glm::vec3(-0.1, 0.0, 0.0));
+		vertices.push_back(glm::vec3(0.0, 0.0, 2.0));
 
-		SetCollisionPrimitives({primitive});
+		std::vector<uint32_t> indices = {0, 1, 2};
+
+		SetObjectVertices(vertices);
+		//SetObjectIndices(indices);
+		SetObjectCenter({0.0f, 0.0f, 1.5f});
 		SetObjectMatrix(glm::mat4(1.0));
 
 		SetInputEnabled(true);
@@ -145,7 +149,11 @@ public:
 			if (fabs(_vspeed) > 0.0001) {
 				_vspeed = -_vspeed * 0.4;
 			} else {
-				_vspeed = 0;
+				if (effect.z < 0.0000001) {
+					_vspeed = 0;
+				} else {
+					_vspeed = 0.1;
+				}
 			}
 		}
 
@@ -154,6 +162,11 @@ public:
 		}
 
 		if (fabs(effect.x) + fabs(effect.y) > 0.0001) {
+			Logger::Verbose() << "Effect " <<
+				effect.x << " " << effect.y;
+			Logger::Verbose() << "HSpeed " <<
+				hspeed.x << " " << hspeed.y;
+
 			if (effect.x * hspeed.x + effect.y * hspeed.y < 0) {
 				hspeed = glm::vec2(0, 0);
 			}
@@ -166,17 +179,20 @@ public:
 		SetObjectMatrix(
 			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
 				glm::radians(_angleH), glm::vec3(0, 0, 1)));
-		SetObjectSpeed(glm::vec3(0.0, 0.0, _vspeed / 200));
+		SetObjectSpeed(glm::vec3(
+			hspeed.x / 20,
+			hspeed.y / 20,
+			_vspeed / 200));
 
 		_video->SetCameraPosition(_pos + glm::vec3(0, 0, 1.85));
 		_video->SetCameraDirection(glm::vec3(
-				hdir,
+				hdir * cosf(glm::radians(_angleV)),
 				sinf(glm::radians(_angleV))));
 
 		_light->SetLightPosition(_pos + glm::vec3(0, 0, 1.2) +
 				glm::vec3(hdirStrafe * 0.3f, 0.0f));
 		_light->SetLightDirection(glm::vec3(
-				hdir,
+				hdir * cosf(glm::radians(_angleV)),
 				sinf(glm::radians(_angleV))));
 		_mutex.unlock();
 	}
@@ -207,20 +223,13 @@ public:
 			{-200, 200, 0.251981},
 			{200, 200, 0.251981},
 			{200, -200, 0.251981},
-			{0, 0, -300},
 		};
-		// 2 pyramids.
-		std::vector<Object::CollisionPrimitive> primitives(2);
-		primitives[0].Vertices[0] = objectVertices[0];
-		primitives[0].Vertices[1] = objectVertices[1];
-		primitives[0].Vertices[2] = objectVertices[2];
-		primitives[0].Vertices[3] = objectVertices[4];
-		primitives[1].Vertices[0] = objectVertices[0];
-		primitives[1].Vertices[1] = objectVertices[2];
-		primitives[1].Vertices[2] = objectVertices[3];
-		primitives[1].Vertices[3] = objectVertices[4];
 
-		SetCollisionPrimitives(primitives);
+		std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
+
+		SetObjectVertices(objectVertices);
+		SetObjectIndices(indices);
+		SetObjectCenter({0.0f, 0.0f, -300.0f});
 		SetObjectMatrix(glm::mat4(1.0));
 		SetModelMatrix(glm::scale(
 			glm::mat4(1.0),
@@ -254,7 +263,7 @@ public:
 	}
 };
 
-class Brick : public Model
+class Brick : public Model, public Object
 {
 public:
 	Brick(glm::vec3 pos)
@@ -273,6 +282,11 @@ public:
 			texHeight);
 		auto model = Loader::LoadModel(
 			"../src/Assets/Resources/Models/field.obj");
+
+		SetObjectVertices(model.Vertices);
+		SetObjectIndices(model.Indices);
+		SetObjectCenter();
+		SetObjectMatrix(GetModelMatrix());
 
 		for (auto& coord : model.TexCoords) {
 			coord *= 100;
@@ -359,6 +373,7 @@ public:
 
 		collisionEngine.RegisterObject(&player);
 		collisionEngine.RegisterObject(&field);
+		collisionEngine.RegisterObject(&brick2);
 
 		video.RegisterModel(&field);
 		video.RegisterModel(&brick1);
@@ -394,6 +409,7 @@ public:
 
 		collisionEngine.RemoveObject(&field);
 		collisionEngine.RemoveObject(&player);
+		collisionEngine.RemoveObject(&brick2);
 
 		universe.RemoveActor(&player);
 

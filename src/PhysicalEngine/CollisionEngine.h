@@ -29,13 +29,11 @@ private:
 		const glm::mat4& matrix1,
 		const glm::mat4& matrix2);
 
-	glm::vec3 CalculateCollision(
-		const Object::CollisionPrimitive& primitive1,
-		const Object::CollisionPrimitive& primitive2,
-		const glm::mat4& matrix1,
-		const glm::mat4& matrix2,
-		const glm::vec3& speed1,
-		const glm::vec3& speed2);
+	glm::vec3 CalculateEffectOnPoint(
+		const std::vector<glm::vec3>& triangle,
+		const glm::vec3& point,
+		const glm::vec3& centerP,
+		const glm::vec3& centerT);
 };
 
 #endif

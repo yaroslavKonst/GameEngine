@@ -14,11 +14,6 @@
 class Object
 {
 public:
-	struct CollisionPrimitive
-	{
-		glm::vec3 Vertices[4];
-	};
-
 	Object()
 	{
 		_initialized = false;
@@ -30,15 +25,26 @@ public:
 	{
 	}
 
-	virtual const std::vector<CollisionPrimitive>& GetCollisionPrimitives()
+	virtual void SetObjectVertices(
+		const std::vector<glm::vec3>& value)
 	{
-		return _collisionPrimitives;
+		_collisionVertices = value;
 	}
 
-	virtual void SetCollisionPrimitives(
-		const std::vector<CollisionPrimitive>& value)
+	virtual const std::vector<glm::vec3>& GetObjectVertices()
 	{
-		_collisionPrimitives = value;
+		return _collisionVertices;
+	}
+
+	virtual void SetObjectIndices(
+		const std::vector<uint32_t>& value)
+	{
+		_collisionIndices = value;
+	}
+
+	virtual const std::vector<uint32_t>& GetObjectIndices()
+	{
+		return _collisionIndices;
 	}
 
 	virtual const glm::mat4& GetObjectMatrix()
@@ -51,12 +57,12 @@ public:
 		_matrix = value;
 	}
 
-	virtual const glm::vec3& _GetObjectCenter()
+	virtual const glm::vec3& GetObjectCenter()
 	{
 		return _center;
 	}
 
-	virtual void _SetObjectCenter(const glm::vec3& value)
+	virtual void SetObjectCenter(const glm::vec3& value)
 	{
 		_center = value;
 	}
@@ -106,8 +112,20 @@ public:
 		_speed = value;
 	}
 
+	virtual void SetObjectCenter()
+	{
+		_center = glm::vec3(0.0f);
+
+		for (auto& vertex : _collisionVertices) {
+			_center += vertex;
+		}
+
+		_center /= _collisionVertices.size();
+	}
+
 private:
-	std::vector<CollisionPrimitive> _collisionPrimitives;
+	std::vector<glm::vec3> _collisionVertices;
+	std::vector<uint32_t> _collisionIndices;
 	glm::mat4 _matrix;
 	glm::vec3 _speed;
 	glm::vec3 _center;

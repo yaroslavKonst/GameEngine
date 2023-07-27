@@ -79,6 +79,45 @@ namespace PlaneHelper
 			point[1] * plane[1] +
 			point[2] * plane[2] + plane[3];
 	}
+
+	glm::vec3 ProjectPointToPlane(
+		const glm::vec3& point,
+		const Plane& plane)
+	{
+		float alpha = -SetPointToPlane(point, plane) /
+			(plane[0] * plane[0] +
+			plane[1] * plane[1] +
+			plane[2] * plane[2]);
+
+		return point + alpha * glm::vec3(plane[0], plane[1], plane[2]);
+	}
+
+	float TriangleSqr(const std::vector<glm::vec3>& triangle)
+	{
+		float l1 = glm::length(triangle[1] - triangle[0]);
+		float l2 = glm::length(triangle[2] - triangle[0]);
+		float l3 = glm::length(triangle[2] - triangle[1]);
+
+		float h = (l1 + l2 + l3) / 2.0f;
+
+		return sqrtf(h * (h - l1) * (h - l2) * (h - l3));
+	}
+
+	bool PointInTriangle(
+		const glm::vec3& point,
+		const std::vector<glm::vec3>& triangle)
+	{
+		float s1 = TriangleSqr({point, triangle[0], triangle[1]});
+		float s2 = TriangleSqr({point, triangle[0], triangle[2]});
+		float s3 = TriangleSqr({point, triangle[1], triangle[2]});
+		float st = TriangleSqr(triangle);
+
+		if (s1 + s2 + s3 > st + 0.5) {
+			return false;
+		}
+
+		return true;
+	}
 }
 
 #endif
