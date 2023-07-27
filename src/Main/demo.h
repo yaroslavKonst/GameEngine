@@ -162,11 +162,6 @@ public:
 		}
 
 		if (fabs(effect.x) + fabs(effect.y) > 0.0001) {
-			Logger::Verbose() << "Effect " <<
-				effect.x << " " << effect.y;
-			Logger::Verbose() << "HSpeed " <<
-				hspeed.x << " " << hspeed.y;
-
 			if (effect.x * hspeed.x + effect.y * hspeed.y < 0) {
 				hspeed = glm::vec2(0, 0);
 			}
