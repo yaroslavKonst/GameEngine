@@ -549,6 +549,8 @@ void Video::RegisterRectangle(Rectangle* rectangle)
 {
 	auto descriptor = CreateRectangleDescriptor(rectangle);
 
+	rectangle->SetRectangleScreenRatio(_swapchain->GetScreenRatio());
+
 	if (_scene.SceneMutex) {
 		_scene.SceneMutex->lock();
 	}

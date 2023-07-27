@@ -41,6 +41,11 @@ public:
 	void MainLoop();
 	void Stop();
 
+	float GetScreenRatio()
+	{
+		return (float)_extent.width / (float)_extent.height;
+	}
+
 private:
 	const uint32_t _maxFramesInFlight = 2;
 

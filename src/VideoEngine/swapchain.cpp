@@ -230,6 +230,12 @@ void Swapchain::Create()
 
 	CreateSyncObjects();
 
+	float ratio = GetScreenRatio();
+
+	for (auto& rectangle : _scene->Rectangles) {
+		rectangle.first->SetRectangleScreenRatio(ratio);
+	}
+
 	_currentFrame = 0;
 	_initialized = true;
 }

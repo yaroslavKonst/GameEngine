@@ -83,6 +83,11 @@ public:
 		_scene.SceneMutex = mutex;
 	}
 
+	float GetScreenRatio()
+	{
+		return _swapchain->GetScreenRatio();
+	}
+
 private:
 	Window _window;
 

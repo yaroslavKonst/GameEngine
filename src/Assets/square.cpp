@@ -43,6 +43,21 @@ Square::~Square()
 {
 }
 
+void Square::SetRectangleScreenRatio(float value)
+{
+	float xpos = -0.9f;
+	float ypos = -0.9f;
+
+	float height = 0.1;
+	float width = height / value;
+
+	SetRectanglePosition(glm::vec4(
+		xpos,
+		ypos,
+		xpos + width,
+		ypos + height));
+}
+
 void Square::Tick()
 {
 	SetRectangleTexCoords(glm::vec4(
