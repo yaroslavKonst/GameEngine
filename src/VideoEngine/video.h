@@ -83,6 +83,10 @@ public:
 		uint32_t texHeight,
 		const std::vector<uint8_t>& texData);
 	void DestroySkybox();
+	void SetSkyboxColor(glm::vec3 color)
+	{
+		_scene.skybox.ColorModifier = color;
+	}
 
 	void SetSceneMutex(std::mutex* mutex)
 	{

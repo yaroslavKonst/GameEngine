@@ -1,4 +1,4 @@
-#include "demo.h"
+#include "demoScene.h"
 
 int main(int argc, char** argv)
 {

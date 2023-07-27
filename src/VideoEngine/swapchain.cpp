@@ -742,6 +742,9 @@ void Swapchain::CreatePipelines()
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	initInfo.PushConstantRangeCount = 1;
+	pushConstants[0].stageFlags =
+		VK_SHADER_STAGE_VERTEX_BIT |
+		VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushConstants[0].size = sizeof(Skybox::ShaderData);
 
 	_skyboxPipeline = new Pipeline(&initInfo);
@@ -1107,11 +1110,13 @@ void Swapchain::RecordCommandBuffer(
 		shaderData.Up = _scene->CameraUp;
 		shaderData.FOV = glm::radians((float)_scene->FOV);
 		shaderData.Ratio = (float)_extent.width / (float)_extent.height;
+		shaderData.ColorModifier = _scene->skybox.ColorModifier;
 
 		vkCmdPushConstants(
 			commandBuffer,
 			_skyboxPipeline->GetPipelineLayout(),
-			VK_SHADER_STAGE_VERTEX_BIT,
+			VK_SHADER_STAGE_VERTEX_BIT |
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			0,
 			sizeof(Skybox::ShaderData),
 			&shaderData);

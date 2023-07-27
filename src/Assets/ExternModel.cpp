@@ -3,7 +3,10 @@
 #include "../Utils/loader.h"
 #include "../Logger/logger.h"
 
-ExternModel::ExternModel(std::string modelFile, std::string textureFile)
+ExternModel::ExternModel(
+	std::string modelFile,
+	std::string textureFile,
+	glm::mat4 matrix)
 {
 	auto model = Loader::LoadModel(modelFile);
 
@@ -16,11 +19,16 @@ ExternModel::ExternModel(std::string modelFile, std::string textureFile)
 	SetModelTexCoords(model.TexCoords);
 	SetModelIndices(model.Indices);
 
+	SetObjectVertices(model.Vertices);
+	SetObjectIndices(model.Indices);
+	SetObjectCenter();
+
 	SetTexWidth(texWidth);
 	SetTexHeight(texHeight);
 	SetTexData(texture);
 
-	SetModelMatrix(glm::mat4(1.0f));
+	SetModelMatrix(matrix);
+	SetObjectMatrix(matrix);
 	SetModelInnerMatrix(glm::mat4(1.0f));
 	SetModelInstances({glm::mat4(1.0f)});
 }

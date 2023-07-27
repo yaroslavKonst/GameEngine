@@ -4,6 +4,7 @@ layout(push_constant) uniform MVP
 {
 	vec3 Direction;
 	vec3 Up;
+	vec3 ColorModifier;
 	float FOV;
 	float Ratio;
 } mvp;
