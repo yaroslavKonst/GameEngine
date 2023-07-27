@@ -31,4 +31,6 @@ ExternModel::ExternModel(
 	SetObjectMatrix(matrix);
 	SetModelInnerMatrix(glm::mat4(1.0f));
 	SetModelInstances({glm::mat4(1.0f)});
+
+	SetDrawEnabled(true);
 }

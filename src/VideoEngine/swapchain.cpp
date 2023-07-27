@@ -1157,7 +1157,7 @@ void Swapchain::RecordCommandBuffer(
 		(char*)_lightBufferMappings[imageIndex] + 1024);
 
 	glm::mat4 shadowProj =
-		glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 500.0f);
+		glm::perspective(glm::radians(90.0f), 1.0f, 0.01f, 500.0f);
 
 	for (auto& light : orderedLights) {
 		lightDescriptors[selectedLights].Position =
