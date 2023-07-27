@@ -490,7 +490,8 @@ void Pipeline::DestroyFramebuffers()
 
 void Pipeline::RecordCommandBuffer(
 	VkCommandBuffer commandBuffer,
-	uint32_t imageIndex)
+	uint32_t imageIndex,
+	float colorClearAlphaValue)
 {
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -503,7 +504,7 @@ void Pipeline::RecordCommandBuffer(
 
 	if (_color) {
 		VkClearValue clearValue{};
-		clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+		clearValue.color = {{0.0f, 0.0f, 0.0f, colorClearAlphaValue}};
 		clearValues.push_back(clearValue);
 	}
 

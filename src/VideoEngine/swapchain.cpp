@@ -417,8 +417,7 @@ void Swapchain::DestroyRenderingImages()
 
 void Swapchain::CreateHDRResources()
 {
-	_maxHdrImage = 1;
-	_currentHdrImage = 0;
+	_maxHdrImage = 2;
 
 	_hdrImages.resize(_maxHdrImage);
 	_hdrImageViews.resize(_maxHdrImage);
@@ -628,7 +627,7 @@ void Swapchain::CreatePipelines()
 	initInfo.VertexAttributeDescriptions =
 		ModelDescriptor::GetAttributeDescriptions();
 	initInfo.DepthTestEnabled = VK_TRUE;
-	initInfo.ResolveImage = false;
+	initInfo.ResolveImage = true;
 	initInfo.ClearColorImage = false;
 	initInfo.ColorImage = true;
 	initInfo.DepthImage = true;
@@ -650,7 +649,7 @@ void Swapchain::CreatePipelines()
 
 	_pipeline = new Pipeline(&initInfo);
 	_pipeline->CreateFramebuffers(
-		{_imageViews[0]},
+		{_hdrImageViews[0]},
 		{_colorImageView},
 		{_depthImageView});
 
@@ -663,14 +662,16 @@ void Swapchain::CreatePipelines()
 	initInfo.VertexShaderSize = sizeof(RectangleShaderVert);
 	initInfo.FragmentShaderCode = RectangleShaderFrag;
 	initInfo.FragmentShaderSize = sizeof(RectangleShaderFrag);
-	initInfo.ClearColorImage = false;
+	initInfo.ClearColorImage = true;
+	initInfo.ColorImageFinalLayout =
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	initInfo.PushConstantRangeCount = 1;
 	pushConstants[0].size = sizeof(glm::vec4) * 2;
 
 	_rectanglePipeline = new Pipeline(&initInfo);
 	_rectanglePipeline->CreateFramebuffers(
-		_hdrImageViews,
+		{_hdrImageViews[1]},
 		{_colorImageView},
 		{_depthImageView});
 
@@ -684,6 +685,8 @@ void Swapchain::CreatePipelines()
 	initInfo.FragmentShaderCode = SkyboxShaderFrag;
 	initInfo.FragmentShaderSize = sizeof(SkyboxShaderFrag);
 	initInfo.ClearColorImage = true;
+	initInfo.ColorImageFinalLayout =
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	initInfo.PushConstantRangeCount = 1;
 	pushConstants[0].size = sizeof(Skybox::ShaderData);
@@ -1361,9 +1364,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdEndRenderPass(commandBuffer);
 
 	// Rectangle pipeline.
-	_rectanglePipeline->RecordCommandBuffer(
-		commandBuffer,
-		_currentHdrImage);
+	_rectanglePipeline->RecordCommandBuffer(commandBuffer, 0, 0.0f);
 
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -1581,7 +1582,6 @@ void Swapchain::DrawFrame()
 	vkQueuePresentKHR(_presentQueue, &presentInfo);
 
 	_currentFrame = (_currentFrame + 1) % _maxFramesInFlight;
-	_currentHdrImage = (_currentHdrImage + 1) % _maxHdrImage;
 }
 
 void Swapchain::CreateSyncObjects()

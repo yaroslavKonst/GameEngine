@@ -24,7 +24,7 @@ Square::Square(const char* texturePath, float depthMod)
 
 	SetDrawEnabled(true);
 
-	SetRectanglePosition(glm::vec4(-1.0f, -1.0f, -0.1f, -0.1f));
+	SetRectanglePosition(glm::vec4(-0.9f, -0.9f, -0.8f, -0.8f));
 	SetRectangleTexCoords(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
 	InputArea.x0 = -1;

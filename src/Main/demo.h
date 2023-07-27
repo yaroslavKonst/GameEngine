@@ -6,6 +6,7 @@
 #include "../VideoEngine/video.h"
 #include "../UniverseEngine/universe.h"
 #include "../Utils/loader.h"
+#include "../Assets/square.h"
 
 class Player : public Actor, public Object, public InputHandler
 {
@@ -347,6 +348,8 @@ public:
 		Brick brick2({0, 60, 0.5});
 		brick1.SetDrawLight(true);
 
+		Square square("../src/Assets/Resources/Images/texture.jpg", 0);
+
 		universe.RegisterActor(&player);
 
 		collisionEngine.RegisterObject(&player);
@@ -355,6 +358,8 @@ public:
 		video.RegisterModel(&field);
 		video.RegisterModel(&brick1);
 		video.RegisterModel(&brick2);
+
+		video.RegisterRectangle(&square);
 
 		video.RegisterLight(&light);
 		video.RegisterLight(&lightSt1);
@@ -379,6 +384,8 @@ public:
 		video.RemoveModel(&field);
 		video.RemoveModel(&brick1);
 		video.RemoveModel(&brick2);
+
+		video.RemoveRectangle(&square);
 
 		collisionEngine.RemoveObject(&field);
 		collisionEngine.RemoveObject(&player);

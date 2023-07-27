@@ -53,7 +53,8 @@ public:
 
 	void RecordCommandBuffer(
 		VkCommandBuffer commandBuffer,
-		uint32_t imageIndex);
+		uint32_t imageIndex,
+		float colorClearAlphaValue = 1.0f);
 
 	VkPipelineLayout GetPipelineLayout()
 	{
