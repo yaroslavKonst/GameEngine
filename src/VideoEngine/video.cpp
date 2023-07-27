@@ -10,10 +10,17 @@ Video::Video(
 	int width,
 	int height,
 	std::string name,
-	std::string applicationName)
+	std::string applicationName,
+	GraphicsSettings* settings)
 	: _window(width, height, name)
 {
 	_scene.SceneMutex = nullptr;
+	if (settings) {
+		_settings = *settings;
+		_settingsValid = true;
+	} else {
+		_settingsValid = false;
+	}
 
 	VkInstanceHandler::SetApplicationName(applicationName);
 	VkInstanceHandler::IncRef();
@@ -182,10 +189,16 @@ VkSampleCountFlagBits Video::GetMaxSampleCount()
 		VK_SAMPLE_COUNT_2_BIT
 	};
 
+	uint32_t maxSamples = _settingsValid ? _settings.MsaaLimit : 64;
+
+	uint32_t cSamples = 64;
+
 	for (auto bit : bits) {
-		if (counts & bit) {
+		if ((counts & bit) && cSamples <= maxSamples) {
 			return bit;
 		}
+
+		cSamples /= 2;
 	}
 
 	return VK_SAMPLE_COUNT_1_BIT;

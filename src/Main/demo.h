@@ -301,7 +301,11 @@ public:
 		CollisionEngine collisionEngine;
 		// 5 ms between universe ticks.
 		Universe universe(5);
-		Video video(1400, 1000, "Demo", "Application");
+
+		Video::GraphicsSettings videoSettings{};
+		videoSettings.MsaaLimit = 2;
+
+		Video video(1400, 1000, "Demo", "Application", &videoSettings);
 
 		video.SetSceneMutex(&sceneMutex);
 		universe.SetSceneMutex(&sceneMutex);

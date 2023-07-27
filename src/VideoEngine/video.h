@@ -19,11 +19,17 @@
 class Video
 {
 public:
+	struct GraphicsSettings
+	{
+		uint32_t MsaaLimit;
+	};
+
 	Video(
 		int width,
 		int height,
 		std::string name,
-		std::string applicationName = "");
+		std::string applicationName = "",
+		GraphicsSettings* settings = nullptr);
 
 	~Video();
 
@@ -90,6 +96,9 @@ public:
 
 private:
 	Window _window;
+
+	bool _settingsValid;
+	GraphicsSettings _settings;
 
 	VkSurfaceKHR _surface;
 	void CreateSurface();
