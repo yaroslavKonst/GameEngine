@@ -30,12 +30,15 @@ public:
 		vertices.push_back(glm::vec3(0.1, -0.1, 0.0));
 		vertices.push_back(glm::vec3(0.1, 0.1, 0.0));
 		vertices.push_back(glm::vec3(-0.1, 0.0, 0.0));
+		vertices.push_back(glm::vec3(0.1, -0.1, 1.0));
+		vertices.push_back(glm::vec3(0.1, 0.1, 1.0));
+		vertices.push_back(glm::vec3(-0.1, 0.0, 1.0));
 		vertices.push_back(glm::vec3(0.0, 0.0, 2.0));
 
 		std::vector<uint32_t> indices = {0, 1, 2};
 
 		SetObjectVertices(vertices);
-		//SetObjectIndices(indices);
+		SetObjectIndices(indices);
 		SetObjectCenter({0.0f, 0.0f, 1.5f});
 		SetObjectMatrix(glm::mat4(1.0));
 
@@ -215,10 +218,10 @@ public:
 	Field()
 	{
 		std::vector<glm::vec3> objectVertices = {
-			{-200, -200, 0.251981},
-			{-200, 200, 0.251981},
-			{200, 200, 0.251981},
-			{200, -200, 0.251981},
+			{-200, -200, 0.0},
+			{-200, 200, 0.0},
+			{200, 200, 0.0},
+			{200, -200, 0.0},
 		};
 
 		std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
@@ -227,9 +230,12 @@ public:
 		SetObjectIndices(indices);
 		SetObjectCenter({0.0f, 0.0f, -300.0f});
 		SetObjectMatrix(glm::mat4(1.0));
-		SetModelMatrix(glm::scale(
-			glm::mat4(1.0),
-			glm::vec3(10, 10, 1)));
+		SetModelMatrix(
+			glm::translate(
+			glm::scale(
+				glm::mat4(1.0),
+				glm::vec3(10, 10, 1)),
+				glm::vec3(0, 0, -0.251981)));
 		SetModelInnerMatrix(glm::mat4(1.0));
 		SetModelInstances({glm::mat4(1.0)});
 
@@ -300,6 +306,65 @@ public:
 		Player player(&video, &light);
 		Field field;
 
+		glm::mat4 base = glm::translate(
+			glm::mat4(1.0),
+			glm::vec3(20, 0, 0));
+
+		ExternModel wall1(
+			"../src/Assets/Resources/Models/wall.obj",
+			"../src/Assets/Resources/Models/wall.png",
+			base);
+
+		base = glm::translate(base, glm::vec3(11, 0, 0));
+
+		ExternModel wall2(
+			"../src/Assets/Resources/Models/wall.obj",
+			"../src/Assets/Resources/Models/wall.png",
+			base);
+
+		base = glm::rotate(
+			base,
+			glm::radians(90.0f),
+			glm::vec3(0, 0, 1));
+
+		ExternModel wall3(
+			"../src/Assets/Resources/Models/wall.obj",
+			"../src/Assets/Resources/Models/wall.png",
+			base);
+
+		base = glm::translate(base, glm::vec3(10, 3, 0));
+
+		ExternModel wall4(
+			"../src/Assets/Resources/Models/wall.obj",
+			"../src/Assets/Resources/Models/wall.png",
+			base);
+
+		ExternModel wallLight(
+			"../src/Assets/Resources/Models/wall.obj",
+			"../src/Assets/Resources/Models/wall.png",
+			glm::scale(
+				glm::translate(
+					glm::mat4(1.0f),
+				glm::vec3(25, 5, 2.5)),
+					glm::vec3(0.1, 0.1, 0.1)));
+
+		ExternModel roof(
+			"../src/Assets/Resources/Models/roof.obj",
+			"../src/Assets/Resources/Models/wall.png",
+			glm::scale(
+				glm::translate(
+					glm::mat4(1.0f),
+				glm::vec3(21, 12, 3)),
+					glm::vec3(1, 1, 1)));
+
+		wallLight.SetDrawLight(true);
+		wallLight.SetDrawLightMultiplier(10);
+
+		Light lightSt;
+		lightSt.SetLightType(Light::Type::Point);
+		lightSt.SetLightColor({20.0, 20.0, 20.0});
+		lightSt.SetLightPosition({25, 5.5, 2.5});
+
 		Square square("../src/Assets/Resources/Images/texture.jpg", 0);
 
 		universe.RegisterActor(&player);
@@ -307,11 +372,26 @@ public:
 		collisionEngine.RegisterObject(&player);
 		collisionEngine.RegisterObject(&field);
 
+		collisionEngine.RegisterObject(&wallLight);
+		collisionEngine.RegisterObject(&wall1);
+		collisionEngine.RegisterObject(&wall2);
+		collisionEngine.RegisterObject(&wall3);
+		collisionEngine.RegisterObject(&wall4);
+		collisionEngine.RegisterObject(&roof);
+
 		video.RegisterModel(&field);
+
+		video.RegisterModel(&wallLight);
+		video.RegisterModel(&wall1);
+		video.RegisterModel(&wall2);
+		video.RegisterModel(&wall3);
+		video.RegisterModel(&wall4);
+		video.RegisterModel(&roof);
 
 		video.RegisterRectangle(&square);
 
 		video.RegisterLight(&light);
+		video.RegisterLight(&lightSt);
 
 		video.GetInputControl()->Subscribe(&player);
 
@@ -326,10 +406,26 @@ public:
 
 		video.RemoveModel(&field);
 
+		video.RemoveModel(&wallLight);
+		video.RemoveModel(&wall1);
+		video.RemoveModel(&wall2);
+		video.RemoveModel(&wall3);
+		video.RemoveModel(&wall4);
+		video.RemoveModel(&roof);
+
 		video.RemoveRectangle(&square);
+
+		video.RemoveLight(&lightSt);
 
 		collisionEngine.RemoveObject(&field);
 		collisionEngine.RemoveObject(&player);
+
+		collisionEngine.RemoveObject(&wallLight);
+		collisionEngine.RemoveObject(&wall1);
+		collisionEngine.RemoveObject(&wall2);
+		collisionEngine.RemoveObject(&wall3);
+		collisionEngine.RemoveObject(&wall4);
+		collisionEngine.RemoveObject(&roof);
 
 		universe.RemoveActor(&player);
 

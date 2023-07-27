@@ -107,7 +107,7 @@ vec3 ProcessPointLight(
 		0.32f * (distance * distance));
 
 	float shadow = CalculateShadow(fragPos, viewPos, index);
-	return (ambient + (diffuse + specular) * (1.0 - shadow)) * attenuation;
+	return (ambient + diffuse + specular) * (1.0 - shadow) * attenuation;
 }
 
 vec3 ProcessSpotLight(
@@ -145,8 +145,8 @@ vec3 ProcessSpotLight(
 		vec3 specular = specularStrength * spec * lightColor;
 
 		float shadow = CalculateShadow(fragPos, viewPos, index);
-		return (ambient + (diffuse + specular) * intensity *
-			(1.0 - shadow)) * attenuation;
+		return (ambient + (diffuse + specular) * intensity) *
+			(1.0 - shadow) * attenuation;
 	} else {
 		return ambient * attenuation;
 	}
