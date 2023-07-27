@@ -32,10 +32,21 @@ public:
 		_isLight = value;
 	}
 
+	virtual float DrawLightMultiplier()
+	{
+		return _lightMultiplier;
+	}
+
+	virtual void SetDrawLightMultiplier(float value)
+	{
+		_lightMultiplier = value;
+	}
+
 private:
 	bool _active;
 	bool _ready;
 	bool _isLight;
+	float _lightMultiplier;
 };
 
 #endif

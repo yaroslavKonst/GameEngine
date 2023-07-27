@@ -351,6 +351,7 @@ public:
 		Brick brick1({0, 50, 5});
 		Brick brick2({0, 60, 0.5});
 		brick1.SetDrawLight(true);
+		brick1.SetDrawLightMultiplier(10);
 
 		Square square("../src/Assets/Resources/Images/texture.jpg", 0);
 

@@ -649,8 +649,8 @@ void Swapchain::CreatePipelines()
 	pushConstants[0].size = sizeof(MVP);
 	pushConstants[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushConstants[1].offset = 192;
-	pushConstants[1].size = sizeof(glm::vec3) + sizeof(uint32_t);
-	initInfo.PushConstantRangeCount = 1;
+	pushConstants[1].size = sizeof(glm::vec4) + sizeof(uint32_t) * 2;
+	initInfo.PushConstantRangeCount = 2;
 	initInfo.PushConstants = pushConstants;
 
 	_pipeline = new Pipeline(&initInfo);
@@ -1342,6 +1342,19 @@ void Swapchain::RecordCommandBuffer(
 			204,
 			sizeof(uint32_t),
 			&isLight);
+
+		if (isLight) {
+			float lightMultiplier =
+				model.first->DrawLightMultiplier();
+
+			vkCmdPushConstants(
+				commandBuffer,
+				_pipeline->GetPipelineLayout(),
+				VK_SHADER_STAGE_FRAGMENT_BIT,
+				208,
+				sizeof(float),
+				&lightMultiplier);
+		}
 
 		std::vector<VkDescriptorSet> descriptorSets = {
 			model.second.DescriptorSet,

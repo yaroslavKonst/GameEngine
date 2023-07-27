@@ -28,7 +28,8 @@ layout(set = 1, binding = 1) uniform samplerCube shadowSampler[100];
 
 layout(push_constant) uniform ViewPos {
 	layout(offset = 192) vec3 Pos;
-	layout(offset = 204) int isLight;
+	layout(offset = 204) int IsLight;
+	layout(offset = 208) float LightMultiplier;
 } viewPos;
 
 float CalculateShadow(vec3 fragPos, vec3 viewPos, int lightIndex)
@@ -155,8 +156,11 @@ void main() {
 	vec4 objectColorAlpha = texture(texSampler, texCoord);
 	vec3 objectColor = objectColorAlpha.rgb;
 
-	if (viewPos.isLight != 0) {
-		outColor = objectColorAlpha;
+	if (viewPos.IsLight != 0) {
+		outColor = vec4(
+			objectColor * viewPos.LightMultiplier,
+			objectColorAlpha.a);
+
 		return;
 	}
 
