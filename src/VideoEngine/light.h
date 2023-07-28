@@ -19,6 +19,11 @@ public:
 		Direct = 2
 	};
 
+	Light()
+	{
+		_active = false;
+	}
+
 	virtual ~Light()
 	{
 	}
@@ -83,6 +88,16 @@ public:
 		_angleFade = value;
 	}
 
+	virtual bool IsLightActive()
+	{
+		return _active;
+	}
+
+	virtual void SetLightActive(bool value)
+	{
+		_active = value;
+	}
+
 private:
 	glm::vec3 _position;
 	glm::vec3 _color;
@@ -90,6 +105,8 @@ private:
 	Type _type;
 	float _angle;
 	float _angleFade;
+
+	bool _active;
 };
 
 #endif

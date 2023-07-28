@@ -1169,6 +1169,10 @@ void Swapchain::RecordCommandBuffer(
 		glm::perspective(glm::radians(90.0f), 1.0f, 0.01f, 500.0f);
 
 	for (auto& light : orderedLights) {
+		if (!light.second->IsLightActive()) {
+			continue;
+		}
+
 		lightDescriptors[selectedLights].Position =
 			light.second->GetLightPosition();
 		lightDescriptors[selectedLights].Color =

@@ -9,10 +9,230 @@
 #include "../Assets/square.h"
 #include "../Assets/ExternModel.h"
 
+class Sword : public InputHandler, public Actor
+{
+public:
+	Sword(Video* video)
+	{
+		_video = video;
+
+		int texWidth;
+		int texHeight;
+		auto texData = Loader::LoadImage(
+			"../src/Assets/Resources/Models/sword.png",
+			texWidth,
+			texHeight);
+
+		_swordTexture = video->GetTextures()->AddTexture(
+			texWidth,
+			texHeight,
+			texData);
+
+		texData = Loader::LoadImage(
+			"../src/Assets/Resources/Models/blade.png",
+			texWidth,
+			texHeight);
+
+		_bladeTexture = video->GetTextures()->AddTexture(
+			texWidth,
+			texHeight,
+			texData);
+
+		_state = 0;
+		_prevState = 0;
+		_length = 0;
+		_intensity = 0;
+
+		_sword = new ExternModel(
+			"../src/Assets/Resources/Models/sword.obj",
+			_swordTexture,
+			_swordTexture,
+			glm::scale(glm::mat4(1.0f),
+				glm::vec3(0.01, 0.01, 0.01)));
+
+		_blade = new ExternModel(
+			"../src/Assets/Resources/Models/blade.obj",
+			_bladeTexture,
+			_bladeTexture,
+			glm::scale(glm::mat4(1.0f),
+				glm::vec3(0.01, 0.01, 1.0)));
+		_blade->SetDrawLight(true);
+		_blade->SetDrawLightMultiplier(10);
+		_blade->SetDrawEnabled(false);
+
+		video->RegisterModel(_sword);
+		video->RegisterModel(_blade);
+
+		_bladeLight1.SetLightColor({0.0, 0.6, 0.0});
+		_bladeLight2.SetLightColor({0.0, 0.6, 0.0});
+		_bladeLight1.SetLightType(Light::Type::Point);
+		_bladeLight2.SetLightType(Light::Type::Point);
+
+		_video->RegisterLight(&_bladeLight1);
+		_video->RegisterLight(&_bladeLight2);
+
+		SetInputEnabled(true);
+	}
+
+	~Sword()
+	{
+	}
+
+	void Tick()
+	{
+		_mutex.lock();
+		float maxLength = 1.2;
+
+		_intensity += 20;
+
+		if (_intensity >= 360) {
+			_intensity -= 360;
+		}
+
+		_bladeLight1.SetLightColor(
+			glm::vec3(0.0f, 0.6f, 0.0f) *
+			(1.0f + sinf(glm::radians(_intensity)) * 0.01f));
+
+		_bladeLight2.SetLightColor(
+			glm::vec3(0.0f, 0.6f, 0.0f) *
+			(1.0f + sinf(glm::radians(_intensity)) * 0.01f));
+
+		switch (_state) {
+		case 1:
+			if (_length < maxLength) {
+				_length += 0.02;
+
+				if (_length > maxLength) {
+					_length = maxLength;
+				}
+
+
+				if (_prevState == 0) {
+					_bladeLight1.SetLightActive(true);
+					_bladeLight2.SetLightActive(true);
+					_blade->SetDrawEnabled(true);
+					_prevState = 1;
+				}
+			}
+
+			break;
+		case 0:
+			if (_length > 0) {
+				_length -= 0.02;
+
+				if (_length < 0) {
+					_length = 0;
+				}
+
+				if (_length <= 0 && _prevState == 1) {
+					_bladeLight1.SetLightActive(false);
+					_bladeLight2.SetLightActive(false);
+					_blade->SetDrawEnabled(false);
+					_prevState = 0;
+				}
+			}
+
+			break;
+		}
+
+		_mutex.unlock();
+	}
+
+	void Key(
+		int key,
+		int scancode,
+		int action,
+		int mods)
+	{
+		if (key == GLFW_KEY_F) {
+			if (action == GLFW_PRESS) {
+				_mutex.lock();
+
+				switch (_state) {
+				case 0:
+					_state = 1;
+					break;
+				case 1:
+					_state = 0;
+					break;
+				}
+
+				_mutex.unlock();
+			}
+		}
+	}
+
+	void SetPosition(const glm::mat4 pos)
+	{
+		float maxLength = 1.2;
+		_position = pos;
+
+		_bladeLight1.SetLightPosition(ToGlobal({
+			0.0,
+			0.0,
+			_length * 0.33}));
+
+		_bladeLight2.SetLightPosition(ToGlobal({
+			0.0,
+			0.0,
+			_length * 0.66}));
+
+		if (_length > 0 && _length < maxLength) {
+			_bladeLight1.SetLightColor(
+				glm::vec3(0.0, 0.6, 0.0) *
+				_length / maxLength);
+			_bladeLight2.SetLightColor(
+				glm::vec3(0.0, 0.6, 0.0) *
+				_length / maxLength);
+		}
+
+		glm::mat4 blade = _position;
+
+		blade = glm::translate(
+			blade,
+			glm::vec3(0.0, 0.0, 0.35));
+
+		blade = glm::scale(
+			blade,
+			glm::vec3(
+				0.01,
+				0.01,
+				_length / maxLength));
+
+		_blade->SetModelMatrix(blade);
+		_sword->SetModelMatrix(
+			glm::scale(_position, glm::vec3(0.01, 0.01, 0.01)));
+	}
+
+private:
+	ExternModel* _sword;
+	ExternModel* _blade;
+	uint32_t _swordTexture;
+	uint32_t _bladeTexture;
+	Light _bladeLight1;
+	Light _bladeLight2;
+
+	int _state;
+	int _prevState;
+	float _length;
+
+	Video* _video;
+
+	std::mutex _mutex;
+	float _intensity;
+
+	glm::mat4 _position;
+
+	glm::vec3 ToGlobal(const glm::vec3& coords)
+	{
+		return _position * glm::vec4(coords, 1.0f);
+	}
+};
+
 class Player : public Actor, public Object, public InputHandler
 {
 public:
-	Player(Video* video, Light* light)
+	Player(Video* video, Light* light, Sword* sword)
 	{
 		_video = video;
 		_pos = glm::vec3(0.0, 0.0, 5.0);
@@ -24,6 +244,7 @@ public:
 		_vspeed = 0;
 		_light = light;
 		_lightActive = true;
+		_sword = sword;
 
 		// Pyramid
 		std::vector<glm::vec3> vertices;
@@ -101,10 +322,10 @@ public:
 		} else if (key == GLFW_KEY_L) {
 			if (action == GLFW_PRESS) {
 				if (_lightActive) {
-					_video->RemoveLight(_light);
+					_light->SetLightActive(false);
 					_lightActive = false;
 				} else {
-					_video->RegisterLight(_light);
+					_light->SetLightActive(true);
 					_lightActive = true;
 				}
 			}
@@ -194,6 +415,19 @@ public:
 				hdir * cosf(glm::radians(_angleV)),
 				sinf(glm::radians(_angleV))));
 		_mutex.unlock();
+
+		glm::mat4 swp(1.0f);
+
+		swp = glm::translate(
+			swp,
+			_pos + glm::vec3(hdir * 0.5f + hdirStrafe * 0.3f,
+				1.2f));
+		swp = glm::rotate(
+			swp,
+			glm::radians(-_angleH), glm::vec3(0,0,1));
+		swp = glm::rotate(swp, glm::radians(-45.0f), glm::vec3(1,0,0));
+
+		_sword->SetPosition(swp);
 	}
 
 private:
@@ -210,6 +444,8 @@ private:
 	bool _lightActive;
 
 	std::mutex _mutex;
+
+	Sword* _sword;
 };
 
 class Field : public Model, public Object
@@ -325,6 +561,7 @@ public:
 		light.SetLightColor({0.9, 0.9, 0.9});
 		light.SetLightAngle(15);
 		light.SetLightAngleFade(10);
+		light.SetLightActive(true);
 
 		video.SetFOV(80);
 		video.SetCameraUp({0, 0, 1});
@@ -337,8 +574,10 @@ public:
 		video.CreateSkybox(skbTWidth, skbTHeight, skbTData);
 		video.SetSkyboxColor({0.1, 0.05, 0.05});
 
-		Player player(&video, &light);
+		Sword sword(&video);
+		Player player(&video, &light, &sword);
 		Field field(woodenTiles);
+
 
 		glm::mat4 base = glm::translate(
 			glm::mat4(1.0),
@@ -404,10 +643,12 @@ public:
 		lightSt.SetLightType(Light::Type::Point);
 		lightSt.SetLightColor({20.0, 20.0, 20.0});
 		lightSt.SetLightPosition({25, 5.5, 2.5});
+		lightSt.SetLightActive(true);
 
 		Square square(squareTexture, 0);
 
 		universe.RegisterActor(&player);
+		universe.RegisterActor(&sword);
 
 		collisionEngine.RegisterObject(&player);
 		collisionEngine.RegisterObject(&field);
@@ -434,6 +675,7 @@ public:
 		video.RegisterLight(&lightSt);
 
 		video.GetInputControl()->Subscribe(&player);
+		video.GetInputControl()->Subscribe(&sword);
 
 		std::thread universeThread(UniverseThread, &universe);
 
@@ -443,6 +685,7 @@ public:
 		universeThread.join();
 
 		video.GetInputControl()->UnSubscribe(&player);
+		video.GetInputControl()->UnSubscribe(&sword);
 
 		video.RemoveModel(&field);
 
@@ -455,6 +698,7 @@ public:
 
 		video.RemoveRectangle(&square);
 
+		video.RemoveLight(&light);
 		video.RemoveLight(&lightSt);
 
 		collisionEngine.RemoveObject(&field);
@@ -468,6 +712,7 @@ public:
 		collisionEngine.RemoveObject(&roof);
 
 		universe.RemoveActor(&player);
+		universe.RemoveActor(&sword);
 
 		universe.RemoveCollisionEngine(&collisionEngine);
 	}
