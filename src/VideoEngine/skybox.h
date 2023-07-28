@@ -9,7 +9,7 @@
 #include "texturable.h"
 #include "ModelDescriptor.h"
 
-struct Skybox : public Texturable
+struct Skybox : public Drawable
 {
 	struct ShaderData
 	{

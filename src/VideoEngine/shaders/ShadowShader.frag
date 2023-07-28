@@ -12,7 +12,7 @@ struct LightDescriptor
 
 layout(location = 0) in vec3 inPos;
 
-layout(set = 1, binding = 0) uniform Light
+layout(set = 0, binding = 0) uniform Light
 {
 	int LightCount;
 	layout(offset = 16) LightDescriptor Lights[100];

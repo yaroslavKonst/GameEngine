@@ -98,6 +98,11 @@ public:
 		return _swapchain->GetScreenRatio();
 	}
 
+	TextureHandler* GetTextures()
+	{
+		return _scene.Textures;
+	}
+
 private:
 	Window _window;
 
@@ -140,19 +145,6 @@ private:
 	ModelDescriptor CreateRectangleDescriptor(Rectangle* rectangle);
 	void DestroyRectangleDescriptor(ModelDescriptor descriptor);
 	void RemoveAllRectangles();
-
-	ImageHelper::Image CreateTextureImage(
-		Texturable* model,
-		uint32_t& mipLevels,
-		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
-		uint32_t layerCount = 1);
-	void CreateDescriptorSets(ModelDescriptor* descriptor);
-	void DestroyDescriptorSets(ModelDescriptor* descriptor);
-	void GenerateMipmaps(
-		ImageHelper::Image image,
-		uint32_t width,
-		uint32_t height,
-		uint32_t mipLevels);
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();

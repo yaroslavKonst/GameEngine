@@ -9,6 +9,7 @@
 #include "rectangle.h"
 #include "skybox.h"
 #include "light.h"
+#include "TextureHandler.h"
 
 struct SceneDescriptor
 {
@@ -16,6 +17,8 @@ struct SceneDescriptor
 	std::map<Rectangle*, ModelDescriptor> Rectangles;
 	std::set<Light*> Lights;
 	Skybox skybox;
+
+	TextureHandler* Textures;
 
 	double FOV;
 	glm::vec3 CameraPosition;

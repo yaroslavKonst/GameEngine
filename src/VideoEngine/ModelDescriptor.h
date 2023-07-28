@@ -32,12 +32,7 @@ struct ModelDescriptor
 	uint32_t InstanceCount;
 	BufferHelper::Buffer InstanceBuffer;
 
-	ImageHelper::Image TextureImage;
-	VkImageView TextureImageView;
-	VkSampler TextureSampler;
-
-	VkDescriptorPool DescriptorPool;
-	VkDescriptorSet DescriptorSet;
+	std::vector<uint32_t> Textures;
 
 	static std::vector<VkVertexInputBindingDescription>
 		GetVertexBindingDescription();

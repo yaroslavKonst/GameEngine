@@ -34,10 +34,10 @@ public:
 	~TextureHandler();
 
 	uint32_t AddTexture(
-		TextureType type,
 		uint32_t width,
 		uint32_t height,
 		const std::vector<uint8_t>& texture,
+		TextureType type = TextureType::T2D,
 		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
 		uint32_t layerCount = 1);
 

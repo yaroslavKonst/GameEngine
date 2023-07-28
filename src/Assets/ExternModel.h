@@ -11,7 +11,7 @@ class ExternModel : public Model, public Object
 public:
 	ExternModel(
 		std::string modelFile,
-		std::string textureFile,
+		uint32_t textureIndex,
 		glm::mat4 matrix);
 };
 

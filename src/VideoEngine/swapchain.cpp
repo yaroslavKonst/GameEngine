@@ -758,7 +758,6 @@ void Swapchain::CreatePipelines()
 	initInfo.Extent.height = _shadowSize;
 	initInfo.DepthAttachmentFormat = _shadowFormat;
 	initInfo.DescriptorSetLayouts = {
-		_descriptorSetLayout,
 		_lightDescriptorSetLayout
 	};
 	initInfo.MsaaSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -1121,13 +1120,16 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(Skybox::ShaderData),
 			&shaderData);
 
+		auto& tex = _scene->Textures->GetTexture(
+			_scene->skybox.Descriptor.Textures[0]);
+
 		vkCmdBindDescriptorSets(
 			commandBuffer,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			_skyboxPipeline->GetPipelineLayout(),
 			0,
 			1,
-			&_scene->skybox.Descriptor.DescriptorSet,
+			&tex.DescriptorSet,
 			0,
 			nullptr);
 
@@ -1310,7 +1312,6 @@ void Swapchain::RecordCommandBuffer(
 				&lightIndex);
 
 			std::vector<VkDescriptorSet> descriptorSets = {
-				model.second.DescriptorSet,
 				_lightDescriptorSets[imageIndex]
 			};
 
@@ -1408,8 +1409,11 @@ void Swapchain::RecordCommandBuffer(
 				&lightMultiplier);
 		}
 
+		auto& tex = _scene->Textures->GetTexture(
+			model.second.Textures[0]);
+
 		std::vector<VkDescriptorSet> descriptorSets = {
-			model.second.DescriptorSet,
+			tex.DescriptorSet,
 			_lightDescriptorSets[imageIndex]
 		};
 
@@ -1469,13 +1473,16 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(glm::vec4) * 2,
 			rectData.data());
 
+		auto& tex = _scene->Textures->GetTexture(
+			rectangle.second.Textures[0]);
+
 		vkCmdBindDescriptorSets(
 			commandBuffer,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			_rectanglePipeline->GetPipelineLayout(),
 			0,
 			1,
-			&rectangle.second.DescriptorSet,
+			&tex.DescriptorSet,
 			0,
 			nullptr);
 

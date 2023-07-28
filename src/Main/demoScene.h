@@ -215,7 +215,7 @@ private:
 class Field : public Model, public Object
 {
 public:
-	Field()
+	Field(uint32_t textureIndex)
 	{
 		std::vector<glm::vec3> objectVertices = {
 			{-200, -200, 0.0},
@@ -239,12 +239,6 @@ public:
 		SetModelInnerMatrix(glm::mat4(1.0));
 		SetModelInstances({glm::mat4(1.0)});
 
-		int texWidth;
-		int texHeight;
-		auto texture = Loader::LoadImage(
-			"../src/Assets/Resources/Models/floor.jpg",
-			texWidth,
-			texHeight);
 		auto model = Loader::LoadModel(
 			"../src/Assets/Resources/Models/field.obj");
 
@@ -257,9 +251,7 @@ public:
 		SetModelTexCoords(model.TexCoords);
 		SetModelIndices(model.Indices);
 
-		SetTexWidth(texWidth);
-		SetTexHeight(texHeight);
-		SetTexData(texture);
+		SetTexture({textureIndex});
 
 		SetDrawEnabled(true);
 	}
@@ -286,6 +278,38 @@ public:
 
 		universe.RegisterCollisionEngine(&collisionEngine);
 
+		int texWidth;
+		int texHeight;
+		auto texData = Loader::LoadImage(
+			"../src/Assets/Resources/Models/floor.jpg",
+			texWidth,
+			texHeight);
+
+		uint32_t woodenTiles = video.GetTextures()->AddTexture(
+			texWidth,
+			texHeight,
+			texData);
+
+		texData = Loader::LoadImage(
+			"../src/Assets/Resources/Models/wall.png",
+			texWidth,
+			texHeight);
+
+		uint32_t wallTexture = video.GetTextures()->AddTexture(
+			texWidth,
+			texHeight,
+			texData);
+
+		texData = Loader::LoadImage(
+			"../src/Assets/Resources/Images/texture.jpg",
+			texWidth,
+			texHeight);
+
+		uint32_t squareTexture = video.GetTextures()->AddTexture(
+			texWidth,
+			texHeight,
+			texData);
+
 		Light light;
 		light.SetLightType(Light::Type::Spot);
 		light.SetLightColor({0.9, 0.9, 0.9});
@@ -304,7 +328,7 @@ public:
 		video.SetSkyboxColor({0.1, 0.05, 0.05});
 
 		Player player(&video, &light);
-		Field field;
+		Field field(woodenTiles);
 
 		glm::mat4 base = glm::translate(
 			glm::mat4(1.0),
@@ -312,14 +336,14 @@ public:
 
 		ExternModel wall1(
 			"../src/Assets/Resources/Models/wall.obj",
-			"../src/Assets/Resources/Models/wall.png",
+			wallTexture,
 			base);
 
 		base = glm::translate(base, glm::vec3(11, 0, 0));
 
 		ExternModel wall2(
 			"../src/Assets/Resources/Models/wall.obj",
-			"../src/Assets/Resources/Models/wall.png",
+			wallTexture,
 			base);
 
 		base = glm::rotate(
@@ -329,19 +353,19 @@ public:
 
 		ExternModel wall3(
 			"../src/Assets/Resources/Models/wall.obj",
-			"../src/Assets/Resources/Models/wall.png",
+			wallTexture,
 			base);
 
 		base = glm::translate(base, glm::vec3(10, 3, 0));
 
 		ExternModel wall4(
 			"../src/Assets/Resources/Models/wall.obj",
-			"../src/Assets/Resources/Models/wall.png",
+			wallTexture,
 			base);
 
 		ExternModel wallLight(
 			"../src/Assets/Resources/Models/wall.obj",
-			"../src/Assets/Resources/Models/wall.png",
+			wallTexture,
 			glm::scale(
 				glm::translate(
 					glm::mat4(1.0f),
@@ -350,7 +374,7 @@ public:
 
 		ExternModel roof(
 			"../src/Assets/Resources/Models/roof.obj",
-			"../src/Assets/Resources/Models/wall.png",
+			wallTexture,
 			glm::scale(
 				glm::translate(
 					glm::mat4(1.0f),
@@ -365,7 +389,7 @@ public:
 		lightSt.SetLightColor({20.0, 20.0, 20.0});
 		lightSt.SetLightPosition({25, 5.5, 2.5});
 
-		Square square("../src/Assets/Resources/Images/texture.jpg", 0);
+		Square square(squareTexture, 0);
 
 		universe.RegisterActor(&player);
 

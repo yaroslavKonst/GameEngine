@@ -1,7 +1,6 @@
 .PHONY: all
 
 all: \
-	../../build/triangle.o \
 	../../build/square.o \
 	../../build/ExternModel.o
 

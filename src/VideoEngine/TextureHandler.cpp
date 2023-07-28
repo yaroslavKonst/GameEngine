@@ -29,10 +29,10 @@ TextureHandler::~TextureHandler()
 }
 
 uint32_t TextureHandler::AddTexture(
-	TextureType type,
 	uint32_t width,
 	uint32_t height,
 	const std::vector<uint8_t>& texture,
+	TextureType type,
 	VkImageCreateFlagBits flags,
 	uint32_t layerCount)
 {

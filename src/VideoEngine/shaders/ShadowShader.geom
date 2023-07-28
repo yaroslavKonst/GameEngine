@@ -3,7 +3,7 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices=18) out;
 
-layout(set = 1, binding = 0) uniform Shadow
+layout(set = 0, binding = 0) uniform Shadow
 {
 	layout(offset = 1024) mat4 Matrices[60];
 } shadow;

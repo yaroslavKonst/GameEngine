@@ -6,21 +6,11 @@
 
 #include "../Utils/loader.h"
 
-Square::Square(const char* texturePath, float depthMod)
+Square::Square(uint32_t textureIndex, float depthMod)
 {
 	_depthMod = depthMod;
 
-	int texWidth;
-	int texHeight;
-
-	std::vector<uint8_t> texData = Loader::LoadImage(
-		texturePath,
-		texWidth,
-		texHeight);
-
-	SetTexWidth(texWidth);
-	SetTexHeight(texHeight);
-	SetTexData(texData);
+	SetTexture({textureIndex});
 
 	SetDrawEnabled(true);
 

@@ -9,7 +9,7 @@
 class Square : public Rectangle, public Actor, public InputHandler
 {
 public:
-	Square(const char* texturePath, float depthMod);
+	Square(uint32_t textureIndex, float depthMod);
 	~Square();
 	void Tick() override;
 	bool MouseMove(double xpos, double ypos, bool inArea) override

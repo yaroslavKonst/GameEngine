@@ -5,14 +5,10 @@
 
 ExternModel::ExternModel(
 	std::string modelFile,
-	std::string textureFile,
+	uint32_t textureIndex,
 	glm::mat4 matrix)
 {
 	auto model = Loader::LoadModel(modelFile);
-
-	int texWidth;
-	int texHeight;
-	auto texture = Loader::LoadImage(textureFile, texWidth, texHeight);
 
 	SetModelVertices(model.Vertices);
 	SetModelNormals(model.Normals);
@@ -23,9 +19,7 @@ ExternModel::ExternModel(
 	SetObjectIndices(model.Indices);
 	SetObjectCenter();
 
-	SetTexWidth(texWidth);
-	SetTexHeight(texHeight);
-	SetTexData(texture);
+	SetTexture({textureIndex});
 
 	SetModelMatrix(matrix);
 	SetObjectMatrix(matrix);
