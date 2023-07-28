@@ -301,6 +301,16 @@ public:
 			texData);
 
 		texData = Loader::LoadImage(
+			"../src/Assets/Resources/Models/wall_specular.png",
+			texWidth,
+			texHeight);
+
+		uint32_t wallSpecular = video.GetTextures()->AddTexture(
+			texWidth,
+			texHeight,
+			texData);
+
+		texData = Loader::LoadImage(
 			"../src/Assets/Resources/Images/texture.jpg",
 			texWidth,
 			texHeight);
@@ -337,6 +347,7 @@ public:
 		ExternModel wall1(
 			"../src/Assets/Resources/Models/wall.obj",
 			wallTexture,
+			wallSpecular,
 			base);
 
 		base = glm::translate(base, glm::vec3(11, 0, 0));
@@ -344,6 +355,7 @@ public:
 		ExternModel wall2(
 			"../src/Assets/Resources/Models/wall.obj",
 			wallTexture,
+			wallSpecular,
 			base);
 
 		base = glm::rotate(
@@ -354,6 +366,7 @@ public:
 		ExternModel wall3(
 			"../src/Assets/Resources/Models/wall.obj",
 			wallTexture,
+			wallSpecular,
 			base);
 
 		base = glm::translate(base, glm::vec3(10, 3, 0));
@@ -361,11 +374,13 @@ public:
 		ExternModel wall4(
 			"../src/Assets/Resources/Models/wall.obj",
 			wallTexture,
+			wallSpecular,
 			base);
 
 		ExternModel wallLight(
 			"../src/Assets/Resources/Models/wall.obj",
 			wallTexture,
+			wallSpecular,
 			glm::scale(
 				glm::translate(
 					glm::mat4(1.0f),
@@ -375,6 +390,7 @@ public:
 		ExternModel roof(
 			"../src/Assets/Resources/Models/roof.obj",
 			wallTexture,
+			wallSpecular,
 			glm::scale(
 				glm::translate(
 					glm::mat4(1.0f),

@@ -668,6 +668,7 @@ void Swapchain::CreatePipelines()
 	initInfo.DepthAttachmentFormat = _depthImage.Format;
 	initInfo.DescriptorSetLayouts = {
 		_descriptorSetLayout,
+		_descriptorSetLayout,
 		_lightDescriptorSetLayout
 	};
 	initInfo.MsaaSamples = _msaaSamples;
@@ -715,6 +716,9 @@ void Swapchain::CreatePipelines()
 	initInfo.VertexShaderSize = sizeof(RectangleShaderVert);
 	initInfo.FragmentShaderCode = RectangleShaderFrag;
 	initInfo.FragmentShaderSize = sizeof(RectangleShaderFrag);
+	initInfo.DescriptorSetLayouts = {
+		_descriptorSetLayout
+	};
 	initInfo.ClearColorImage = true;
 	initInfo.ColorImageFinalLayout =
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -737,6 +741,9 @@ void Swapchain::CreatePipelines()
 	initInfo.VertexShaderSize = sizeof(SkyboxShaderVert);
 	initInfo.FragmentShaderCode = SkyboxShaderFrag;
 	initInfo.FragmentShaderSize = sizeof(SkyboxShaderFrag);
+	initInfo.DescriptorSetLayouts = {
+		_descriptorSetLayout
+	};
 	initInfo.ClearColorImage = true;
 	initInfo.ColorImageFinalLayout =
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1409,11 +1416,16 @@ void Swapchain::RecordCommandBuffer(
 				&lightMultiplier);
 		}
 
-		auto& tex = _scene->Textures->GetTexture(
+		auto& texDiff = _scene->Textures->GetTexture(
 			model.second.Textures[0]);
 
+		auto& texSpec = model.second.Textures.size() > 1 ?
+			_scene->Textures->GetTexture(model.second.Textures[1]) :
+			texDiff;
+
 		std::vector<VkDescriptorSet> descriptorSets = {
-			tex.DescriptorSet,
+			texDiff.DescriptorSet,
+			texSpec.DescriptorSet,
 			_lightDescriptorSets[imageIndex]
 		};
 

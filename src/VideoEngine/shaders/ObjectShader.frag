@@ -16,15 +16,16 @@ layout(location = 2) in vec3 inPos;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 0, binding = 0) uniform sampler2D texSampler;
+layout(set = 0, binding = 0) uniform sampler2D diffuseImage;
+layout(set = 1, binding = 0) uniform sampler2D specularImage;
 
-layout(set = 1, binding = 0) uniform Light
+layout(set = 2, binding = 0) uniform Light
 {
 	int LightCount;
 	layout(offset = 16) LightDescriptor Lights[100];
 } light;
 
-layout(set = 1, binding = 1) uniform samplerCube shadowSampler[100];
+layout(set = 2, binding = 1) uniform samplerCube shadowSampler[100];
 
 layout(push_constant) uniform ViewPos {
 	layout(offset = 192) vec3 Pos;
@@ -82,6 +83,8 @@ float CalculateShadow(vec3 fragPos, vec3 viewPos, int lightIndex)
 }
 
 vec3 ProcessPointLight(
+	vec3 diffuseColor,
+	vec3 specularColor,
 	vec3 fragPos,
 	vec3 lightPos,
 	vec3 lightColor,
@@ -107,10 +110,13 @@ vec3 ProcessPointLight(
 		0.32f * (distance * distance));
 
 	float shadow = CalculateShadow(fragPos, viewPos, index);
-	return (ambient + diffuse + specular) * (1.0 - shadow) * attenuation;
+	return ((ambient + diffuse) * diffuseColor + specular * specularColor)
+		* (1.0 - shadow) * attenuation;
 }
 
 vec3 ProcessSpotLight(
+	vec3 diffuseColor,
+	vec3 specularColor,
 	vec3 fragPos,
 	vec3 lightPos,
 	vec3 lightColor,
@@ -145,20 +151,22 @@ vec3 ProcessSpotLight(
 		vec3 specular = specularStrength * spec * lightColor;
 
 		float shadow = CalculateShadow(fragPos, viewPos, index);
-		return (ambient + (diffuse + specular) * intensity) *
+		return (ambient * diffuseColor + (diffuse * diffuseColor +
+			specular * specularColor) * intensity) *
 			(1.0 - shadow) * attenuation;
 	} else {
-		return ambient * attenuation;
+		return ambient * diffuseColor * attenuation;
 	}
 }
 
 void main() {
-	vec4 objectColorAlpha = texture(texSampler, texCoord);
-	vec3 objectColor = objectColorAlpha.rgb;
+	vec4 objectColorAlpha = texture(diffuseImage, texCoord);
+	vec3 diffuseColor = objectColorAlpha.rgb;
+	vec3 specularColor = texture(specularImage, texCoord).rgb;
 
 	if (viewPos.IsLight != 0) {
 		outColor = vec4(
-			objectColor * viewPos.LightMultiplier,
+			diffuseColor * viewPos.LightMultiplier,
 			objectColorAlpha.a);
 
 		return;
@@ -171,6 +179,8 @@ void main() {
 	for (int i = 0; i < light.LightCount; ++i) {
 		if (light.Lights[i].Type == 0) {
 			sumLight += ProcessPointLight(
+				diffuseColor,
+				specularColor,
 				inPos,
 				light.Lights[i].Position,
 				light.Lights[i].Color,
@@ -181,6 +191,8 @@ void main() {
 
 		if (light.Lights[i].Type == 1) {
 			sumLight += ProcessSpotLight(
+				diffuseColor,
+				specularColor,
 				inPos,
 				light.Lights[i].Position,
 				light.Lights[i].Color,
@@ -193,6 +205,6 @@ void main() {
 		}
 	}
 
-	vec3 result = sumLight * objectColor;
+	vec3 result = sumLight;
 	outColor = vec4(result, objectColorAlpha.a);
 }

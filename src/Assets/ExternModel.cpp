@@ -6,6 +6,7 @@
 ExternModel::ExternModel(
 	std::string modelFile,
 	uint32_t textureIndex,
+	uint32_t specularIndex,
 	glm::mat4 matrix)
 {
 	auto model = Loader::LoadModel(modelFile);
@@ -19,7 +20,7 @@ ExternModel::ExternModel(
 	SetObjectIndices(model.Indices);
 	SetObjectCenter();
 
-	SetTexture({textureIndex});
+	SetTexture({textureIndex, specularIndex});
 
 	SetModelMatrix(matrix);
 	SetObjectMatrix(matrix);

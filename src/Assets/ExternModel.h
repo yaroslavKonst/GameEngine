@@ -12,6 +12,7 @@ public:
 	ExternModel(
 		std::string modelFile,
 		uint32_t textureIndex,
+		uint32_t specularIndex,
 		glm::mat4 matrix);
 };
 
