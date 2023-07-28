@@ -113,11 +113,11 @@ void CorrectExposure(float exposure)
 
 		float value = max(max(avgLight.r, avgLight.g), avgLight.b);
 
-		if (value > 0.9) {
+		if (value > 0.8) {
 			exposure -= 0.005;
 		}
 
-		if (value < 0.9) {
+		if (value < 0.8) {
 			exposure += 0.005;
 		}
 
