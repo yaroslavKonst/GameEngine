@@ -30,11 +30,17 @@ namespace TextFileParser
 				lineDelims.find(currChar) != lineDelims.end();
 
 			if (isWordDelim || isLineDelim) {
-				line.push_back(word);
+				if (!word.empty()) {
+					line.push_back(word);
+				}
+
 				word.clear();
 
 				if (isLineDelim) {
-					file.push_back(line);
+					if (!line.empty()) {
+						file.push_back(line);
+					}
+
 					line.clear();
 				}
 			} else {

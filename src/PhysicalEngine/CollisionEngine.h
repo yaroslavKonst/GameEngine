@@ -17,7 +17,7 @@ public:
 	void RegisterObject(Object* object);
 	void RemoveObject(Object* object);
 
-	void RayCast(
+	Object* RayCast(
 		const glm::vec3& point,
 		const glm::vec3& direction,
 		float distance,

@@ -1088,7 +1088,7 @@ void Swapchain::RecordCommandBuffer(
 	mvp.ProjView = glm::perspective(
 		glm::radians((float)_scene->FOV),
 		(float)_extent.width / (float)_extent.height,
-		0.1f,
+		0.01f,
 		100.0f) * view;
 
 	// ViewPort and scissor.

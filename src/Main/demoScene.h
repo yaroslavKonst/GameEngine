@@ -9,6 +9,7 @@
 #include "../Assets/square.h"
 #include "../Assets/ExternModel.h"
 #include "../Assets/animation.h"
+#include "../Assets/ScriptHandler.h"
 
 class Sword : public InputHandler, public Actor
 {
@@ -161,6 +162,16 @@ public:
 				_mutex.unlock();
 			}
 		}
+	}
+
+	void On()
+	{
+		_state = 1;
+	}
+
+	void Off()
+	{
+		_state = 0;
 	}
 
 	void SetPosition(const glm::mat4 pos)
@@ -350,6 +361,7 @@ public:
 			}
 		} else if (key == GLFW_KEY_E) {
 			if (action == GLFW_PRESS) {
+				_sword->On();
 				_animation.SetStep(0.01);
 			}
 		}
@@ -710,6 +722,15 @@ public:
 		video.GetInputControl()->Subscribe(&player);
 		video.GetInputControl()->Subscribe(&sword);
 
+		auto scene = ScriptHandler::LoadScene(
+			"../src/Assets/Scripts/TestScene.script",
+			&video);
+
+		for (auto model : scene.Models) {
+			video.RegisterModel(model);
+			collisionEngine.RegisterObject(model);
+		}
+
 		std::thread universeThread(UniverseThread, &universe);
 
 		video.MainLoop();
@@ -719,6 +740,11 @@ public:
 
 		video.GetInputControl()->UnSubscribe(&player);
 		video.GetInputControl()->UnSubscribe(&sword);
+
+		for (auto model : scene.Models) {
+			video.RemoveModel(model);
+			collisionEngine.RemoveObject(model);
+		}
 
 		video.RemoveModel(&field);
 
