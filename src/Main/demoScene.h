@@ -263,6 +263,7 @@ public:
 		SetObjectIndices(indices);
 		SetObjectCenter({0.0f, 0.0f, 1.5f});
 		SetObjectMatrix(glm::mat4(1.0));
+		SetObjectDynamic(true);
 
 		SetInputEnabled(true);
 

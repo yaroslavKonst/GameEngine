@@ -19,6 +19,7 @@ public:
 		_initialized = false;
 		_effect = glm::vec3(0.0f);
 		_speed = glm::vec3(0.0f);
+		_dynamic = false;
 	}
 
 	virtual ~Object()
@@ -123,6 +124,16 @@ public:
 		_center /= _collisionVertices.size();
 	}
 
+	virtual bool IsObjectDynamic()
+	{
+		return _dynamic;
+	}
+
+	virtual void SetObjectDynamic(bool value)
+	{
+		_dynamic = value;
+	}
+
 private:
 	std::vector<glm::vec3> _collisionVertices;
 	std::vector<uint32_t> _collisionIndices;
@@ -132,6 +143,7 @@ private:
 	float _radius;
 	bool _initialized;
 	glm::vec3 _effect;
+	bool _dynamic;
 };
 
 #endif

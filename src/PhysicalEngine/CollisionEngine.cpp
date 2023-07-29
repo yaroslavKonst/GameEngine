@@ -48,6 +48,8 @@ void CollisionEngine::Run()
 
 	for (size_t objIdx1 = 0; objIdx1 < objects.size(); ++objIdx1)
 	{
+		bool object1Dynamic = objects[objIdx1]->IsObjectDynamic();
+
 		glm::vec3 center1 = objects[objIdx1]->GetObjectCenter();
 		float radius1 = objects[objIdx1]->_GetObjectRadius();
 		glm::mat4 matrix1 = objects[objIdx1]->GetObjectMatrix();
@@ -59,6 +61,13 @@ void CollisionEngine::Run()
 			objIdx2 < objects.size();
 			++objIdx2)
 		{
+			bool object2Dynamic =
+				objects[objIdx2]->IsObjectDynamic();
+
+			if (!(object1Dynamic || object2Dynamic)) {
+				continue;
+			}
+
 			glm::vec3 center2 =
 				objects[objIdx2]->GetObjectCenter();
 			float radius2 =
