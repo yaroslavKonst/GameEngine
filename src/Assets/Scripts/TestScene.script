@@ -7,3 +7,5 @@ object ../src/Assets/Resources/Models/wall.obj Wall WallSpecular -31 0 0 0 0 0
 object ../src/Assets/Resources/Models/wall.obj Wall WallSpecular -31 0 0 90 0 0
 object ../src/Assets/Resources/Models/wall.obj Wall WallSpecular -17 10 0 90 0 0
 object ../src/Assets/Resources/Models/roof.obj Wall WallSpecular -21 12 3 0 0 0
+
+light point 20 20 20 -10 20 5

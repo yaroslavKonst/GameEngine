@@ -271,7 +271,15 @@ public:
 		vertices.push_back(glm::vec3(0.1, -0.1, 1.0));
 		vertices.push_back(glm::vec3(0.1, 0.1, 1.0));
 		vertices.push_back(glm::vec3(-0.1, 0.0, 1.0));
-		vertices.push_back(glm::vec3(0.0, 0.0, 2.0));
+		vertices.push_back(glm::vec3(0.1, -0.1, 1.5));
+		vertices.push_back(glm::vec3(0.1, 0.1, 1.5));
+		vertices.push_back(glm::vec3(-0.1, 0.0, 1.5));
+		vertices.push_back(glm::vec3(0.1, -0.1, 2.0));
+		vertices.push_back(glm::vec3(0.1, 0.1, 2.0));
+		vertices.push_back(glm::vec3(-0.1, 0.0, 2.0));
+		vertices.push_back(glm::vec3(0.1, -0.1, 0.5));
+		vertices.push_back(glm::vec3(0.1, 0.1, 0.5));
+		vertices.push_back(glm::vec3(-0.1, 0.0, 0.5));
 
 		std::vector<uint32_t> indices = {0, 1, 2};
 
@@ -417,13 +425,17 @@ public:
 			}
 		}
 
+		if (effect.z < 0 && _vspeed > 0) {
+			_vspeed = 0;
+		}
+
 		if (effect.z > 0 && _jump) {
 			_vspeed = 6;
 		}
 
 		if (fabs(effect.x) + fabs(effect.y) > 0.0001) {
 			if (effect.x * hspeed.x + effect.y * hspeed.y < 0) {
-				hspeed = glm::vec2(0, 0);
+				hspeed = glm::vec2(effect.x, effect.y);
 			}
 		}
 
@@ -731,6 +743,10 @@ public:
 			collisionEngine.RegisterObject(model);
 		}
 
+		for (auto light : scene.Lights) {
+			video.RegisterLight(light);
+		}
+
 		std::thread universeThread(UniverseThread, &universe);
 
 		video.MainLoop();
@@ -744,6 +760,12 @@ public:
 		for (auto model : scene.Models) {
 			video.RemoveModel(model);
 			collisionEngine.RemoveObject(model);
+			delete model;
+		}
+
+		for (auto light : scene.Lights) {
+			video.RemoveLight(light);
+			delete light;
 		}
 
 		video.RemoveModel(&field);

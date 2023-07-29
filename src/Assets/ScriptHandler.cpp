@@ -72,6 +72,39 @@ ScriptHandler::Scene ScriptHandler::LoadScene(std::string file, Video* video)
 			}
 
 			scene.Models.push_back(model);
+		} else if (line[0] == "light") {
+			Light* light = new Light();
+
+			light->SetLightActive(true);
+			light->SetLightPosition({
+				std::stof(line[5]),
+				std::stof(line[6]),
+				std::stof(line[7])});
+			light->SetLightColor({
+				std::stof(line[2]),
+				std::stof(line[3]),
+				std::stof(line[4])});
+
+			if (line[1] == "spot") {
+				light->SetLightType(Light::Type::Spot);
+
+				light->SetLightDirection({
+					std::stof(line[8]),
+					std::stof(line[9]),
+					std::stof(line[10])});
+
+				light->SetLightAngle(
+					std::stof(line[11]));
+				light->SetLightAngleFade(
+					std::stof(line[12]));
+			} else if (line[1] == "point") {
+				light->SetLightType(Light::Type::Point);
+			} else {
+				throw std::runtime_error(
+					"Invalid light type.");
+			}
+
+			scene.Lights.push_back(light);
 		} else {
 			Logger::Verbose() << "Unknown command " << line[0];
 
