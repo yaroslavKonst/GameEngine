@@ -8,6 +8,7 @@
 #include "../Utils/loader.h"
 #include "../Assets/square.h"
 #include "../Assets/ExternModel.h"
+#include "../Assets/animation.h"
 
 class Sword : public InputHandler, public Actor
 {
@@ -90,12 +91,12 @@ public:
 		}
 
 		_bladeLight1.SetLightColor(
-			glm::vec3(0.0f, 0.6f, 0.0f) *
-			(1.0f + sinf(glm::radians(_intensity)) * 0.01f));
+			glm::vec3(0.0f, 0.3f, 0.0f) *
+			(1.0f + sinf(glm::radians(_intensity)) * 0.05f));
 
 		_bladeLight2.SetLightColor(
-			glm::vec3(0.0f, 0.6f, 0.0f) *
-			(1.0f + sinf(glm::radians(_intensity)) * 0.01f));
+			glm::vec3(0.0f, 0.3f, 0.0f) *
+			(1.0f + sinf(glm::radians(_intensity)) * 0.05f));
 
 		switch (_state) {
 		case 1:
@@ -170,19 +171,19 @@ public:
 		_bladeLight1.SetLightPosition(ToGlobal({
 			0.0,
 			0.0,
-			_length * 0.33}));
+			_length * 0.33 + 0.35}));
 
 		_bladeLight2.SetLightPosition(ToGlobal({
 			0.0,
 			0.0,
-			_length * 0.66}));
+			_length * 0.66 + 0.35}));
 
 		if (_length > 0 && _length < maxLength) {
 			_bladeLight1.SetLightColor(
-				glm::vec3(0.0, 0.6, 0.0) *
+				glm::vec3(0.0, 0.3, 0.0) *
 				_length / maxLength);
 			_bladeLight2.SetLightColor(
-				glm::vec3(0.0, 0.6, 0.0) *
+				glm::vec3(0.0, 0.3, 0.0) *
 				_length / maxLength);
 		}
 
@@ -264,6 +265,18 @@ public:
 		SetObjectMatrix(glm::mat4(1.0));
 
 		SetInputEnabled(true);
+
+		_animation.SetTimePoints(
+		{
+			{{0.0f, 0.0f, 0.0f}, -30.0f, 0.0f, 0.0f},
+			{{0.1f, -0.2f, 0.0f}, -10.0f, 0.0f, -30.0f},
+			{{0.0f, 0.0f, 0.0f}, -40.0f, 0.0f, -75.0f},
+			{{-0.3f, 0.2f, 0.0f}, -85.0f, 0.0f, 0.0f},
+			{{-0.6f, 0.2f, 0.0f}, -120.0f, 0.0f, 75.0f},
+			{{0.0f, 0.0f, 0.0f}, -30.0f, 0.0f, 0.0f}
+		});
+
+		_animation.SetTimeValues({0, 0.2, 0.8, 1, 1.2, 2.5});
 	}
 
 	void Key(
@@ -328,6 +341,10 @@ public:
 					_light->SetLightActive(true);
 					_lightActive = true;
 				}
+			}
+		} else if (key == GLFW_KEY_E) {
+			if (action == GLFW_PRESS) {
+				_animation.SetStep(0.01);
 			}
 		}
 	}
@@ -410,7 +427,7 @@ public:
 				sinf(glm::radians(_angleV))));
 
 		_light->SetLightPosition(_pos + glm::vec3(0, 0, 1.2) +
-				glm::vec3(hdirStrafe * 0.3f, 0.0f));
+				glm::vec3(-hdirStrafe * 0.3f, 0.0f));
 		_light->SetLightDirection(glm::vec3(
 				hdir * cosf(glm::radians(_angleV)),
 				sinf(glm::radians(_angleV))));
@@ -425,7 +442,8 @@ public:
 		swp = glm::rotate(
 			swp,
 			glm::radians(-_angleH), glm::vec3(0,0,1));
-		swp = glm::rotate(swp, glm::radians(-45.0f), glm::vec3(1,0,0));
+
+		swp = _animation.Step(swp);
 
 		_sword->SetPosition(swp);
 	}
@@ -446,6 +464,7 @@ private:
 	std::mutex _mutex;
 
 	Sword* _sword;
+	Animation _animation;
 };
 
 class Field : public Model, public Object
@@ -547,7 +566,7 @@ public:
 			texData);
 
 		texData = Loader::LoadImage(
-			"../src/Assets/Resources/Images/texture.jpg",
+			"../src/Assets/Resources/Images/transparent.png",
 			texWidth,
 			texHeight);
 

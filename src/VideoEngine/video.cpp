@@ -353,7 +353,7 @@ void Video::CreateSwapchain()
 		&_scene,
 		_descriptorSetLayout,
 		10,
-		256);
+		1024);
 
 	_swapchain->Create();
 }
