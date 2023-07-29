@@ -20,9 +20,6 @@ public:
 		float RotationX;
 		float RotationY;
 		float RotationZ;
-
-		glm::vec3 Alignment;
-		float AlignmentForce;
 	};
 
 	Animation()
@@ -30,6 +27,7 @@ public:
 		_current = 0;
 		_step = 0;
 		_cycle = false;
+		_twoPos = false;
 	}
 
 	glm::mat4 GetTransform(float time, glm::mat4 matrix = glm::mat4(1.0f));
@@ -43,6 +41,11 @@ public:
 	void SetCycle(bool value)
 	{
 		_cycle = value;
+	}
+
+	void SetTwoPos(bool value)
+	{
+		_twoPos = value;
 	}
 
 	void SetTimePoints(const std::vector<TimePoint>& sequence)
@@ -62,6 +65,7 @@ private:
 	float _current;
 	float _step;
 	bool _cycle;
+	bool _twoPos;
 };
 
 #endif

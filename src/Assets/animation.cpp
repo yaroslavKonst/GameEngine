@@ -42,10 +42,17 @@ glm::mat4 Animation::Step(glm::mat4 matrix)
 
 	_current += _step;
 
-	if (_current >= _timeValues.back()) {
-		_current = 0;
+	if (_current >= _timeValues.back() || _current < _timeValues.front()) {
+		if (!_twoPos) {
+			_current = _timeValues.front();
+		} else {
+			_current = std::clamp(
+				_current,
+				_timeValues.front(),
+				_timeValues.back());
+		}
 
-		if (!_cycle) {
+		if (!_cycle || _twoPos) {
 			_step = 0;
 		}
 	}
