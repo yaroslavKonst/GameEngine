@@ -17,6 +17,7 @@ public:
 	Sword(Video* video)
 	{
 		_video = video;
+		_maxLength = 1.0;
 
 		int texWidth;
 		int texHeight;
@@ -83,7 +84,6 @@ public:
 	void Tick()
 	{
 		_mutex.lock();
-		float maxLength = 1.2;
 
 		_intensity += 20;
 
@@ -101,11 +101,11 @@ public:
 
 		switch (_state) {
 		case 1:
-			if (_length < maxLength) {
+			if (_length < _maxLength) {
 				_length += 0.02;
 
-				if (_length > maxLength) {
-					_length = maxLength;
+				if (_length > _maxLength) {
+					_length = _maxLength;
 				}
 
 
@@ -176,7 +176,6 @@ public:
 
 	void SetPosition(const glm::mat4 pos)
 	{
-		float maxLength = 1.2;
 		_position = pos;
 
 		_bladeLight1.SetLightPosition(ToGlobal({
@@ -189,13 +188,13 @@ public:
 			0.0,
 			_length * 0.66 + 0.35}));
 
-		if (_length > 0 && _length < maxLength) {
+		if (_length > 0 && _length < _maxLength) {
 			_bladeLight1.SetLightColor(
 				glm::vec3(0.0, 0.3, 0.0) *
-				_length / maxLength);
+				_length / _maxLength);
 			_bladeLight2.SetLightColor(
 				glm::vec3(0.0, 0.3, 0.0) *
-				_length / maxLength);
+				_length / _maxLength);
 		}
 
 		glm::mat4 blade = _position;
@@ -209,7 +208,7 @@ public:
 			glm::vec3(
 				0.01,
 				0.01,
-				_length / maxLength));
+				_length));
 
 		_blade->SetModelMatrix(blade);
 		_sword->SetModelMatrix(
@@ -227,6 +226,7 @@ private:
 	int _state;
 	int _prevState;
 	float _length;
+	float _maxLength;
 
 	Video* _video;
 
