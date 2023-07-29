@@ -17,6 +17,12 @@ public:
 	void RegisterObject(Object* object);
 	void RemoveObject(Object* object);
 
+	void RayCast(
+		const glm::vec3& point,
+		const glm::vec3& direction,
+		float distance,
+		void* userPointer);
+
 private:
 	std::set<Object*> _objects;
 
@@ -34,6 +40,13 @@ private:
 		const glm::vec3& point,
 		const glm::vec3& centerP,
 		const glm::vec3& centerT);
+
+	bool FindRayIntersection(
+		Object* object,
+		const glm::vec3& point,
+		const glm::vec3& direction,
+		float distance,
+		float& result);
 };
 
 #endif

@@ -134,6 +134,10 @@ public:
 		_dynamic = value;
 	}
 
+	virtual void RayCastCallback(void* userPointer)
+	{
+	}
+
 private:
 	std::vector<glm::vec3> _collisionVertices;
 	std::vector<uint32_t> _collisionIndices;

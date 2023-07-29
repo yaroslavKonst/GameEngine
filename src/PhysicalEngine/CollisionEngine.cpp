@@ -226,3 +226,152 @@ glm::vec3 CollisionEngine::CalculateEffectOnPoint(
 
 	return projectedPoint - point;
 }
+
+void CollisionEngine::RayCast(
+	const glm::vec3& point,
+	const glm::vec3& direction,
+	float distance,
+	void* userPointer)
+{
+	glm::vec3 dir = glm::normalize(direction);
+
+	float closestHitDistance = distance;
+	Object* closestObject = nullptr;
+
+	for (auto object : _objects) {
+		if (!object->_IsObjectInitialized()) {
+			InitializeObject(object);
+		}
+
+		glm::vec3 center = object->GetObjectCenter();
+		float radius = object->_GetObjectRadius();
+		glm::mat4 matrix = object->GetObjectMatrix();
+		glm::vec3 centerWorld = matrix * glm::vec4(center, 1.0f);
+
+		float dist = glm::length(centerWorld - point) - radius;
+
+		if (dist > closestHitDistance) {
+			continue;
+		}
+
+		bool isValid = FindRayIntersection(
+			object,
+			point,
+			dir,
+			distance,
+			dist);
+
+		if (isValid && dist < closestHitDistance) {
+			closestObject = object;
+			closestHitDistance = dist;
+		}
+	}
+
+	if (closestObject) {
+		closestObject->RayCastCallback(userPointer);
+	}
+}
+
+bool CollisionEngine::FindRayIntersection(
+	Object* object,
+	const glm::vec3& point,
+	const glm::vec3& direction,
+	float distance,
+	float& result)
+{
+	glm::vec3 center = object->GetObjectCenter();
+	float radius = object->_GetObjectRadius();
+	glm::mat4 matrix = object->GetObjectMatrix();
+
+	glm::vec3 centerWorld = matrix * glm::vec4(center, 1.0f);
+
+	// Sphere: X : length(centerWorld, X) == radius.
+	// Ray: point + alpha * normalize(direction) where
+	//   0 <= alpha <= distance.
+	float p1, p2;
+
+	bool sphereInt = RayIntersectSphere(
+		point,
+		direction,
+		centerWorld,
+		radius,
+		p1,
+		p2);
+
+	if (!sphereInt) {
+		return false;
+	}
+
+	if (!(p1 <= distance || p2 <= distance)) {
+		return false;
+	}
+
+	auto& vertices = object->GetObjectVertices();
+	auto& indices = object->GetObjectIndices();
+
+	std::vector<glm::vec3> verticesWorld(vertices.size());
+
+	for (size_t i = 0; i < vertices.size(); ++i) {
+		verticesWorld[i] =
+			glm::vec3(matrix * glm::vec4(vertices[i], 1.0f));
+	}
+
+	float closestHitDistance = distance;
+	bool hitFound = false;
+
+	for (uint32_t index = 0; index < indices.size(); index += 3) {
+		uint32_t index1 = indices[index];
+		uint32_t index2 = indices[index + 1];
+		uint32_t index3 = indices[index + 2];
+
+		float d1 = glm::length(point - verticesWorld[index1]);
+		float d2 = glm::length(point - verticesWorld[index2]);
+		float d3 = glm::length(point - verticesWorld[index3]);
+
+		if (std::min(std::min(d1, d2), d3) > closestHitDistance) {
+			continue;
+		}
+
+		Plane plane = PlaneByThreePoints(
+			verticesWorld[index1],
+			verticesWorld[index2],
+			verticesWorld[index3]);
+
+		float dist;
+
+		bool isIntersect = RayIntersectPlane(
+			point,
+			direction,
+			plane,
+			dist);
+
+		if (!isIntersect || dist < 0) {
+			continue;
+		}
+
+		glm::vec3 intersectPoint = point + direction * dist;
+
+		if (!PointInTriangle(
+			intersectPoint,
+			{
+				verticesWorld[index1],
+				verticesWorld[index2],
+				verticesWorld[index3]
+			}))
+		{
+			continue;
+		}
+
+		if (dist < closestHitDistance) {
+			closestHitDistance = dist;
+			hitFound = true;
+		}
+	}
+
+	if (hitFound) {
+		result = closestHitDistance;
+		return true;
+	}
+
+	return false;
+}

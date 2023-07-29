@@ -136,6 +136,63 @@ namespace PlaneHelper
 
 		return v1 * v2 >= 0 && v1 * v3 >= 0 && v2 * v3 >= 0;
 	}
+
+	bool RayIntersectSphere(
+		const glm::vec3& point,
+		const glm::vec3& direction,
+		const glm::vec3& center,
+		float radius,
+		float& res1,
+		float& res2)
+	{
+		float a =
+			powf(direction.x, 2) +
+			powf(direction.y, 2) +
+			powf(direction.z, 2);
+
+		float xf = point.x - center.x;
+		float yf = point.y - center.y;
+		float zf = point.z - center.z;
+
+		float b = 2.0 * (
+			direction.x * xf +
+			direction.y * yf +
+			direction.z * zf);
+
+		float c = powf(xf, 2) + powf(yf, 2) + powf(zf, 2) -
+			powf(radius, 2);
+
+		float D = powf(b, 2) - a * c * 4;
+
+		if (D < 0) {
+			return false;
+		}
+
+		res1 = (-b - sqrtf(D)) / (a * 2);
+		res2 = (-b + sqrtf(D)) / (a * 2);
+
+		return true;
+	}
+
+	bool RayIntersectPlane(
+		const glm::vec3& point,
+		const glm::vec3& direction,
+		const Plane& plane,
+		float& result)
+	{
+		float f2 =
+			plane[0] * direction.x +
+			plane[1] * direction.y +
+			plane[2] * direction.z;
+
+		if (fabs(f2) < std::numeric_limits<float>::epsilon()) {
+			return false;
+		}
+
+		result = -SetPointToPlane(point, plane) / f2;
+
+		return true;
+	}
 }
 
 #endif

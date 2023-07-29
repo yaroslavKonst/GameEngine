@@ -233,9 +233,14 @@ private:
 class Player : public Actor, public Object, public InputHandler
 {
 public:
-	Player(Video* video, Light* light, Sword* sword)
+	Player(
+		Video* video,
+		Light* light,
+		Sword* sword,
+		CollisionEngine* rayEngine)
 	{
 		_video = video;
+		_rayEngine = rayEngine;
 		_pos = glm::vec3(0.0, 0.0, 5.0);
 		_angleH = 0;
 		_angleV = 0;
@@ -434,6 +439,14 @@ public:
 				sinf(glm::radians(_angleV))));
 		_mutex.unlock();
 
+		_rayEngine->RayCast(
+			_pos + glm::vec3(0, 0, 1.85),
+			glm::vec3(
+				hdir * cosf(glm::radians(_angleV)),
+				sinf(glm::radians(_angleV))),
+			5,
+			nullptr);
+
 		glm::mat4 swp(1.0f);
 
 		swp = glm::translate(
@@ -451,6 +464,7 @@ public:
 
 private:
 	Video* _video;
+	CollisionEngine* _rayEngine;
 	glm::vec3 _pos;
 	float _angleH;
 	float _angleV;
@@ -595,9 +609,8 @@ public:
 		video.SetSkyboxColor({0.1, 0.05, 0.05});
 
 		Sword sword(&video);
-		Player player(&video, &light, &sword);
+		Player player(&video, &light, &sword, &collisionEngine);
 		Field field(woodenTiles);
-
 
 		glm::mat4 base = glm::translate(
 			glm::mat4(1.0),
