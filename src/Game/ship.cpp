@@ -14,12 +14,17 @@ Ship::Ship(Video* video, uint32_t blockTexture)
 
 	_blockTexture = blockTexture;
 	_previewBlock = nullptr;
+	_block = nullptr;
 }
 
 Ship::~Ship()
 {
-	for (auto& block : _grid) {
-		delete block.second;
+	if (_block) {
+		delete _block;
+	}
+
+	if (_previewBlock) {
+		delete _previewBlock;
 	}
 }
 
@@ -33,7 +38,13 @@ void Ship::InsertBlock(const glm::ivec3& position)
 		return;
 	}
 
-	_grid[position] = new Block(_video, position, _blockTexture);
+	glm::mat4 matrix = glm::translate(
+		glm::mat4(1),
+		glm::vec3(position) * 2.0f);
+
+	_grid[position] = matrix;
+
+	UpdateView();
 }
 
 void Ship::RemoveBlock(const glm::ivec3& position)
@@ -42,8 +53,8 @@ void Ship::RemoveBlock(const glm::ivec3& position)
 		return;
 	}
 
-	delete _grid[position];
 	_grid.erase(position);
+	UpdateView();
 }
 
 void Ship::PreviewBlock(const glm::ivec3& position)
@@ -60,6 +71,24 @@ void Ship::StopPreview()
 
 	delete _previewBlock;
 	_previewBlock = nullptr;
+}
+
+void Ship::UpdateView()
+{
+	std::vector<glm::mat4> instances(_grid.size());
+
+	size_t idx = 0;
+
+	for (auto& mat : _grid) {
+		instances[idx] = mat.second;
+		++idx;
+	}
+
+	if (!_block) {
+		_block = new Block(_video, {0, 0, 0}, _blockTexture);
+	}
+
+	_block->SetModelInstances(instances);
 }
 
 // Block

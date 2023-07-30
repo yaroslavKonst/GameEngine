@@ -516,6 +516,8 @@ ModelDescriptor Video::CreateModelDescriptor(Model* model)
 
 	descriptor.InstanceCount = instances.size();
 
+	model->_SetModelInstancesUpdated();
+
 	// Texture image.
 	descriptor.Textures = model->GetTextures();
 

@@ -2,6 +2,7 @@
 
 Model::Model()
 {
+	_updatedInstances = false;
 }
 
 Model::~Model()

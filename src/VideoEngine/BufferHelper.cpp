@@ -71,10 +71,16 @@ namespace BufferHelper
 		Buffer src,
 		Buffer dst,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue)
+		VkQueue graphicsQueue,
+		VkCommandBuffer commandBufferExt)
 	{
-		VkCommandBuffer commandBuffer =
-			commandPool->StartOneTimeBuffer();
+		VkCommandBuffer commandBuffer;
+
+		if (commandBufferExt == VK_NULL_HANDLE) {
+			commandBuffer = commandPool->StartOneTimeBuffer();
+		} else {
+			commandBuffer = commandBufferExt;
+		}
 
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0; // Optional
@@ -88,9 +94,11 @@ namespace BufferHelper
 			1,
 			&copyRegion);
 
-		commandPool->EndOneTimeBuffer(
-			commandBuffer,
-			graphicsQueue);
+		if (commandBufferExt == VK_NULL_HANDLE) {
+			commandPool->EndOneTimeBuffer(
+				commandBuffer,
+				graphicsQueue);
+		}
 	}
 
 	void LoadDataToBuffer(
@@ -101,7 +109,9 @@ namespace BufferHelper
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue)
+		VkQueue graphicsQueue,
+		Buffer* stagingBufferPtr,
+		VkCommandBuffer commandBuffer)
 	{
 		Buffer stagingBuffer = CreateBuffer(
 			device,
@@ -132,11 +142,16 @@ namespace BufferHelper
 			stagingBuffer,
 			buffer,
 			commandPool,
-			graphicsQueue);
+			graphicsQueue,
+			commandBuffer);
 
-		DestroyBuffer(
-			device,
-			stagingBuffer,
-			memorySystem);
+		if (!stagingBufferPtr) {
+			DestroyBuffer(
+				device,
+				stagingBuffer,
+				memorySystem);
+		} else {
+			*stagingBufferPtr = stagingBuffer;
+		}
 	}
 }

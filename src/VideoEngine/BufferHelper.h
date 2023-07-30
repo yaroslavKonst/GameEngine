@@ -34,7 +34,8 @@ namespace BufferHelper
 		Buffer src,
 		Buffer dst,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue);
+		VkQueue graphicsQueue,
+		VkCommandBuffer commandBufferExt = VK_NULL_HANDLE);
 
 	void LoadDataToBuffer(
 		VkDevice device,
@@ -44,7 +45,9 @@ namespace BufferHelper
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue);
+		VkQueue graphicsQueue,
+		Buffer* stagingBufferPtr = nullptr,
+		VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 }
 
 #endif

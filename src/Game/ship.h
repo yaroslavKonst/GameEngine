@@ -66,7 +66,8 @@ public:
 private:
 	Video* _video;
 
-	std::map<BlockCoord, Block*> _grid;
+	std::map<BlockCoord, glm::mat4> _grid;
+	Block* _block;
 	Block* _previewBlock;
 
 	uint32_t _blockTexture;
@@ -75,6 +76,8 @@ private:
 	glm::vec3 _rotation;
 	glm::vec3 _linearSpeed;
 	glm::vec3 _angularSpeed;
+
+	void UpdateView();
 };
 
 #endif

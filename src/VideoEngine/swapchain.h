@@ -142,6 +142,8 @@ private:
 	std::vector<VkFence> _inFlightFences;
 	void CreateSyncObjects();
 	void DestroySyncObjects();
+
+	std::list<BufferHelper::Buffer> _stagingBuffers;
 };
 
 #endif

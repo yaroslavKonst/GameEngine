@@ -66,6 +66,7 @@ public:
 
 	void SetModelInstances(const std::vector<glm::mat4>& instances)
 	{
+		_updatedInstances = false;
 		_modelInstances = instances;
 	}
 
@@ -89,6 +90,16 @@ public:
 		_modelNormalBuffer = normals;
 	}
 
+	virtual bool _GetModelInstancesUpdated()
+	{
+		return _updatedInstances;
+	}
+
+	virtual void _SetModelInstancesUpdated()
+	{
+		_updatedInstances = true;
+	}
+
 private:
 	std::vector<glm::vec3> _modelVertexBuffer;
 	std::vector<glm::vec3> _modelNormalBuffer;
@@ -98,6 +109,8 @@ private:
 
 	glm::mat4 _modelMatrix;
 	glm::mat4 _modelInnerMatrix;
+
+	bool _updatedInstances;
 };
 
 #endif
