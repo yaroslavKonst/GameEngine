@@ -5,7 +5,7 @@
 #include "../PhysicalEngine/object.h"
 #include "../UniverseEngine/actor.h"
 
-class Block : public Model, public Object
+class Block : public Model
 {
 public:
 	Block(Video* video, const glm::ivec3& position, uint32_t texture);
@@ -15,7 +15,7 @@ private:
 	Video* _video;
 };
 
-class Ship : public Actor
+class Ship : public Actor, public Object
 {
 public:
 	struct BlockCoord

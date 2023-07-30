@@ -4,6 +4,63 @@
 #include "player.h"
 #include "ship.h"
 
+class Field : public Model, public Object
+{
+public:
+	Field(Video* video)
+	{
+		std::vector<glm::vec3> objectVertices = {
+			{-200, -200, 0.0},
+			{-200, 200, 0.0},
+			{200, 200, 0.0},
+			{200, -200, 0.0},
+		};
+
+		std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
+
+		SetObjectVertices(objectVertices);
+		SetObjectIndices(indices);
+		SetObjectCenter({0.0f, 0.0f, -300.0f});
+		SetObjectMatrix(glm::mat4(1.0));
+		SetModelMatrix(
+			glm::translate(
+			glm::scale(
+				glm::mat4(1.0),
+				glm::vec3(10, 10, 1)),
+				glm::vec3(0, 0, -0.251981)));
+		SetModelInnerMatrix(glm::mat4(1.0));
+		SetModelInstances({glm::mat4(1.0)});
+
+		auto model = Loader::LoadModel(
+			"../src/Assets/Resources/Models/field.obj");
+
+		for (auto& coord : model.TexCoords) {
+			coord *= 100;
+		}
+
+		SetModelVertices(model.Vertices);
+		SetModelNormals(model.Normals);
+		SetModelTexCoords(model.TexCoords);
+		SetModelIndices(model.Indices);
+
+		int texWidth;
+		int texHeight;
+		auto texData = Loader::LoadImage(
+			"../src/Assets/Resources/Models/floor.jpg",
+			texWidth,
+			texHeight);
+
+		uint32_t woodenTiles = video->GetTextures()->AddTexture(
+			texWidth,
+			texHeight,
+			texData);
+
+		SetTexture({woodenTiles});
+
+		SetDrawEnabled(true);
+	}
+};
+
 static void UniverseThread(Universe* universe)
 {
 	universe->MainLoop();
@@ -79,7 +136,14 @@ void World::Run()
 	_universe->RegisterActor(&player);
 	_collisionEngine->RegisterObject(&player);
 
+	Field field(_video);
+	_video->RegisterModel(&field);
+	_collisionEngine->RegisterObject(&field);
+
 	_video->MainLoop();
+
+	_video->RemoveModel(&field);
+	_collisionEngine->RemoveObject(&field);
 
 	_collisionEngine->RemoveObject(&player);
 	_universe->RemoveActor(&player);

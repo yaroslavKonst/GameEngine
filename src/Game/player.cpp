@@ -251,7 +251,7 @@ void Player::Tick()
 
 	_pos.x += hspeed.x / 20;
 	_pos.y += hspeed.y / 20;
-	//_pos.z += _vspeed / 200;
+	_pos.z += _vspeed / 200;
 
 	SetObjectMatrix(
 		glm::rotate(glm::translate(glm::mat4(1.0), _pos),

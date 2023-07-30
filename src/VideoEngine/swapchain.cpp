@@ -1625,7 +1625,11 @@ void Swapchain::MainLoop() {
 
 		if (dur >= 1000) {
 			refTime = currTime;
-			Logger::Verbose() << "FPS " << frameCount;
+
+			if (frameCount < 58) {
+				Logger::Warning() << "FPS " << frameCount;
+			}
+
 			frameCount = 0;
 		}
 	}

@@ -61,6 +61,9 @@ void Ship::PreviewBlock(const glm::ivec3& position)
 {
 	StopPreview();
 	_previewBlock = new Block(_video, position, _blockTexture);
+	_previewBlock->SetModelInnerMatrix(glm::scale(
+		glm::mat4(1),
+		glm::vec3(1.1, 1.1, 1.1)));
 }
 
 void Ship::StopPreview()
@@ -89,6 +92,9 @@ void Ship::UpdateView()
 	}
 
 	_block->SetModelInstances(instances);
+
+	std::vector<glm::vec3> vertices;
+	std::vector<uint32_t> indices;
 }
 
 // Block
@@ -103,9 +109,6 @@ Block::Block(Video* video, const glm::ivec3& position, uint32_t texture)
 	SetModelIndices(model.Indices);
 	SetModelNormals(model.Normals);
 	SetModelTexCoords(model.TexCoords);
-
-	SetObjectVertices(model.Vertices);
-	SetObjectIndices(model.Indices);
 
 	SetModelInnerMatrix(glm::mat4(1));
 	SetModelInstances({glm::mat4(1)});

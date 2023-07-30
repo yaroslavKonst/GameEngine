@@ -142,6 +142,8 @@ vec3 ProcessSpotLight(
 	float intensity = clamp((theta - lightOuterAngle) /
 		epsilon, 0.0, 1.0);
 
+	float shadow = CalculateShadow(fragPos, viewPos, index);
+
 	if (theta > lightOuterAngle) {
 		float diff = max(dot(normal, lightDir), 0.0);
 		vec3 diffuse = lightColor * diff;
@@ -150,12 +152,11 @@ vec3 ProcessSpotLight(
 		float spec = pow(max(dot(normal, halfwayDir), 0.0), 32);
 		vec3 specular = specularStrength * spec * lightColor;
 
-		float shadow = CalculateShadow(fragPos, viewPos, index);
 		return (ambient * diffuseColor + (diffuse * diffuseColor +
 			specular * specularColor) * intensity) *
 			(1.0 - shadow) * attenuation;
 	} else {
-		return ambient * diffuseColor * attenuation;
+		return ambient * diffuseColor * attenuation * (1.0 - shadow);
 	}
 }
 
