@@ -15,6 +15,7 @@ all:
 	cd Utils ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 	cd Logger ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 	cd Assets ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
+	cd Game ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 	$(CC) $(CC_OPTS) ../build/*.o -o ../build/$(OUTPUT) $(LIBS)
 
 clean:

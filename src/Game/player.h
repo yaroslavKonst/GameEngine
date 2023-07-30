@@ -1,0 +1,56 @@
+#ifndef _PLAYER_H
+#define _PLAYER_H
+
+#include <algorithm>
+
+#include "../VideoEngine/video.h"
+#include "../UniverseEngine/universe.h"
+#include "../Utils/loader.h"
+#include "../Assets/animation.h"
+#include "ship.h"
+
+class Player : public Actor, public Object, public InputHandler
+{
+public:
+	Player(
+		Video* video,
+		CollisionEngine* rayEngine,
+		Ship* ship);
+	~Player();
+
+	void Key(
+		int key,
+		int scancode,
+		int action,
+		int mods) override;
+
+	bool MouseMoveRaw(
+		double xoffset,
+		double yoffset) override;
+
+	void Tick() override;
+
+	void BuildActions(int key, int action);
+
+private:
+	Video* _video;
+	CollisionEngine* _rayEngine;
+	glm::vec3 _pos;
+	float _angleH;
+	float _angleV;
+	float _vspeed;
+
+	int _go;
+	int _strafe;
+	bool _jump;
+	Light _light;
+	bool _lightActive;
+
+	std::mutex _mutex;
+
+	Ship* _ship;
+	bool _buildMode;
+	glm::ivec3 _buildPos;
+};
+
+#endif
