@@ -31,9 +31,9 @@ Player::Player(
 	vertices.push_back(glm::vec3(0.1, -0.1, 1.5));
 	vertices.push_back(glm::vec3(0.1, 0.1, 1.5));
 	vertices.push_back(glm::vec3(-0.1, 0.0, 1.5));
-	vertices.push_back(glm::vec3(0.1, -0.1, 2.0));
-	vertices.push_back(glm::vec3(0.1, 0.1, 2.0));
-	vertices.push_back(glm::vec3(-0.1, 0.0, 2.0));
+	vertices.push_back(glm::vec3(0.1, -0.1, 1.9));
+	vertices.push_back(glm::vec3(0.1, 0.1, 1.9));
+	vertices.push_back(glm::vec3(-0.1, 0.0, 1.9));
 	vertices.push_back(glm::vec3(0.1, -0.1, 0.5));
 	vertices.push_back(glm::vec3(0.1, 0.1, 0.5));
 	vertices.push_back(glm::vec3(-0.1, 0.0, 0.5));
