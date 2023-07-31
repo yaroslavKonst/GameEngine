@@ -121,7 +121,7 @@ World::~World()
 
 void World::Run()
 {
-	Ship ship(_video, _shipBlockTexture);
+	Ship ship(_video, _shipBlockTexture, _collisionEngine);
 	ship.InsertBlock({-1, -1, 0});
 	ship.InsertBlock({-1, 0, 0});
 	ship.InsertBlock({-1, 1, 0});
@@ -134,6 +134,7 @@ void World::Run()
 
 	Player player(_video, _collisionEngine, &ship);
 	_universe->RegisterActor(&player);
+	_universe->RegisterActor(&ship);
 	_collisionEngine->RegisterObject(&player);
 
 	Field field(_video);
@@ -147,4 +148,5 @@ void World::Run()
 
 	_collisionEngine->RemoveObject(&player);
 	_universe->RemoveActor(&player);
+	_universe->RemoveActor(&ship);
 }

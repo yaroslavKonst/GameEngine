@@ -21,6 +21,7 @@ public:
 		_speed = glm::vec3(0.0f);
 		_dynamic = false;
 		_domain = 0;
+		_externMatrix = nullptr;
 	}
 
 	virtual ~Object()
@@ -145,6 +146,16 @@ public:
 		_domain = value;
 	}
 
+	virtual glm::mat4* GetObjectExternMatrix()
+	{
+		return _externMatrix;
+	}
+
+	virtual void SetObjectExternMatrix(glm::mat4* value)
+	{
+		_externMatrix = value;
+	}
+
 	virtual void RayCastCallback(void* userPointer)
 	{
 	}
@@ -161,6 +172,8 @@ private:
 	bool _dynamic;
 
 	uint32_t _domain;
+
+	glm::mat4* _externMatrix;
 };
 
 #endif

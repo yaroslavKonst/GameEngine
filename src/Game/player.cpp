@@ -249,6 +249,8 @@ void Player::Tick()
 		}
 	}
 
+	_pos += effect;
+
 	_pos.x += hspeed.x / 20;
 	_pos.y += hspeed.y / 20;
 	_pos.z += _vspeed / 200;

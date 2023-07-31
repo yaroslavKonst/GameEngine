@@ -2,12 +2,19 @@
 #define _SHIP_H
 
 #include "../VideoEngine/video.h"
-#include "../PhysicalEngine/object.h"
+#include "../PhysicalEngine/CollisionEngine.h"
 #include "../UniverseEngine/actor.h"
 
 class Block : public Model
 {
 public:
+	enum class FaceType
+	{
+		Solid,
+		AirTransparent,
+		ObjectTransparent
+	};
+
 	Block(Video* video, const glm::ivec3& position, uint32_t texture);
 	~Block();
 
@@ -15,7 +22,7 @@ private:
 	Video* _video;
 };
 
-class Ship : public Actor, public Object
+class Ship : public Actor
 {
 public:
 	struct BlockCoord
@@ -49,7 +56,16 @@ public:
 		}
 	};
 
-	Ship(Video* video, uint32_t blockTexture);
+	struct BlockDescriptor
+	{
+		glm::mat4 Matrix;
+		Object Collision;
+	};
+
+	Ship(
+		Video* video,
+		uint32_t blockTexture,
+		CollisionEngine* collisionEngine);
 	~Ship();
 
 	void Tick() override;
@@ -65,12 +81,16 @@ public:
 
 private:
 	Video* _video;
+	CollisionEngine* _collisionEngine;
 
-	std::map<BlockCoord, glm::mat4> _grid;
+	std::map<BlockCoord, BlockDescriptor*> _grid;
 	Block* _block;
+
 	Block* _previewBlock;
 
 	uint32_t _blockTexture;
+
+	glm::mat4 _globalMatrix;
 
 	glm::vec3 _pos;
 	glm::vec3 _rotation;

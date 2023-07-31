@@ -3,18 +3,27 @@
 #include "../Utils/loader.h"
 
 // Ship
-Ship::Ship(Video* video, uint32_t blockTexture)
+Ship::Ship(
+	Video* video,
+	uint32_t blockTexture,
+	CollisionEngine* collisionEngine)
 {
 	_video = video;
+	_collisionEngine = collisionEngine;
 
-	_pos = {0, 0, 0};
+	_pos = {0, 0, 1.5};
 	_rotation = {0, 0, 0};
 	_linearSpeed = {0, 0, 0};
 	_angularSpeed = {0, 0, 0};
 
+	_globalMatrix = glm::translate(
+		glm::mat4(1),
+		glm::vec3(_pos));
+
 	_blockTexture = blockTexture;
 	_previewBlock = nullptr;
 	_block = nullptr;
+	_block = new Block(_video, {0, 0, 0}, _blockTexture);
 }
 
 Ship::~Ship()
@@ -26,10 +35,22 @@ Ship::~Ship()
 	if (_previewBlock) {
 		delete _previewBlock;
 	}
+
+	for (auto& block : _grid) {
+		_collisionEngine->RemoveObject(&block.second->Collision);
+		delete block.second;
+	}
 }
 
 void Ship::Tick()
 {
+	_pos += _linearSpeed;
+
+	_globalMatrix = glm::translate(
+		glm::mat4(1),
+		glm::vec3(_pos));
+
+	_block->SetModelMatrix(_globalMatrix);
 }
 
 void Ship::InsertBlock(const glm::ivec3& position)
@@ -38,11 +59,24 @@ void Ship::InsertBlock(const glm::ivec3& position)
 		return;
 	}
 
+	_block->SetDrawEnabled(true);
+
 	glm::mat4 matrix = glm::translate(
 		glm::mat4(1),
 		glm::vec3(position) * 2.0f);
 
-	_grid[position] = matrix;
+	BlockDescriptor* desc = new BlockDescriptor();
+	desc->Matrix = matrix;
+	desc->Collision.SetObjectVertices(_block->GetModelVertices());
+	desc->Collision.SetObjectIndices(_block->GetModelIndices());
+	desc->Collision.SetObjectCenter();
+	desc->Collision.SetObjectMatrix(matrix);
+	desc->Collision.SetObjectExternMatrix(&_globalMatrix);
+	desc->Collision.SetObjectDomain(1);
+
+	_collisionEngine->RegisterObject(&desc->Collision);
+
+	_grid[position] = desc;
 
 	UpdateView();
 }
@@ -53,6 +87,9 @@ void Ship::RemoveBlock(const glm::ivec3& position)
 		return;
 	}
 
+	_collisionEngine->RemoveObject(&_grid[position]->Collision);
+	delete _grid[position];
+
 	_grid.erase(position);
 	UpdateView();
 }
@@ -61,6 +98,9 @@ void Ship::PreviewBlock(const glm::ivec3& position)
 {
 	StopPreview();
 	_previewBlock = new Block(_video, position, _blockTexture);
+	_previewBlock->SetDrawEnabled(true);
+	_previewBlock->SetModelMatrix(
+		_globalMatrix * _previewBlock->GetModelMatrix());
 	_previewBlock->SetModelInnerMatrix(glm::scale(
 		glm::mat4(1),
 		glm::vec3(1.1, 1.1, 1.1)));
@@ -83,7 +123,7 @@ void Ship::UpdateView()
 	size_t idx = 0;
 
 	for (auto& mat : _grid) {
-		instances[idx] = mat.second;
+		instances[idx] = mat.second->Matrix;
 		++idx;
 	}
 
@@ -92,9 +132,6 @@ void Ship::UpdateView()
 	}
 
 	_block->SetModelInstances(instances);
-
-	std::vector<glm::vec3> vertices;
-	std::vector<uint32_t> indices;
 }
 
 // Block
@@ -103,7 +140,7 @@ Block::Block(Video* video, const glm::ivec3& position, uint32_t texture)
 	_video = video;
 
 	auto model = Loader::LoadModel(
-		"../src/Assets/Resources/Models/blade.obj");
+		"../src/Assets/Resources/Models/ship_wall.obj");
 
 	SetModelVertices(model.Vertices);
 	SetModelIndices(model.Indices);
@@ -118,8 +155,6 @@ Block::Block(Video* video, const glm::ivec3& position, uint32_t texture)
 			glm::vec3(position) * 2.0f));
 
 	SetTexture({texture});
-
-	SetDrawEnabled(true);
 
 	_video->RegisterModel(this);
 }

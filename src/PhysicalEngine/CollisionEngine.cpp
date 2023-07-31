@@ -54,8 +54,12 @@ void CollisionEngine::Run()
 		glm::vec3 center1 = objects[objIdx1]->GetObjectCenter();
 		float radius1 = objects[objIdx1]->_GetObjectRadius();
 		glm::mat4 matrix1 = objects[objIdx1]->GetObjectMatrix();
+		glm::mat4* extMatrix1 =
+			objects[objIdx1]->GetObjectExternMatrix();
 
-		glm::vec3 center1World = matrix1 * glm::vec4(center1, 1.0f);
+		glm::vec3 center1World =
+			(extMatrix1 ? *extMatrix1 : glm::mat4(1)) *
+			matrix1 * glm::vec4(center1, 1.0f);
 
 		for (
 			size_t objIdx2 = objIdx1 + 1;
@@ -85,8 +89,11 @@ void CollisionEngine::Run()
 				objects[objIdx2]->_GetObjectRadius();
 			glm::mat4 matrix2 =
 				objects[objIdx2]->GetObjectMatrix();
+			glm::mat4* extMatrix2 =
+				objects[objIdx2]->GetObjectExternMatrix();
 
 			glm::vec3 center2World =
+				(extMatrix2 ? *extMatrix2 : glm::mat4(1)) *
 				matrix2 * glm::vec4(center2, 1.0f);
 
 			float distance =
@@ -152,21 +159,28 @@ void CollisionEngine::CalculateCollision(
 	auto& speed1 = object1->GetObjectSpeed();
 	auto& speed2 = object2->GetObjectSpeed();
 
+	glm::mat4* extMatrix1 = object1->GetObjectExternMatrix();
+	glm::mat4* extMatrix2 = object2->GetObjectExternMatrix();
+
 	std::vector<glm::vec3> verticesWorld1(vertices1.size());
 	std::vector<glm::vec3> verticesWorld2(vertices2.size());
 
-	glm::vec3 center1World = matrix1 * glm::vec4(center1, 1.0f);
-	glm::vec3 center2World = matrix2 * glm::vec4(center2, 1.0f);
+	glm::vec3 center1World = (extMatrix1 ? *extMatrix1 : glm::mat4(1)) *
+		matrix1 * glm::vec4(center1, 1.0f);
+	glm::vec3 center2World = (extMatrix2 ? *extMatrix2 : glm::mat4(1)) *
+		matrix2 * glm::vec4(center2, 1.0f);
 
 	for (size_t i = 0; i < vertices1.size(); ++i) {
 		verticesWorld1[i] =
-			glm::vec3(matrix1 * glm::vec4(vertices1[i], 1.0f)) +
+			glm::vec3((extMatrix1 ? *extMatrix1 : glm::mat4(1)) *
+				matrix1 * glm::vec4(vertices1[i], 1.0f)) +
 			speed1;
 	}
 
 	for (size_t i = 0; i < vertices2.size(); ++i) {
 		verticesWorld2[i] =
-			glm::vec3(matrix2 * glm::vec4(vertices2[i], 1.0f)) +
+			glm::vec3((extMatrix2 ? *extMatrix2 : glm::mat4(1)) *
+				matrix2 * glm::vec4(vertices2[i], 1.0f)) +
 			speed2;
 	}
 
@@ -257,7 +271,10 @@ Object* CollisionEngine::RayCast(
 		glm::vec3 center = object->GetObjectCenter();
 		float radius = object->_GetObjectRadius();
 		glm::mat4 matrix = object->GetObjectMatrix();
-		glm::vec3 centerWorld = matrix * glm::vec4(center, 1.0f);
+		glm::mat4* extMatrix = object->GetObjectExternMatrix();
+		glm::vec3 centerWorld =
+			(extMatrix ? *extMatrix : glm::mat4(1)) *
+			matrix * glm::vec4(center, 1.0f);
 
 		float dist = glm::length(centerWorld - point) - radius;
 
@@ -295,8 +312,10 @@ bool CollisionEngine::FindRayIntersection(
 	glm::vec3 center = object->GetObjectCenter();
 	float radius = object->_GetObjectRadius();
 	glm::mat4 matrix = object->GetObjectMatrix();
+	glm::mat4* extMatrix = object->GetObjectExternMatrix();
 
-	glm::vec3 centerWorld = matrix * glm::vec4(center, 1.0f);
+	glm::vec3 centerWorld = (extMatrix ? *extMatrix : glm::mat4(1)) *
+		matrix * glm::vec4(center, 1.0f);
 
 	// Sphere: X : length(centerWorld, X) == radius.
 	// Ray: point + alpha * normalize(direction) where
@@ -330,7 +349,8 @@ bool CollisionEngine::FindRayIntersection(
 
 	for (size_t i = 0; i < vertices.size(); ++i) {
 		verticesWorld[i] =
-			glm::vec3(matrix * glm::vec4(vertices[i], 1.0f));
+			glm::vec3((extMatrix ? *extMatrix : glm::mat4(1)) *
+				matrix * glm::vec4(vertices[i], 1.0f));
 	}
 
 	float closestHitDistance = distance;
