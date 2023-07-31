@@ -19,6 +19,7 @@ Player::Player(
 	_lightActive = false;
 	_ship = ship;
 	_buildMode = false;
+	_buildCamCoeff = 0;
 
 	// Pyramid
 	std::vector<glm::vec3> vertices;
@@ -76,38 +77,6 @@ void Player::Key(
 				ToggleRawMouseInput();
 			_mutex.unlock();
 		}
-	} else if (key == GLFW_KEY_W) {
-		_mutex.lock();
-		if (action == GLFW_PRESS) {
-			_go += 1;
-		} else if (action == GLFW_RELEASE) {
-			_go -= 1;
-		}
-		_mutex.unlock();
-	} else if (key == GLFW_KEY_S) {
-		_mutex.lock();
-		if (action == GLFW_PRESS) {
-			_go -= 1;
-		} else if (action == GLFW_RELEASE) {
-			_go += 1;
-		}
-		_mutex.unlock();
-	} else if (key == GLFW_KEY_D) {
-		_mutex.lock();
-		if (action == GLFW_PRESS) {
-			_strafe += 1;
-		} else if (action == GLFW_RELEASE) {
-			_strafe -= 1;
-		}
-		_mutex.unlock();
-	} else if (key == GLFW_KEY_A) {
-		_mutex.lock();
-		if (action == GLFW_PRESS) {
-			_strafe -= 1;
-		} else if (action == GLFW_RELEASE) {
-			_strafe += 1;
-		}
-		_mutex.unlock();
 	} else if (key == GLFW_KEY_SPACE) {
 		_mutex.lock();
 		if (action == GLFW_PRESS) {
@@ -143,42 +112,76 @@ void Player::Key(
 
 	if (_buildMode) {
 		BuildActions(key, action);
+	} else {
+		if (key == GLFW_KEY_W) {
+			_mutex.lock();
+			if (action == GLFW_PRESS) {
+				_go += 1;
+			} else if (action == GLFW_RELEASE) {
+				_go -= 1;
+			}
+			_mutex.unlock();
+		} else if (key == GLFW_KEY_S) {
+			_mutex.lock();
+			if (action == GLFW_PRESS) {
+				_go -= 1;
+			} else if (action == GLFW_RELEASE) {
+				_go += 1;
+			}
+			_mutex.unlock();
+		} else if (key == GLFW_KEY_D) {
+			_mutex.lock();
+			if (action == GLFW_PRESS) {
+				_strafe += 1;
+			} else if (action == GLFW_RELEASE) {
+				_strafe -= 1;
+			}
+			_mutex.unlock();
+		} else if (key == GLFW_KEY_A) {
+			_mutex.lock();
+			if (action == GLFW_PRESS) {
+				_strafe -= 1;
+			} else if (action == GLFW_RELEASE) {
+				_strafe += 1;
+			}
+			_mutex.unlock();
+		}
 	}
 }
 
 void Player::BuildActions(int key, int action)
 {
-	if (key == GLFW_KEY_I) {
+	if (key == GLFW_KEY_W) {
 		if (action == GLFW_PRESS) {
 			++_buildPos.x;
 			_ship->PreviewBlock(_buildPos);
 		}
-	} else if (key == GLFW_KEY_K) {
+	} else if (key == GLFW_KEY_S) {
 		if (action == GLFW_PRESS) {
 			--_buildPos.x;
 			_ship->PreviewBlock(_buildPos);
 		}
-	} else if (key == GLFW_KEY_L) {
+	} else if (key == GLFW_KEY_D) {
 		if (action == GLFW_PRESS) {
 			--_buildPos.y;
 			_ship->PreviewBlock(_buildPos);
 		}
-	} else if (key == GLFW_KEY_J) {
+	} else if (key == GLFW_KEY_A) {
 		if (action == GLFW_PRESS) {
 			++_buildPos.y;
 			_ship->PreviewBlock(_buildPos);
 		}
-	} else if (key == GLFW_KEY_Y) {
+	} else if (key == GLFW_KEY_R) {
 		if (action == GLFW_PRESS) {
 			++_buildPos.z;
 			_ship->PreviewBlock(_buildPos);
 		}
-	} else if (key == GLFW_KEY_H) {
+	} else if (key == GLFW_KEY_F) {
 		if (action == GLFW_PRESS) {
 			--_buildPos.z;
 			_ship->PreviewBlock(_buildPos);
 		}
-	} else if (key == GLFW_KEY_P) {
+	} else if (key == GLFW_KEY_E) {
 		if (action == GLFW_PRESS) {
 			_ship->InsertBlock(_buildPos);
 		}
@@ -263,10 +266,27 @@ void Player::Tick()
 		hspeed.y / 20,
 		_vspeed / 200));
 
-	_video->SetCameraPosition(_pos + glm::vec3(0, 0, 1.85));
-	_video->SetCameraDirection(glm::vec3(
-			hdir * cosf(glm::radians(_angleV)),
-			sinf(glm::radians(_angleV))));
+	glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
+	glm::vec3 cameraDirection = glm::vec3(
+		hdir * cosf(glm::radians(_angleV)),
+		sinf(glm::radians(_angleV)));
+
+	cameraPosition = cameraPosition * (1.0f - _buildCamCoeff) +
+		(_pos + glm::vec3(-5, -1, 20)) * _buildCamCoeff;
+
+	cameraDirection = cameraDirection * (1.0f - _buildCamCoeff) +
+		(_pos - cameraPosition) * _buildCamCoeff;
+
+	if (!_buildMode) {
+		_buildCamCoeff -= 0.001;
+	} else {
+		_buildCamCoeff += 0.001;
+	}
+
+	_buildCamCoeff = std::clamp(_buildCamCoeff, 0.0f, 1.0f);
+
+	_video->SetCameraPosition(cameraPosition);
+	_video->SetCameraDirection(cameraDirection);
 
 	_light.SetLightPosition(_pos + glm::vec3(0, 0, 1.2) +
 			glm::vec3(-hdirStrafe * 0.3f, 0.0f));

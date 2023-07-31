@@ -121,6 +121,14 @@ World::~World()
 
 void World::Run()
 {
+	Light sun;
+	sun.SetLightType(Light::Type::Point);
+	sun.SetLightColor({2000, 2000, 2000});
+	sun.SetLightPosition({0, 0, 200});
+	sun.SetLightActive(true);
+
+	_video->RegisterLight(&sun);
+
 	Ship ship(_video, _shipBlockTexture, _collisionEngine);
 	ship.InsertBlock({-1, -1, 0});
 	ship.InsertBlock({-1, 0, 0});
@@ -149,4 +157,6 @@ void World::Run()
 	_collisionEngine->RemoveObject(&player);
 	_universe->RemoveActor(&player);
 	_universe->RemoveActor(&ship);
+
+	_video->RemoveLight(&sun);
 }
