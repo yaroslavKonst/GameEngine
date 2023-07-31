@@ -51,7 +51,9 @@ private:
 	Ship* _ship;
 	bool _buildMode;
 	glm::ivec3 _buildPos;
+	glm::vec3 _buildRotation;
 	float _buildCamCoeff;
+	glm::vec3 _buildCamPos;
 };
 
 #endif

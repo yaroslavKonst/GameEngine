@@ -21,7 +21,6 @@ Player::Player(
 	_buildMode = false;
 	_buildCamCoeff = 0;
 
-	// Pyramid
 	std::vector<glm::vec3> vertices;
 	vertices.push_back(glm::vec3(0.1, -0.1, 0.0));
 	vertices.push_back(glm::vec3(0.1, 0.1, 0.0));
@@ -104,7 +103,9 @@ void Player::Key(
 			} else {
 				_buildMode = true;
 				_buildPos = {0, 0, 0};
-				_ship->PreviewBlock(_buildPos);
+				_buildCamPos = {0, 0, 0};
+				_buildRotation = {0, 0, 0};
+				_ship->PreviewBlock(_buildPos, _buildRotation);
 				Logger::Verbose() << "Build mode on.";
 			}
 		}
@@ -154,36 +155,36 @@ void Player::BuildActions(int key, int action)
 	if (key == GLFW_KEY_W) {
 		if (action == GLFW_PRESS) {
 			++_buildPos.x;
-			_ship->PreviewBlock(_buildPos);
+			_ship->PreviewBlock(_buildPos, _buildRotation);
 		}
 	} else if (key == GLFW_KEY_S) {
 		if (action == GLFW_PRESS) {
 			--_buildPos.x;
-			_ship->PreviewBlock(_buildPos);
+			_ship->PreviewBlock(_buildPos, _buildRotation);
 		}
 	} else if (key == GLFW_KEY_D) {
 		if (action == GLFW_PRESS) {
 			--_buildPos.y;
-			_ship->PreviewBlock(_buildPos);
+			_ship->PreviewBlock(_buildPos, _buildRotation);
 		}
 	} else if (key == GLFW_KEY_A) {
 		if (action == GLFW_PRESS) {
 			++_buildPos.y;
-			_ship->PreviewBlock(_buildPos);
+			_ship->PreviewBlock(_buildPos, _buildRotation);
 		}
 	} else if (key == GLFW_KEY_R) {
 		if (action == GLFW_PRESS) {
 			++_buildPos.z;
-			_ship->PreviewBlock(_buildPos);
+			_ship->PreviewBlock(_buildPos, _buildRotation);
 		}
 	} else if (key == GLFW_KEY_F) {
 		if (action == GLFW_PRESS) {
 			--_buildPos.z;
-			_ship->PreviewBlock(_buildPos);
+			_ship->PreviewBlock(_buildPos, _buildRotation);
 		}
 	} else if (key == GLFW_KEY_E) {
 		if (action == GLFW_PRESS) {
-			_ship->InsertBlock(_buildPos);
+			_ship->InsertBlock(_buildPos, _buildRotation);
 		}
 	}
 }
@@ -271,16 +272,28 @@ void Player::Tick()
 		hdir * cosf(glm::radians(_angleV)),
 		sinf(glm::radians(_angleV)));
 
+	glm::vec3 buildCamPosTarget = _pos + glm::vec3(_buildPos * 2);
+
+	if (glm::length(_buildCamPos - buildCamPosTarget) > 0.02) {
+		_buildCamPos -=
+			glm::normalize(_buildCamPos - buildCamPosTarget) *
+				0.02f;
+	} else {
+		_buildCamPos = buildCamPosTarget;
+	}
+
 	cameraPosition = cameraPosition * (1.0f - _buildCamCoeff) +
-		(_pos + glm::vec3(-5, -1, 20)) * _buildCamCoeff;
+		(_buildCamPos + glm::vec3(-10, -4, 20)) *
+		_buildCamCoeff;
 
 	cameraDirection = cameraDirection * (1.0f - _buildCamCoeff) +
-		(_pos - cameraPosition) * _buildCamCoeff;
+		(_buildCamPos - cameraPosition) *
+		_buildCamCoeff;
 
 	if (!_buildMode) {
-		_buildCamCoeff -= 0.001;
+		_buildCamCoeff -= 0.01;
 	} else {
-		_buildCamCoeff += 0.001;
+		_buildCamCoeff += 0.01;
 	}
 
 	_buildCamCoeff = std::clamp(_buildCamCoeff, 0.0f, 1.0f);

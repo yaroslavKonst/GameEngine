@@ -15,7 +15,11 @@ public:
 		ObjectTransparent
 	};
 
-	Block(Video* video, const glm::ivec3& position, uint32_t texture);
+	Block(
+		Video* video,
+		const glm::ivec3& position,
+		const glm::vec3& rotation,
+		uint32_t texture);
 	~Block();
 
 private:
@@ -70,10 +74,14 @@ public:
 
 	void Tick() override;
 
-	void InsertBlock(const glm::ivec3& position);
+	void InsertBlock(
+		const glm::ivec3& position,
+		const glm::vec3& rotation);
 	void RemoveBlock(const glm::ivec3& position);
 
-	void PreviewBlock(const glm::ivec3& position);
+	void PreviewBlock(
+		const glm::ivec3& position,
+		const glm::vec3& rotation);
 	void StopPreview();
 
 	void SaveToFile(std::string file);

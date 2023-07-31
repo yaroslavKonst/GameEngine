@@ -130,15 +130,15 @@ void World::Run()
 	_video->RegisterLight(&sun);
 
 	Ship ship(_video, _shipBlockTexture, _collisionEngine);
-	ship.InsertBlock({-1, -1, 0});
-	ship.InsertBlock({-1, 0, 0});
-	ship.InsertBlock({-1, 1, 0});
-	ship.InsertBlock({0, -1, 0});
-	ship.InsertBlock({0, 0, 0});
-	ship.InsertBlock({0, 1, 0});
-	ship.InsertBlock({1, -1, 0});
-	ship.InsertBlock({1, 0, 0});
-	ship.InsertBlock({1, 1, 0});
+	ship.InsertBlock({-1, -1, 0}, {0, 0, 0});
+	ship.InsertBlock({-1, 0, 0}, {0, 0, 0});
+	ship.InsertBlock({-1, 1, 0}, {0, 0, 0});
+	ship.InsertBlock({0, -1, 0}, {0, 0, 0});
+	ship.InsertBlock({0, 0, 0}, {0, 0, 0});
+	ship.InsertBlock({0, 1, 0}, {0, 0, 0});
+	ship.InsertBlock({1, -1, 0}, {0, 0, 0});
+	ship.InsertBlock({1, 0, 0}, {0, 0, 0});
+	ship.InsertBlock({1, 1, 0}, {0, 0, 0});
 
 	Player player(_video, _collisionEngine, &ship);
 	_universe->RegisterActor(&player);
