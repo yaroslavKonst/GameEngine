@@ -20,6 +20,7 @@ public:
 		_effect = glm::vec3(0.0f);
 		_speed = glm::vec3(0.0f);
 		_dynamic = false;
+		_domain = 0;
 	}
 
 	virtual ~Object()
@@ -134,6 +135,16 @@ public:
 		_dynamic = value;
 	}
 
+	virtual uint32_t GetObjectDomain()
+	{
+		return _domain;
+	}
+
+	virtual void SetObjectDomain(uint32_t value)
+	{
+		_domain = value;
+	}
+
 	virtual void RayCastCallback(void* userPointer)
 	{
 	}
@@ -148,6 +159,8 @@ private:
 	bool _initialized;
 	glm::vec3 _effect;
 	bool _dynamic;
+
+	uint32_t _domain;
 };
 
 #endif

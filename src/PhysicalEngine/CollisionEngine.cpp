@@ -49,6 +49,7 @@ void CollisionEngine::Run()
 	for (size_t objIdx1 = 0; objIdx1 < objects.size(); ++objIdx1)
 	{
 		bool object1Dynamic = objects[objIdx1]->IsObjectDynamic();
+		uint32_t object1Domain = objects[objIdx1]->GetObjectDomain();
 
 		glm::vec3 center1 = objects[objIdx1]->GetObjectCenter();
 		float radius1 = objects[objIdx1]->_GetObjectRadius();
@@ -63,8 +64,18 @@ void CollisionEngine::Run()
 		{
 			bool object2Dynamic =
 				objects[objIdx2]->IsObjectDynamic();
+			uint32_t object2Domain =
+				objects[objIdx2]->GetObjectDomain();
 
 			if (!(object1Dynamic || object2Dynamic)) {
+				continue;
+			}
+
+			bool uncheckedDomains =
+				object1Domain > 0 &&
+				object1Domain == object2Domain;
+
+			if (uncheckedDomains) {
 				continue;
 			}
 
