@@ -127,6 +127,59 @@ void CorrectExposure(float exposure)
 	}
 }
 
+vec3 ApplyPalette(vec3 color)
+{
+	vec3 palette[16] = vec3[] (
+		vec3(1.0, 1.0, 1.0),
+
+		vec3(1.0, 0.0, 0.0),
+		vec3(0.0, 1.0, 0.0),
+		vec3(0.0, 0.0, 1.0),
+
+		vec3(1.0, 1.0, 0.0),
+		vec3(0.0, 1.0, 1.0),
+		vec3(1.0, 0.0, 1.0),
+
+		vec3(1.0, 0.5, 0.0),
+		vec3(1.0, 0.0, 0.5),
+
+		vec3(0.5, 1.0, 0.0),
+		vec3(0.0, 1.0, 0.5),
+
+		vec3(0.5, 0.0, 1.0),
+		vec3(0.0, 0.5, 1.0),
+
+		vec3(1.0, 0.5, 0.5),
+		vec3(0.5, 1.0, 0.5),
+		vec3(0.5, 0.5, 1.0)
+	);
+
+	float coeffs[6] = float[] (0.0, 0.2, 0.4, 0.6, 0.8, 1.0);
+
+	float minDist = 3;
+	float coeff = 0;
+
+	vec3 result = palette[0];
+
+	for (int i = 0; i < 16; ++i) {
+		for (int j = 0; j < 6; ++j) {
+			vec3 pColor = palette[i] * coeffs[j];
+
+			float dist =
+				max(abs(pColor.r - color.r),
+				max(abs(pColor.g - color.g),
+				abs(pColor.b - color.b)));
+
+			if (dist < minDist) {
+				minDist = dist;
+				result = pColor;
+			}
+		}
+	}
+
+	return result;
+}
+
 void main()
 {
 	const float gamma = 2.2;
@@ -143,14 +196,17 @@ void main()
 	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
 	CorrectExposure(exposure);
 
-	// gamma correction
+	// gamma correction (off)
 	//mapped = pow(mapped, vec3(1.0 / gamma));
+
+	//mapped = ApplyPalette(mapped);
 
 	mapped = mapped * (1.0 - hdrInterface.a) +
 		hdrInterface.rgb * hdrInterface.a;
 
 	outColor = vec4(mapped, 1.0);
 
+	// Debug output
 	if (int(gl_FragCoord.y) == int(exposure * 40.0f) &&
 		gl_FragCoord.x < 20)
 	{

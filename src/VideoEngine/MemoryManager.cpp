@@ -39,7 +39,7 @@ MemoryManager::~MemoryManager()
 	}
 
 	Logger::Verbose() <<
-		"Destroyed memory manager for index " << _memoryTypeIndex <<
+		"Freed memory manager. Index " << _memoryTypeIndex <<
 		", alignment " << _alignment <<
 		". Leaks: " << leakedSectors;
 }

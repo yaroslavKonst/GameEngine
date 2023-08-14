@@ -8,7 +8,7 @@ using namespace PlaneHelper;
 
 CollisionEngine::CollisionEngine()
 {
-	_threadPool = new ThreadPool(3);
+	_threadPool = new ThreadPool(6);
 }
 
 CollisionEngine::~CollisionEngine()
@@ -22,16 +22,21 @@ void CollisionEngine::RegisterObject(Object* object)
 		InitializeObject(object);
 	}
 
+	_mutex.lock();
 	_objects.insert(object);
+	_mutex.unlock();
 }
 
 void CollisionEngine::RemoveObject(Object* object)
 {
+	_mutex.lock();
 	_objects.erase(object);
+	_mutex.unlock();
 }
 
 void CollisionEngine::Run()
 {
+	_mutex.lock();
 	std::vector<Object*> objects(_objects.size());
 
 	size_t i = 0;
@@ -121,6 +126,8 @@ void CollisionEngine::Run()
 	}
 
 	_threadPool->Wait();
+
+	_mutex.unlock();
 }
 
 void CollisionEngine::InitializeObject(Object* object)
@@ -263,6 +270,8 @@ Object* CollisionEngine::RayCast(
 	float closestHitDistance = distance;
 	Object* closestObject = nullptr;
 
+	_mutex.lock();
+
 	for (auto object : _objects) {
 		if (!object->_IsObjectInitialized()) {
 			InitializeObject(object);
@@ -294,6 +303,8 @@ Object* CollisionEngine::RayCast(
 			closestHitDistance = dist;
 		}
 	}
+
+	_mutex.unlock();
 
 	if (closestObject) {
 		closestObject->RayCastCallback(userPointer);

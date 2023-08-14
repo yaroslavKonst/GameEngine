@@ -186,6 +186,10 @@ void Player::BuildActions(int key, int action)
 		if (action == GLFW_PRESS) {
 			_ship->InsertBlock(_buildPos, _buildRotation);
 		}
+	} else if (key == GLFW_KEY_Q) {
+		if (action == GLFW_PRESS) {
+			_ship->RemoveBlock(_buildPos);
+		}
 	}
 }
 
@@ -223,7 +227,7 @@ void Player::Tick()
 	glm::vec2 hspeed = hdir * (float)_go +
 		hdirStrafe * (float)_strafe;
 
-	_vspeed -= 0.098 / 2;
+	_vspeed -= 0.098 / 1;
 
 	glm::vec3 effect = GetObjectEffect();
 
@@ -253,31 +257,33 @@ void Player::Tick()
 		}
 	}
 
-	_pos += effect;
-
-	_pos.x += hspeed.x / 20;
-	_pos.y += hspeed.y / 20;
-	_pos.z += _vspeed / 200;
+	_pos.x += hspeed.x / 10;
+	_pos.y += hspeed.y / 10;
+	_pos.z += _vspeed / 100;
 
 	SetObjectMatrix(
 		glm::rotate(glm::translate(glm::mat4(1.0), _pos),
 			glm::radians(_angleH), glm::vec3(0, 0, 1)));
 	SetObjectSpeed(glm::vec3(
-		hspeed.x / 20,
-		hspeed.y / 20,
-		_vspeed / 200));
+		hspeed.x / 10,
+		hspeed.y / 10,
+		_vspeed / 100));
 
 	glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
 	glm::vec3 cameraDirection = glm::vec3(
 		hdir * cosf(glm::radians(_angleV)),
 		sinf(glm::radians(_angleV)));
 
-	glm::vec3 buildCamPosTarget = _pos + glm::vec3(_buildPos * 2);
+	//cameraPosition -= glm::normalize(cameraDirection) * 1.5f;
 
-	if (glm::length(_buildCamPos - buildCamPosTarget) > 0.02) {
+	glm::vec3 buildCamPosTarget = glm::vec3(_buildPos * 2);
+
+	float buildCamDist = glm::length(_buildCamPos - buildCamPosTarget);
+
+	if (buildCamDist > 0.04) {
 		_buildCamPos -=
 			glm::normalize(_buildCamPos - buildCamPosTarget) *
-				0.02f;
+				std::clamp(0.008f * buildCamDist, 0.04f, 1.0f);
 	} else {
 		_buildCamPos = buildCamPosTarget;
 	}
@@ -291,9 +297,9 @@ void Player::Tick()
 		_buildCamCoeff;
 
 	if (!_buildMode) {
-		_buildCamCoeff -= 0.01;
+		_buildCamCoeff -= 0.02;
 	} else {
-		_buildCamCoeff += 0.01;
+		_buildCamCoeff += 0.02;
 	}
 
 	_buildCamCoeff = std::clamp(_buildCamCoeff, 0.0f, 1.0f);
@@ -308,11 +314,11 @@ void Player::Tick()
 			sinf(glm::radians(_angleV))));
 	_mutex.unlock();
 
-	_rayEngine->RayCast(
+	/*_rayEngine->RayCast(
 		_pos + glm::vec3(0, 0, 1.85),
 		glm::vec3(
 			hdir * cosf(glm::radians(_angleV)),
 			sinf(glm::radians(_angleV))),
 		5,
-		nullptr);
+		nullptr);*/
 }

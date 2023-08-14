@@ -28,6 +28,8 @@ private:
 
 	ThreadPool* _threadPool;
 
+	std::mutex _mutex;
+
 	void InitializeObject(Object* object);
 	void CalculateCollision(
 		Object* object1,
