@@ -424,12 +424,12 @@ void Swapchain::DestroyRenderingImages()
 
 void Swapchain::CreateHDRResources()
 {
-	_maxHdrImage = 2;
+	_hdrImageCount = 2;
 
-	_hdrImages.resize(_maxHdrImage);
-	_hdrImageViews.resize(_maxHdrImage);
+	_hdrImages.resize(_hdrImageCount);
+	_hdrImageViews.resize(_hdrImageCount);
 
-	for (uint32_t i = 0; i < _maxHdrImage; ++i) {
+	for (uint32_t i = 0; i < _hdrImageCount; ++i) {
 		_hdrImages[i] = ImageHelper::CreateImage(
 			_device,
 			_extent.width,
@@ -473,7 +473,7 @@ void Swapchain::CreateHDRResources()
 
 	VkDescriptorSetLayoutBinding hdrSamplerLayoutBinding{};
 	hdrSamplerLayoutBinding.binding = 0;
-	hdrSamplerLayoutBinding.descriptorCount = _maxHdrImage;
+	hdrSamplerLayoutBinding.descriptorCount = _hdrImageCount;
 	hdrSamplerLayoutBinding.descriptorType =
 		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	hdrSamplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -510,7 +510,7 @@ void Swapchain::CreateHDRResources()
 
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize.descriptorCount = _maxHdrImage;
+	poolSize.descriptorCount = _hdrImageCount;
 
 	VkDescriptorPoolSize bufferPoolSize{};
 	bufferPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -558,7 +558,7 @@ void Swapchain::CreateHDRResources()
 
 	std::vector<VkDescriptorImageInfo> imageInfos;
 
-	for (uint32_t i = 0; i < _maxHdrImage; ++i) {
+	for (uint32_t i = 0; i < _hdrImageCount; ++i) {
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout =
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -622,7 +622,7 @@ void Swapchain::DestroyHDRResources()
 		_device,
 		_hdrImageSampler);
 
-	for (uint32_t i = 0; i < _maxHdrImage; ++i) {
+	for (uint32_t i = 0; i < _hdrImageCount; ++i) {
 		ImageHelper::DestroyImageView(_device, _hdrImageViews[i]);
 
 		ImageHelper::DestroyImage(
@@ -905,17 +905,17 @@ void Swapchain::CreateLightBuffers()
 			"Failed to create light descriptor set layout.");
 	}
 
-	_lightBuffers.resize(_images.size());
-	_lightDescriptorSets.resize(_images.size());
-	_lightBufferMappings.resize(_images.size());
+	_lightBuffers.resize(_maxFramesInFlight);
+	_lightDescriptorSets.resize(_maxFramesInFlight);
+	_lightBufferMappings.resize(_maxFramesInFlight);
 
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount = _images.size();
+	poolSize.descriptorCount = _maxFramesInFlight;
 
 	VkDescriptorPoolSize samplerPoolSize{};
 	samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerPoolSize.descriptorCount = _images.size() * _maxLightCount;
+	samplerPoolSize.descriptorCount = _maxFramesInFlight * _maxLightCount;
 
 	std::vector<VkDescriptorPoolSize> poolSizes = {
 		poolSize,
@@ -926,7 +926,7 @@ void Swapchain::CreateLightBuffers()
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = poolSizes.size();
 	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = _images.size();
+	poolInfo.maxSets = _maxFramesInFlight;
 
 	res = vkCreateDescriptorPool(
 		_device,
@@ -940,13 +940,13 @@ void Swapchain::CreateLightBuffers()
 	}
 
 	std::vector<VkDescriptorSetLayout> layouts(
-		_images.size(),
+		_maxFramesInFlight,
 		_lightDescriptorSetLayout);
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = _lightDescriptorPool;
-	allocInfo.descriptorSetCount = _images.size();
+	allocInfo.descriptorSetCount = _maxFramesInFlight;
 	allocInfo.pSetLayouts = layouts.data();
 
 	res = vkAllocateDescriptorSets(
@@ -963,7 +963,7 @@ void Swapchain::CreateLightBuffers()
 	//	sizeof(glm::mat4) * 6 * _maxLightCount;
 	uint32_t bufferSize = 1024 + sizeof(glm::mat4) * 6 * _maxLightCount;
 
-	for (size_t i = 0; i < _images.size(); ++i) {
+	for (size_t i = 0; i < _maxFramesInFlight; ++i) {
 		_lightBuffers[i] = BufferHelper::CreateBuffer(
 			_device,
 			bufferSize,
@@ -983,7 +983,7 @@ void Swapchain::CreateLightBuffers()
 			&_lightBufferMappings[i]);
 	}
 
-	for (size_t i = 0; i < _images.size(); ++i) {
+	for (size_t i = 0; i < _maxFramesInFlight; ++i) {
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = _lightBuffers[i].Buffer;
 		bufferInfo.offset = 0;
@@ -1050,7 +1050,7 @@ void Swapchain::DestroyLightBuffers()
 		_lightDescriptorSetLayout,
 		nullptr);
 
-	for (size_t i = 0; i < _images.size(); ++i) {
+	for (size_t i = 0; i < _maxFramesInFlight; ++i) {
 		vkUnmapMemory(_device, _lightBuffers[i].Allocation.Memory);
 
 		BufferHelper::DestroyBuffer(
@@ -1063,7 +1063,8 @@ void Swapchain::DestroyLightBuffers()
 
 void Swapchain::RecordCommandBuffer(
 	VkCommandBuffer commandBuffer,
-	uint32_t imageIndex)
+	uint32_t imageIndex,
+	uint32_t currentFrame)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1157,13 +1158,13 @@ void Swapchain::RecordCommandBuffer(
 	uint32_t selectedLights = 0;
 
 	LightDescriptor* lightDescriptors = reinterpret_cast<LightDescriptor*>(
-		(char*)_lightBufferMappings[imageIndex] + 16);
+		(char*)_lightBufferMappings[currentFrame] + 16);
 
 	uint32_t* lightCountData = reinterpret_cast<uint32_t*>(
-		_lightBufferMappings[imageIndex]);
+		_lightBufferMappings[currentFrame]);
 
 	glm::mat4* shadowTransforms = reinterpret_cast<glm::mat4*>(
-		(char*)_lightBufferMappings[imageIndex] + 1024);
+		(char*)_lightBufferMappings[currentFrame] + 1024);
 
 	glm::mat4 shadowProj =
 		glm::perspective(glm::radians(90.0f), 1.0f, 0.01f, 500.0f);
@@ -1323,7 +1324,7 @@ void Swapchain::RecordCommandBuffer(
 				&lightIndex);
 
 			std::vector<VkDescriptorSet> descriptorSets = {
-				_lightDescriptorSets[imageIndex]
+				_lightDescriptorSets[currentFrame]
 			};
 
 			vkCmdBindDescriptorSets(
@@ -1477,7 +1478,7 @@ void Swapchain::RecordCommandBuffer(
 		std::vector<VkDescriptorSet> descriptorSets = {
 			texDiff.DescriptorSet,
 			texSpec.DescriptorSet,
-			_lightDescriptorSets[imageIndex]
+			_lightDescriptorSets[currentFrame]
 		};
 
 		vkCmdBindDescriptorSets(
@@ -1678,7 +1679,10 @@ void Swapchain::DrawFrame()
 	}
 
 	try {
-		RecordCommandBuffer(_commandBuffers[_currentFrame], imageIndex);
+		RecordCommandBuffer(
+			_commandBuffers[_currentFrame],
+			imageIndex,
+			_currentFrame);
 	}
 	catch(...)
 	{
