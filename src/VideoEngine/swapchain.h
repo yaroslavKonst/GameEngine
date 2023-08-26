@@ -82,7 +82,6 @@ private:
 	VkDescriptorPool _lightDescriptorPool;
 	VkDescriptorSetLayout _lightDescriptorSetLayout;
 	std::vector<VkDescriptorSet> _lightDescriptorSets;
-	std::vector<void*> _lightBufferMappings;
 	uint32_t _maxLightCount;
 	uint32_t _shadowSize;
 	void CreateLightBuffers();

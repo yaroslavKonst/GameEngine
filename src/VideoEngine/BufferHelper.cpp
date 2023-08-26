@@ -10,6 +10,7 @@ namespace BufferHelper
 		VkMemoryPropertyFlags properties,
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,
+		bool mapped,
 		uint32_t domain)
 	{
 		Buffer buffer;
@@ -42,6 +43,7 @@ namespace BufferHelper
 			memRequirements.memoryTypeBits,
 			properties);
 		allocProps.Alignment = memRequirements.alignment;
+		allocProps.Mapped = mapped;
 
 		buffer.Allocation = memorySystem->Allocate(
 			memRequirements.size,
@@ -120,23 +122,10 @@ namespace BufferHelper
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			memorySystem,
-			deviceSupport);
+			deviceSupport,
+			true);
 
-		void* mappedMemory;
-
-		vkMapMemory(
-			device,
-			stagingBuffer.Allocation.Memory,
-			stagingBuffer.Allocation.Offset,
-			stagingBuffer.Allocation.Size,
-			0,
-			&mappedMemory);
-
-		memcpy(mappedMemory, data, size);
-
-		vkUnmapMemory(
-			device,
-			stagingBuffer.Allocation.Memory);
+		memcpy(stagingBuffer.Allocation.Mapping, data, size);
 
 		CopyBuffer(
 			stagingBuffer,

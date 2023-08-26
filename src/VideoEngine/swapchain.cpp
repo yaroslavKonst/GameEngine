@@ -907,7 +907,6 @@ void Swapchain::CreateLightBuffers()
 
 	_lightBuffers.resize(_maxFramesInFlight);
 	_lightDescriptorSets.resize(_maxFramesInFlight);
-	_lightBufferMappings.resize(_maxFramesInFlight);
 
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -972,15 +971,7 @@ void Swapchain::CreateLightBuffers()
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			_memorySystem,
 			_deviceSupport,
-			i + 1);
-
-		vkMapMemory(
-			_device,
-			_lightBuffers[i].Allocation.Memory,
-			0,
-			bufferSize,
-			0,
-			&_lightBufferMappings[i]);
+			true);
 	}
 
 	for (size_t i = 0; i < _maxFramesInFlight; ++i) {
@@ -1051,13 +1042,10 @@ void Swapchain::DestroyLightBuffers()
 		nullptr);
 
 	for (size_t i = 0; i < _maxFramesInFlight; ++i) {
-		vkUnmapMemory(_device, _lightBuffers[i].Allocation.Memory);
-
 		BufferHelper::DestroyBuffer(
 			_device,
 			_lightBuffers[i],
-			_memorySystem,
-			i + 1);
+			_memorySystem);
 	}
 }
 
@@ -1158,13 +1146,13 @@ void Swapchain::RecordCommandBuffer(
 	uint32_t selectedLights = 0;
 
 	LightDescriptor* lightDescriptors = reinterpret_cast<LightDescriptor*>(
-		(char*)_lightBufferMappings[currentFrame] + 16);
+		(char*)_lightBuffers[currentFrame].Allocation.Mapping + 16);
 
 	uint32_t* lightCountData = reinterpret_cast<uint32_t*>(
-		_lightBufferMappings[currentFrame]);
+		_lightBuffers[currentFrame].Allocation.Mapping);
 
 	glm::mat4* shadowTransforms = reinterpret_cast<glm::mat4*>(
-		(char*)_lightBufferMappings[currentFrame] + 1024);
+		(char*)_lightBuffers[currentFrame].Allocation.Mapping + 1024);
 
 	glm::mat4 shadowProj =
 		glm::perspective(glm::radians(90.0f), 1.0f, 0.01f, 500.0f);

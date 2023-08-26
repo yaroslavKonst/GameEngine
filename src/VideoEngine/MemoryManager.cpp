@@ -8,7 +8,8 @@ MemoryManager::MemoryManager(
 	VkDevice device,
 	uint32_t pageSize,
 	uint32_t memoryTypeIndex,
-	uint32_t alignment)
+	uint32_t alignment,
+	bool mapped)
 {
 	_device = device;
 	_pageSize = (pageSize / alignment + 1) * alignment;
@@ -16,10 +17,13 @@ MemoryManager::MemoryManager(
 	_sectorCount = _pageSize / _alignment;
 	_memoryTypeIndex = memoryTypeIndex;
 
+	_mapped = mapped;
+
 	AddPage();
 
-	Logger::Verbose() << "Created memory manager for index " <<
-		_memoryTypeIndex << ", alignment " << _alignment;
+	Logger::Verbose() << "New memory manager. Index: " <<
+		_memoryTypeIndex << ". Alignment: " << _alignment <<
+		". Mapped: " << mapped;
 
 	Logger::Verbose() << "Page size " << _pageSize;
 }
@@ -29,6 +33,12 @@ MemoryManager::~MemoryManager()
 	uint32_t leakedSectors = 0;
 
 	for (auto& page : _pages) {
+		if (_mapped) {
+			vkUnmapMemory(
+				_device,
+				page.memory);
+		}
+
 		vkFreeMemory(_device, page.memory, nullptr);
 
 		for (bool sector : page.data) {
@@ -39,8 +49,8 @@ MemoryManager::~MemoryManager()
 	}
 
 	Logger::Verbose() <<
-		"Freed memory manager. Index " << _memoryTypeIndex <<
-		", alignment " << _alignment <<
+		"Freed memory manager. Index: " << _memoryTypeIndex <<
+		", alignment: " << _alignment << ", mapped: " << _mapped <<
 		". Leaks: " << leakedSectors;
 }
 
@@ -62,6 +72,16 @@ void MemoryManager::AddPage()
 
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("Failed to allocate device memory.");
+	}
+
+	if (_mapped) {
+		vkMapMemory(
+			_device,
+			page.memory,
+			0,
+			_pageSize,
+			0,
+			&page.mapping);
 	}
 
 	_pages.push_back(page);
@@ -112,6 +132,14 @@ MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
 				allocation.Offset = _alignment * sectorIndex;
 				allocation.Size = size;
 
+				if (_mapped) {
+					allocation.Mapping =
+						(char*)page.mapping +
+						allocation.Offset;
+				} else {
+					allocation.Mapping = nullptr;
+				}
+
 				_mutex.unlock();
 				return allocation;
 			}
@@ -128,6 +156,12 @@ MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
 	allocation.Memory = _pages.back().memory;
 	allocation.Offset = 0;
 	allocation.Size = size;
+
+	if (_mapped) {
+		allocation.Mapping = _pages.back().mapping;
+	} else {
+		allocation.Mapping = nullptr;
+	}
 
 	_mutex.unlock();
 	return allocation;

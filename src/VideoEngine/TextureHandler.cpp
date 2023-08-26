@@ -231,22 +231,13 @@ ImageHelper::Image TextureHandler::CreateTextureImage(
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		_memorySystem,
-		_deviceSupport);
+		_deviceSupport,
+		true);
 
-	uint32_t* imageData;
-	vkMapMemory(
-		_device,
-		stagingBuffer.Allocation.Memory,
-		stagingBuffer.Allocation.Offset,
-		stagingBuffer.Allocation.Size,
-		0,
-		reinterpret_cast<void**>(&imageData));
-
-	memcpy(imageData, texture.data(), texture.size());
-
-	vkUnmapMemory(
-		_device,
-		stagingBuffer.Allocation.Memory);
+	memcpy(
+		stagingBuffer.Allocation.Mapping,
+		texture.data(),
+		texture.size());
 
 	ImageHelper::ChangeImageLayout(
 		textureImage,

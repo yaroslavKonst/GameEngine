@@ -14,13 +14,15 @@ public:
 		VkDeviceMemory Memory;
 		uint32_t Size;
 		uint32_t Offset;
+		void* Mapping;
 	};
 
 	MemoryManager(
 		VkDevice device,
 		uint32_t pageSize,
 		uint32_t memoryTypeIndex,
-		uint32_t alignment);
+		uint32_t alignment,
+		bool mapped = false);
 	~MemoryManager();
 
 	Allocation Allocate(uint32_t size);
@@ -31,6 +33,7 @@ private:
 	{
 		VkDeviceMemory memory;
 		std::vector<bool> data;
+		void* mapping;
 	};
 
 	VkDevice _device;
@@ -39,6 +42,8 @@ private:
 	uint32_t _alignment;
 	uint32_t _memoryTypeIndex;
 	uint32_t _sectorCount;
+
+	bool _mapped;
 
 	std::mutex _mutex;
 

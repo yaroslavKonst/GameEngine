@@ -53,7 +53,8 @@ MemorySystem::Allocation MemorySystem::Allocate(
 			_device,
 			pageSize,
 			properties.MemoryTypeIndex,
-			properties.Alignment);
+			properties.Alignment,
+			properties.Mapped);
 	}
 
 	Allocation allocation;
@@ -65,6 +66,7 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	allocation.Size = alloc.Size;
 	allocation.Offset = alloc.Offset;
 	allocation.Properties = properties;
+	allocation.Mapping = alloc.Mapping;
 
 	return allocation;
 }

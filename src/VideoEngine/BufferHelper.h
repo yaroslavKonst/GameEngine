@@ -22,6 +22,7 @@ namespace BufferHelper
 		VkMemoryPropertyFlags properties,
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,
+		bool mapped = false,
 		uint32_t domain = 0);
 
 	void DestroyBuffer(

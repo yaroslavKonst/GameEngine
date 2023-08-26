@@ -13,6 +13,7 @@ public:
 	{
 		uint32_t Alignment;
 		uint32_t MemoryTypeIndex;
+		bool Mapped;
 
 		bool operator<(const AllocationProperties& properties) const
 		{
@@ -20,7 +21,13 @@ public:
 				return Alignment < properties.Alignment;
 			}
 
-			return MemoryTypeIndex < properties.MemoryTypeIndex;
+			if (MemoryTypeIndex != properties.MemoryTypeIndex) {
+				return
+					MemoryTypeIndex <
+					properties.MemoryTypeIndex;
+			}
+
+			return Mapped < properties.Mapped;
 		}
 	};
 
@@ -29,6 +36,7 @@ public:
 		VkDeviceMemory Memory;
 		uint32_t Size;
 		uint32_t Offset;
+		void* Mapping;
 		AllocationProperties Properties;
 
 	};

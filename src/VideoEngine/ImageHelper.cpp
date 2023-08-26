@@ -59,6 +59,7 @@ namespace ImageHelper
 			memRequirements.memoryTypeBits,
 			properties);
 		allocProps.Alignment = memRequirements.alignment;
+		allocProps.Mapped = false;
 
 		image.Allocation = memorySystem->Allocate(
 			memRequirements.size,
