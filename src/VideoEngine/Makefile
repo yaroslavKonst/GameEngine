@@ -18,7 +18,8 @@ all: \
 	../../build/rectangle.o \
 	../../build/drawable.o \
 	../../build/InputControl.o \
-	../../build/TextureHandler.o
+	../../build/TextureHandler.o \
+	../../build/TextHandler.o
 
 shaders:
 	cd shaders ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
