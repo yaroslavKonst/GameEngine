@@ -117,6 +117,7 @@ private:
 	void DestroyImageViews();
 
 	Pipeline* _objectPipeline;
+	Pipeline* _transparentObjectPipeline;
 	Pipeline* _rectanglePipeline;
 	Pipeline* _skyboxPipeline;
 	Pipeline* _shadowPipeline;
@@ -138,7 +139,8 @@ private:
 		uint32_t imageIndex,
 		uint32_t currentFrame,
 		std::pair<Model* const, ModelDescriptor>& model,
-		MVP mvp);
+		MVP mvp,
+		Pipeline* pipeline);
 
 	bool _work;
 
