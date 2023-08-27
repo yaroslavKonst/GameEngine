@@ -723,8 +723,13 @@ void Swapchain::CreatePipelines()
 	initInfo.ColorImageFinalLayout =
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	initInfo.PushConstantRangeCount = 1;
+	initInfo.PushConstantRangeCount = 2;
+	pushConstants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstants[0].offset = 0;
 	pushConstants[0].size = sizeof(glm::vec4) * 2;
+	pushConstants[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushConstants[1].offset = 32;
+	pushConstants[1].size = sizeof(glm::vec4);
 
 	_rectanglePipeline = new Pipeline(&initInfo);
 	_rectanglePipeline->CreateFramebuffers(
@@ -1522,6 +1527,17 @@ void Swapchain::RecordCommandBuffer(
 			0,
 			sizeof(glm::vec4) * 2,
 			rectData.data());
+
+		glm::vec4 colorMultiplier =
+			rectangle.first->GetColorMultiplier();
+
+		vkCmdPushConstants(
+			commandBuffer,
+			_rectanglePipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			32,
+			sizeof(glm::vec4),
+			&colorMultiplier);
 
 		auto& tex = _scene->Textures->GetTexture(
 			rectangle.second.Textures[0]);
