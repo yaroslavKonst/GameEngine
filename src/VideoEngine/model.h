@@ -100,6 +100,17 @@ public:
 		_updatedInstances = true;
 	}
 
+
+	virtual const glm::vec3& GetModelCenter()
+	{
+		return _modelCenter;
+	}
+
+	virtual void SetModelCenter(const glm::vec3& value)
+	{
+		_modelCenter = value;
+	}
+
 private:
 	std::vector<glm::vec3> _modelVertexBuffer;
 	std::vector<glm::vec3> _modelNormalBuffer;
@@ -109,6 +120,8 @@ private:
 
 	glm::mat4 _modelMatrix;
 	glm::mat4 _modelInnerMatrix;
+
+	glm::vec3 _modelCenter;
 
 	bool _updatedInstances;
 };

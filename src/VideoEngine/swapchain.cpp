@@ -4,7 +4,6 @@
 #include <cstring>
 
 #include "../Logger/logger.h"
-#include "mvp.h"
 
 #include "shaders/spir-v/ObjectShader_vert.spv"
 #include "shaders/spir-v/ObjectShader_frag.spv"
@@ -1278,6 +1277,10 @@ void Swapchain::RecordCommandBuffer(
 				continue;
 			}
 
+			if (model.first->GetColorMultiplier().a < 1.0f) {
+				continue;
+			}
+
 			mvp.Model = model.first->GetModelMatrix();
 			mvp.InnerModel = model.first->GetModelInnerMatrix();
 
@@ -1357,138 +1360,46 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+	std::map<float, Model*> transparentModels;
+
 	for (auto& model : _scene->Models) {
 		if (!model.first->IsDrawEnabled()) {
 			continue;
 		}
 
-		mvp.Model = model.first->GetModelMatrix();
-		mvp.InnerModel = model.first->GetModelInnerMatrix();
+		if (model.first->GetColorMultiplier().a < 1.0f) {
+			float distance = glm::length(
+				_scene->CameraPosition -
+				model.first->GetModelCenter());
 
-		if (!model.first->_GetModelInstancesUpdated()) {
-			BufferHelper::DestroyBuffer(
-				_device,
-				model.second.InstanceBuffer,
-				_memorySystem);
+			transparentModels[distance] = model.first;
 
-			auto& instances = model.first->GetModelInstances();
-
-			model.second.InstanceBuffer =
-				BufferHelper::CreateBuffer(
-					_device,
-					instances.size() * sizeof(glm::mat4),
-					VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-					VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-					_memorySystem,
-					_deviceSupport);
-
-			BufferHelper::Buffer stagingBuffer;
-
-			BufferHelper::LoadDataToBuffer(
-				_device,
-				model.second.InstanceBuffer,
-				instances.data(),
-				instances.size() * sizeof(glm::mat4),
-				_memorySystem,
-				_deviceSupport,
-				nullptr,
-				VK_NULL_HANDLE,
-				&stagingBuffer,
-				commandBuffer);
-
-			model.second.InstanceCount = instances.size();
-
-			_stagingBuffers.push_back(stagingBuffer);
-			model.first->_SetModelInstancesUpdated();
+			continue;
 		}
 
-		VkBuffer vertexBuffers[] = {
-			model.second.VertexBuffer.Buffer,
-			model.second.InstanceBuffer.Buffer
-		};
-
-		VkDeviceSize offsets[] = {0, 0};
-		vkCmdBindVertexBuffers(
+		RecordObjectCommandBuffer(
 			commandBuffer,
-			0,
-			2,
-			vertexBuffers,
-			offsets);
+			imageIndex,
+			currentFrame,
+			model,
+			mvp);
+	}
 
-		vkCmdBindIndexBuffer(
+	for (
+		auto it = transparentModels.rbegin();
+		it != transparentModels.rend();
+		++it)
+	{
+		std::pair<Model* const, ModelDescriptor> modelDesc(
+			it->second,
+			_scene->Models[it->second]);
+
+		RecordObjectCommandBuffer(
 			commandBuffer,
-			model.second.IndexBuffer.Buffer,
-			0,
-			VK_INDEX_TYPE_UINT32);
-
-		vkCmdPushConstants(
-			commandBuffer,
-			_pipeline->GetPipelineLayout(),
-			VK_SHADER_STAGE_VERTEX_BIT,
-			0,
-			sizeof(MVP),
-			&mvp);
-
-		vkCmdPushConstants(
-			commandBuffer,
-			_pipeline->GetPipelineLayout(),
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			192,
-			sizeof(glm::vec3),
-			&_scene->CameraPosition);
-
-		uint32_t isLight = model.first->DrawLight() ? 1 : 0;
-
-		vkCmdPushConstants(
-			commandBuffer,
-			_pipeline->GetPipelineLayout(),
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			204,
-			sizeof(uint32_t),
-			&isLight);
-
-		glm::vec4 colorMultiplier =
-			model.first->GetColorMultiplier();
-
-		vkCmdPushConstants(
-			commandBuffer,
-			_pipeline->GetPipelineLayout(),
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			208,
-			sizeof(glm::vec4),
-			&colorMultiplier);
-
-		auto& texDiff = _scene->Textures->GetTexture(
-			model.second.Textures[0]);
-
-		auto& texSpec = model.second.Textures.size() > 1 ?
-			_scene->Textures->GetTexture(model.second.Textures[1]) :
-			texDiff;
-
-		std::vector<VkDescriptorSet> descriptorSets = {
-			texDiff.DescriptorSet,
-			texSpec.DescriptorSet,
-			_lightDescriptorSets[currentFrame]
-		};
-
-		vkCmdBindDescriptorSets(
-			commandBuffer,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			_pipeline->GetPipelineLayout(),
-			0,
-			descriptorSets.size(),
-			descriptorSets.data(),
-			0,
-			nullptr);
-
-		vkCmdDrawIndexed(
-			commandBuffer,
-			model.second.IndexCount,
-			model.second.InstanceCount,
-			0,
-			0,
-			0);
+			imageIndex,
+			currentFrame,
+			modelDesc,
+			mvp);
 	}
 
 	vkCmdEndRenderPass(commandBuffer);
@@ -1607,6 +1518,142 @@ void Swapchain::RecordCommandBuffer(
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("Failed to end command buffer.");
 	}
+}
+
+void Swapchain::RecordObjectCommandBuffer(
+	VkCommandBuffer commandBuffer,
+	uint32_t imageIndex,
+	uint32_t currentFrame,
+	std::pair<Model* const, ModelDescriptor>& model,
+	MVP mvp)
+{
+	mvp.Model = model.first->GetModelMatrix();
+	mvp.InnerModel = model.first->GetModelInnerMatrix();
+
+	if (!model.first->_GetModelInstancesUpdated()) {
+		BufferHelper::DestroyBuffer(
+			_device,
+			model.second.InstanceBuffer,
+			_memorySystem);
+
+		auto& instances = model.first->GetModelInstances();
+
+		model.second.InstanceBuffer =
+			BufferHelper::CreateBuffer(
+				_device,
+				instances.size() * sizeof(glm::mat4),
+				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+				VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				_memorySystem,
+				_deviceSupport);
+
+		BufferHelper::Buffer stagingBuffer;
+
+		BufferHelper::LoadDataToBuffer(
+			_device,
+			model.second.InstanceBuffer,
+			instances.data(),
+			instances.size() * sizeof(glm::mat4),
+			_memorySystem,
+			_deviceSupport,
+			nullptr,
+			VK_NULL_HANDLE,
+			&stagingBuffer,
+			commandBuffer);
+
+		model.second.InstanceCount = instances.size();
+
+		_stagingBuffers.push_back(stagingBuffer);
+		model.first->_SetModelInstancesUpdated();
+	}
+
+	VkBuffer vertexBuffers[] = {
+		model.second.VertexBuffer.Buffer,
+		model.second.InstanceBuffer.Buffer
+	};
+
+	VkDeviceSize offsets[] = {0, 0};
+	vkCmdBindVertexBuffers(
+		commandBuffer,
+		0,
+		2,
+		vertexBuffers,
+		offsets);
+
+	vkCmdBindIndexBuffer(
+		commandBuffer,
+		model.second.IndexBuffer.Buffer,
+		0,
+		VK_INDEX_TYPE_UINT32);
+
+	vkCmdPushConstants(
+		commandBuffer,
+		_pipeline->GetPipelineLayout(),
+		VK_SHADER_STAGE_VERTEX_BIT,
+		0,
+		sizeof(MVP),
+		&mvp);
+
+	vkCmdPushConstants(
+		commandBuffer,
+		_pipeline->GetPipelineLayout(),
+		VK_SHADER_STAGE_FRAGMENT_BIT,
+		192,
+		sizeof(glm::vec3),
+		&_scene->CameraPosition);
+
+	uint32_t isLight = model.first->DrawLight() ? 1 : 0;
+
+	vkCmdPushConstants(
+		commandBuffer,
+		_pipeline->GetPipelineLayout(),
+		VK_SHADER_STAGE_FRAGMENT_BIT,
+		204,
+		sizeof(uint32_t),
+		&isLight);
+
+	glm::vec4 colorMultiplier =
+		model.first->GetColorMultiplier();
+
+	vkCmdPushConstants(
+		commandBuffer,
+		_pipeline->GetPipelineLayout(),
+		VK_SHADER_STAGE_FRAGMENT_BIT,
+		208,
+		sizeof(glm::vec4),
+		&colorMultiplier);
+
+	auto& texDiff = _scene->Textures->GetTexture(
+		model.second.Textures[0]);
+
+	auto& texSpec = model.second.Textures.size() > 1 ?
+		_scene->Textures->GetTexture(model.second.Textures[1]) :
+		texDiff;
+
+	std::vector<VkDescriptorSet> descriptorSets = {
+		texDiff.DescriptorSet,
+		texSpec.DescriptorSet,
+		_lightDescriptorSets[currentFrame]
+	};
+
+	vkCmdBindDescriptorSets(
+		commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		_pipeline->GetPipelineLayout(),
+		0,
+		descriptorSets.size(),
+		descriptorSets.data(),
+		0,
+		nullptr);
+
+	vkCmdDrawIndexed(
+		commandBuffer,
+		model.second.IndexCount,
+		model.second.InstanceCount,
+		0,
+		0,
+		0);
 }
 
 void Swapchain::MainLoop() {

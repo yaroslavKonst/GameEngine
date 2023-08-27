@@ -15,6 +15,7 @@
 #include "ModelDescriptor.h"
 #include "SceneDescriptor.h"
 #include "LightDescriptor.h"
+#include "mvp.h"
 
 class Swapchain
 {
@@ -131,6 +132,12 @@ private:
 		VkCommandBuffer commandBuffer,
 		uint32_t imageIndex,
 		uint32_t currentFrame);
+	void RecordObjectCommandBuffer(
+		VkCommandBuffer commandBuffer,
+		uint32_t imageIndex,
+		uint32_t currentFrame,
+		std::pair<Model* const, ModelDescriptor>& model,
+		MVP mvp);
 
 	bool _work;
 
