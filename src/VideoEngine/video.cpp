@@ -789,3 +789,32 @@ void Video::RemoveLight(Light* light)
 		_scene.SceneMutex->unlock();
 	}
 }
+
+void Video::RegisterSprite(Sprite* sprite)
+{
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
+	_scene.Sprites.insert(sprite);
+	sprite->_SetDrawReady(true);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
+}
+
+void Video::RemoveSprite(Sprite* sprite)
+{
+	sprite->_SetDrawReady(false);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->lock();
+	}
+
+	_scene.Sprites.erase(sprite);
+
+	if (_scene.SceneMutex) {
+		_scene.SceneMutex->unlock();
+	}
+}

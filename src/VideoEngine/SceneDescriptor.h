@@ -10,12 +10,14 @@
 #include "skybox.h"
 #include "light.h"
 #include "TextureHandler.h"
+#include "sprite.h"
 
 struct SceneDescriptor
 {
 	std::map<Model*, ModelDescriptor> Models;
 	std::map<Rectangle*, ModelDescriptor> Rectangles;
 	std::set<Light*> Lights;
+	std::set<Sprite*> Sprites;
 	Skybox skybox;
 
 	TextureHandler* Textures;

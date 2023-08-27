@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include "SpriteDescriptor.h"
+
 #include "../Logger/logger.h"
 
 #include "shaders/spir-v/ObjectShader_vert.spv"
@@ -20,6 +22,9 @@
 
 #include "shaders/spir-v/PostprocessingShader_vert.spv"
 #include "shaders/spir-v/PostprocessingShader_frag.spv"
+
+#include "shaders/spir-v/SpriteShader_vert.spv"
+#include "shaders/spir-v/SpriteShader_frag.spv"
 
 Swapchain::Swapchain(
 	VkDevice device,
@@ -680,8 +685,10 @@ void Swapchain::CreatePipelines()
 	initInfo.VertexAttributeDescriptions =
 		ModelDescriptor::GetAttributeDescriptions();
 	initInfo.DepthTestEnabled = VK_TRUE;
-	initInfo.ResolveImage = true;
+	initInfo.DepthWriteEnabled = VK_TRUE;
+	initInfo.ResolveImage = false;
 	initInfo.ClearColorImage = false;
+	initInfo.ClearDepthImage = true;
 	initInfo.ColorImage = true;
 	initInfo.DepthImage = true;
 	initInfo.InvertFace = false;
@@ -706,8 +713,43 @@ void Swapchain::CreatePipelines()
 		{_colorImageView},
 		{_depthImageView});
 
+	// Sprite pipeline
+	initInfo.DepthTestEnabled = VK_TRUE;
+	initInfo.DepthWriteEnabled = VK_FALSE;
+	initInfo.ResolveImage = true;
+	initInfo.VertexBindingDescriptions.clear();
+	initInfo.VertexAttributeDescriptions.clear();
+	initInfo.VertexShaderCode = SpriteShaderVert;
+	initInfo.VertexShaderSize = sizeof(SpriteShaderVert);
+	initInfo.FragmentShaderCode = SpriteShaderFrag;
+	initInfo.FragmentShaderSize = sizeof(SpriteShaderFrag);
+	initInfo.DescriptorSetLayouts = {
+		_descriptorSetLayout,
+		_descriptorSetLayout,
+		_lightDescriptorSetLayout
+	};
+	initInfo.ClearColorImage = false;
+	initInfo.ClearDepthImage = false;
+	initInfo.ColorImageFinalLayout =
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	initInfo.PushConstantRangeCount = 2;
+	pushConstants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstants[0].offset = 0;
+	pushConstants[0].size = sizeof(SpriteDescriptor);
+	pushConstants[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushConstants[1].offset = 192;
+	pushConstants[1].size = sizeof(glm::vec4) * 2;
+
+	_spritePipeline = new Pipeline(&initInfo);
+	_spritePipeline->CreateFramebuffers(
+		{_hdrImageViews[0]},
+		{_colorImageView},
+		{_depthImageView});
+
 	// Rectangle pipeline
 	initInfo.DepthTestEnabled = VK_FALSE;
+	initInfo.DepthTestEnabled = VK_TRUE;
 	initInfo.ResolveImage = true;
 	initInfo.VertexBindingDescriptions.clear();
 	initInfo.VertexAttributeDescriptions.clear();
@@ -719,6 +761,7 @@ void Swapchain::CreatePipelines()
 		_descriptorSetLayout
 	};
 	initInfo.ClearColorImage = true;
+	initInfo.ClearDepthImage = true;
 	initInfo.ColorImageFinalLayout =
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
@@ -853,6 +896,9 @@ void Swapchain::CreatePipelines()
 
 void Swapchain::DestroyPipelines()
 {
+	_spritePipeline->DestroyFramebuffers();
+	delete _spritePipeline;
+
 	_postprocessingPipeline->DestroyFramebuffers();
 	delete _postprocessingPipeline;
 
@@ -1400,6 +1446,105 @@ void Swapchain::RecordCommandBuffer(
 			currentFrame,
 			modelDesc,
 			mvp);
+	}
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	// Sprite pipeline.
+	_spritePipeline->RecordCommandBuffer(commandBuffer, 0);
+
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	std::map<float, Sprite*> orderedSprites;
+
+	for (auto sprite : _scene->Sprites) {
+		if (!sprite->IsDrawEnabled()) {
+			continue;
+		}
+
+		orderedSprites[
+			glm::length(sprite->GetSpritePosition() -
+				_scene->CameraPosition)] = sprite;
+	}
+
+	for (
+		auto it = orderedSprites.rbegin();
+		it != orderedSprites.rend();
+		++it)
+	{
+		auto& sprite = *it;
+
+		SpriteDescriptor spriteDesc;
+
+		spriteDesc.ProjView = mvp.ProjView;
+		spriteDesc.TexCoords = sprite.second->GetSpriteTexCoords();
+		spriteDesc.SpritePos = sprite.second->GetSpritePosition();
+		spriteDesc.CameraPos = _scene->CameraPosition;
+		spriteDesc.SpriteUp = sprite.second->GetSpriteUp();
+		spriteDesc.Size = sprite.second->GetSpriteSize();
+
+		vkCmdPushConstants(
+			commandBuffer,
+			_spritePipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_VERTEX_BIT,
+			0,
+			sizeof(SpriteDescriptor),
+			&spriteDesc);
+
+		vkCmdPushConstants(
+			commandBuffer,
+			_spritePipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			192,
+			sizeof(glm::vec3),
+			&_scene->CameraPosition);
+
+		uint32_t isLight = sprite.second->DrawLight() ? 1 : 0;
+
+		vkCmdPushConstants(
+			commandBuffer,
+			_spritePipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			204,
+			sizeof(uint32_t),
+			&isLight);
+
+		const glm::vec4 colorMultiplier =
+			sprite.second->GetColorMultiplier();
+
+		vkCmdPushConstants(
+			commandBuffer,
+			_spritePipeline->GetPipelineLayout(),
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			208,
+			sizeof(glm::vec4),
+			&colorMultiplier);
+
+		auto& texDiff = _scene->Textures->GetTexture(
+			sprite.second->GetTexture(0));
+
+		auto& texSpec = sprite.second->GetTexCount() > 1 ?
+			_scene->Textures->GetTexture(
+				sprite.second->GetTexture(1)) : texDiff;
+
+		std::vector<VkDescriptorSet> descriptorSets = {
+			texDiff.DescriptorSet,
+			texSpec.DescriptorSet,
+			_lightDescriptorSets[currentFrame]
+		};
+
+		vkCmdBindDescriptorSets(
+			commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			_spritePipeline->GetPipelineLayout(),
+			0,
+			descriptorSets.size(),
+			descriptorSets.data(),
+			0,
+			nullptr);
+
+		vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 	}
 
 	vkCmdEndRenderPass(commandBuffer);

@@ -17,6 +17,8 @@ shaders: \
 	spir-v/ShadowShader_frag.spv \
 	spir-v/PostprocessingShader_vert.spv \
 	spir-v/PostprocessingShader_frag.spv \
+	spir-v/SpriteShader_vert.spv \
+	spir-v/SpriteShader_frag.spv
 
 outdir:
 	mkdir -p spir-v

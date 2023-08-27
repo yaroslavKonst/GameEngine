@@ -48,6 +48,9 @@ public:
 	void RegisterLight(Light* light);
 	void RemoveLight(Light* light);
 
+	void RegisterSprite(Sprite* sprite);
+	void RemoveSprite(Sprite* sprite);
+
 	void SetFOV(double fov)
 	{
 		_scene.FOV = fov;

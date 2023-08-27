@@ -29,6 +29,7 @@ public:
 		std::vector<VkVertexInputAttributeDescription>
 			VertexAttributeDescriptions;
 		VkBool32 DepthTestEnabled;
+		VkBool32 DepthWriteEnabled;
 		uint32_t PushConstantRangeCount;
 		VkPushConstantRange* PushConstants;
 		bool ColorImage;
@@ -37,6 +38,7 @@ public:
 		VkImageLayout DepthImageFinalLayout;
 		bool ResolveImage;
 		bool ClearColorImage;
+		bool ClearDepthImage;
 		bool InvertFace;
 	};
 

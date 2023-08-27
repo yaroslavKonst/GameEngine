@@ -144,7 +144,7 @@ Pipeline::Pipeline(InitInfo* initInfo)
 	depthStencil.sType =
 		VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencil.depthTestEnable = initInfo->DepthTestEnabled;
-	depthStencil.depthWriteEnable = VK_TRUE;
+	depthStencil.depthWriteEnable = initInfo->DepthWriteEnabled;
 	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 	depthStencil.minDepthBounds = 0.0f; // Optional
@@ -322,6 +322,12 @@ void Pipeline::CreateRenderPass(InitInfo* initInfo)
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthAttachment.finalLayout = initInfo->DepthImageFinalLayout;
+
+	if (!initInfo->ClearDepthImage) {
+		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		depthAttachment.initialLayout =
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	}
 
 	VkAttachmentReference depthAttachmentRef{};
 	if (_depth) {

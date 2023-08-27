@@ -100,10 +100,7 @@ World::World()
 		tw,
 		th);
 
-	_shipBlockTexture = _video->GetTextures()->AddTexture(
-		tw,
-		th,
-		td);
+	_shipBlockTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
 	_universeThread = new std::thread(UniverseThread, _universe);
 }
@@ -121,6 +118,15 @@ World::~World()
 
 void World::Run()
 {
+	int tw;
+	int th;
+	auto td = Loader::LoadImage(
+		"../src/Assets/Resources/Images/transparent.png",
+		tw,
+		th);
+
+	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
+
 	Light sun;
 	sun.SetLightType(Light::Type::Point);
 	sun.SetLightColor({2000, 2000, 2000});
@@ -128,6 +134,28 @@ void World::Run()
 	sun.SetLightActive(true);
 
 	_video->RegisterLight(&sun);
+
+	Sprite sprite1;
+	sprite1.SetSpritePosition({10, 10, 1.8});
+	sprite1.SetSpriteUp({0, 0, 1});
+	sprite1.SetSpriteTexCoords({0, 0, 1, 1});
+	sprite1.SetSpriteSize({1, 1});
+	sprite1.SetDrawEnabled(true);
+	sprite1.SetTexCount(1);
+	sprite1.SetTexture(0, testTexture);
+
+	_video->RegisterSprite(&sprite1);
+
+	Sprite sprite2;
+	sprite2.SetSpritePosition({10, 0, 1.8});
+	sprite2.SetSpriteUp({0, 0, 1});
+	sprite2.SetSpriteTexCoords({0, 0, 1, 1});
+	sprite2.SetSpriteSize({1, 1});
+	sprite2.SetDrawEnabled(true);
+	sprite2.SetTexCount(1);
+	sprite2.SetTexture(0, testTexture);
+
+	_video->RegisterSprite(&sprite2);
 
 	Ship ship(_video, _shipBlockTexture, _collisionEngine);
 	ship.InsertBlock({-1, -1, 0}, {0, 0, 0});
@@ -157,6 +185,9 @@ void World::Run()
 	_collisionEngine->RemoveObject(&player);
 	_universe->RemoveActor(&player);
 	_universe->RemoveActor(&ship);
+
+	_video->RemoveSprite(&sprite1);
+	_video->RemoveSprite(&sprite2);
 
 	_video->RemoveLight(&sun);
 }

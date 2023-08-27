@@ -121,6 +121,7 @@ private:
 	Pipeline* _skyboxPipeline;
 	Pipeline* _shadowPipeline;
 	Pipeline* _postprocessingPipeline;
+	Pipeline* _spritePipeline;
 	void CreatePipelines();
 	void DestroyPipelines();
 
