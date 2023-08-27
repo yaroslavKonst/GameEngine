@@ -19,7 +19,8 @@ all: \
 	../../build/drawable.o \
 	../../build/InputControl.o \
 	../../build/TextureHandler.o \
-	../../build/TextHandler.o
+	../../build/TextHandler.o \
+	../../build/TextBox.o
 
 shaders:
 	cd shaders ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)

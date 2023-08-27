@@ -1,8 +1,11 @@
 #include "world.h"
 
 #include "../Utils/loader.h"
+#include "../Utils/Text.h"
 #include "player.h"
 #include "ship.h"
+#include "../VideoEngine/TextBox.h"
+#include "../Logger/logger.h"
 
 class Field : public Model, public Object
 {
@@ -126,6 +129,22 @@ void World::Run()
 		th);
 
 	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
+
+	TextHandler textHandler(_video->GetTextures());
+	auto glyphs = Text::LoadFont(
+		"../src/Assets/Resources/Fonts/DroidSans.ttf",
+		{'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a',
+		's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c',
+		'v', 'b', 'n', 'm', ' '});
+
+	textHandler.LoadFont(glyphs);
+
+	TextBox textBox(_video, &textHandler);
+	textBox.SetPosition(-0.9, -0.5);
+	textBox.SetTextSize(0.2);
+	textBox.SetText("hello text check");
+	textBox.SetTextColor({0, 1, 1, 0.5});
+	textBox.Activate();
 
 	Light sun;
 	sun.SetLightType(Light::Type::Point);

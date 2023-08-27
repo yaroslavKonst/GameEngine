@@ -1,5 +1,7 @@
 #include "TextHandler.h"
 
+#include "../Logger/logger.h"
+
 TextHandler::TextHandler(TextureHandler* textureHandler)
 {
 	_textureHandler = textureHandler;
@@ -8,14 +10,16 @@ TextHandler::TextHandler(TextureHandler* textureHandler)
 TextHandler::~TextHandler()
 {
 	for (auto& glyph : _glyphs) {
-		_textureHandler->RemoveTexture(glyph.second.Texture);
+		if (glyph.second.HasTexture) {
+			_textureHandler->RemoveTexture(glyph.second.Texture);
+		}
 	}
 }
 
 void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 {
 	for (auto& data : collection) {
-		Glyph glyph;
+		Glyph glyph{};
 		glyph.Data = data.second;
 
 		std::vector<uint8_t> buffer(glyph.Data.Bitmap.size() * 4);
@@ -24,15 +28,22 @@ void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 			buffer[i * 4] = glyph.Data.Bitmap[i];
 			buffer[i * 4 + 1] = glyph.Data.Bitmap[i];
 			buffer[i * 4 + 2] = glyph.Data.Bitmap[i];
-			buffer[i * 4 + 3] = 255;
+			buffer[i * 4 + 3] = 255 *
+				((float)glyph.Data.Bitmap[i] / 255.0);
 		}
 
-		uint32_t texId = _textureHandler->AddTexture(
-			glyph.Data.Width,
-			glyph.Data.Height,
-			buffer);
+		glyph.HasTexture = false;
 
-		glyph.Texture = texId;
+		if (!(glyph.Data.Width == 0 && glyph.Data.Height == 0)) {
+			uint32_t texId = _textureHandler->AddTexture(
+				glyph.Data.Width,
+				glyph.Data.Height,
+				buffer);
+
+			glyph.Texture = texId;
+			glyph.HasTexture = true;
+		}
+
 		glyph.Data.Bitmap.clear();
 
 		_glyphs[data.first] = glyph;
