@@ -1,6 +1,14 @@
 #ifndef _DRAWABLE_H
 #define _DRAWABLE_H
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
+
 class Drawable
 {
 public:
@@ -32,21 +40,21 @@ public:
 		_isLight = value;
 	}
 
-	virtual float DrawLightMultiplier()
+	virtual const glm::vec4& GetColorMultiplier()
 	{
-		return _lightMultiplier;
+		return _colorMultiplier;
 	}
 
-	virtual void SetDrawLightMultiplier(float value)
+	virtual void SetColorMultiplier(const glm::vec4& value)
 	{
-		_lightMultiplier = value;
+		_colorMultiplier = value;
 	}
 
 private:
 	bool _active;
 	bool _ready;
 	bool _isLight;
-	float _lightMultiplier;
+	glm::vec4 _colorMultiplier;
 };
 
 #endif

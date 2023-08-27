@@ -30,7 +30,7 @@ layout(set = 2, binding = 1) uniform samplerCube shadowSampler[100];
 layout(push_constant) uniform ViewPos {
 	layout(offset = 192) vec3 Pos;
 	layout(offset = 204) int IsLight;
-	layout(offset = 208) float LightMultiplier;
+	layout(offset = 208) vec4 ColorMultiplier;
 } viewPos;
 
 float CalculateShadow(vec3 fragPos, vec3 viewPos, int lightIndex)
@@ -176,9 +176,8 @@ void main() {
 	}
 
 	if (viewPos.IsLight != 0) {
-		outColor = vec4(
-			diffuseColor * viewPos.LightMultiplier,
-			objectColorAlpha.a);
+		outColor = vec4(diffuseColor, objectColorAlpha.a) *
+			viewPos.ColorMultiplier;
 
 		return;
 	}
@@ -217,5 +216,5 @@ void main() {
 	}
 
 	vec3 result = sumLight;
-	outColor = vec4(result, objectColorAlpha.a);
+	outColor = vec4(result, objectColorAlpha.a) * viewPos.ColorMultiplier;
 }

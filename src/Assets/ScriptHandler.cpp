@@ -67,8 +67,11 @@ ScriptHandler::Scene ScriptHandler::LoadScene(std::string file, Video* video)
 
 			if (line.size() == 11) {
 				model->SetDrawLight(true);
-				model->SetDrawLightMultiplier(
-					std::stof(line[10]));
+
+				glm::vec4 multiplier(std::stof(line[10]));
+				multiplier.a = 1.0f;
+
+				model->SetColorMultiplier(multiplier);
 			}
 
 			scene.Models.push_back(model);
