@@ -116,7 +116,7 @@ private:
 	void CreateImageViews();
 	void DestroyImageViews();
 
-	Pipeline* _pipeline;
+	Pipeline* _objectPipeline;
 	Pipeline* _rectanglePipeline;
 	Pipeline* _skyboxPipeline;
 	Pipeline* _shadowPipeline;

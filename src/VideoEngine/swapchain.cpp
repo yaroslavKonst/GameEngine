@@ -707,8 +707,8 @@ void Swapchain::CreatePipelines()
 	initInfo.PushConstantRangeCount = 2;
 	initInfo.PushConstants = pushConstants;
 
-	_pipeline = new Pipeline(&initInfo);
-	_pipeline->CreateFramebuffers(
+	_objectPipeline = new Pipeline(&initInfo);
+	_objectPipeline->CreateFramebuffers(
 		{_hdrImageViews[0]},
 		{_colorImageView},
 		{_depthImageView});
@@ -911,8 +911,8 @@ void Swapchain::DestroyPipelines()
 	_rectanglePipeline->DestroyFramebuffers();
 	delete _rectanglePipeline;
 
-	_pipeline->DestroyFramebuffers();
-	delete _pipeline;
+	_objectPipeline->DestroyFramebuffers();
+	delete _objectPipeline;
 }
 
 void Swapchain::CreateLightBuffers()
@@ -1351,7 +1351,7 @@ void Swapchain::RecordCommandBuffer(
 
 			vkCmdPushConstants(
 				commandBuffer,
-				_pipeline->GetPipelineLayout(),
+				_shadowPipeline->GetPipelineLayout(),
 				VK_SHADER_STAGE_VERTEX_BIT,
 				0,
 				sizeof(MVP),
@@ -1359,7 +1359,7 @@ void Swapchain::RecordCommandBuffer(
 
 			vkCmdPushConstants(
 				commandBuffer,
-				_pipeline->GetPipelineLayout(),
+				_shadowPipeline->GetPipelineLayout(),
 				VK_SHADER_STAGE_FRAGMENT_BIT,
 				192,
 				sizeof(uint32_t),
@@ -1401,7 +1401,7 @@ void Swapchain::RecordCommandBuffer(
 	_stagingBuffers.clear();
 
 	// Object pass.
-	_pipeline->RecordCommandBuffer(commandBuffer, 0);
+	_objectPipeline->RecordCommandBuffer(commandBuffer, 0);
 
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -1627,7 +1627,7 @@ void Swapchain::RecordCommandBuffer(
 
 	vkCmdPushConstants(
 		commandBuffer,
-		_rectanglePipeline->GetPipelineLayout(),
+		_postprocessingPipeline->GetPipelineLayout(),
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		0,
 		sizeof(exposure),
@@ -1635,7 +1635,7 @@ void Swapchain::RecordCommandBuffer(
 
 	vkCmdPushConstants(
 		commandBuffer,
-		_rectanglePipeline->GetPipelineLayout(),
+		_postprocessingPipeline->GetPipelineLayout(),
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		8,
 		sizeof(uint32_t),
@@ -1734,7 +1734,7 @@ void Swapchain::RecordObjectCommandBuffer(
 
 	vkCmdPushConstants(
 		commandBuffer,
-		_pipeline->GetPipelineLayout(),
+		_objectPipeline->GetPipelineLayout(),
 		VK_SHADER_STAGE_VERTEX_BIT,
 		0,
 		sizeof(MVP),
@@ -1742,7 +1742,7 @@ void Swapchain::RecordObjectCommandBuffer(
 
 	vkCmdPushConstants(
 		commandBuffer,
-		_pipeline->GetPipelineLayout(),
+		_objectPipeline->GetPipelineLayout(),
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		192,
 		sizeof(glm::vec3),
@@ -1752,7 +1752,7 @@ void Swapchain::RecordObjectCommandBuffer(
 
 	vkCmdPushConstants(
 		commandBuffer,
-		_pipeline->GetPipelineLayout(),
+		_objectPipeline->GetPipelineLayout(),
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		204,
 		sizeof(uint32_t),
@@ -1763,7 +1763,7 @@ void Swapchain::RecordObjectCommandBuffer(
 
 	vkCmdPushConstants(
 		commandBuffer,
-		_pipeline->GetPipelineLayout(),
+		_objectPipeline->GetPipelineLayout(),
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		208,
 		sizeof(glm::vec4),
@@ -1785,7 +1785,7 @@ void Swapchain::RecordObjectCommandBuffer(
 	vkCmdBindDescriptorSets(
 		commandBuffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		_pipeline->GetPipelineLayout(),
+		_objectPipeline->GetPipelineLayout(),
 		0,
 		descriptorSets.size(),
 		descriptorSets.data(),
