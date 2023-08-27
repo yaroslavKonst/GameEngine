@@ -121,6 +121,7 @@ void Ship::PreviewBlock(
 		_globalMatrix * _previewBlock->GetModelMatrix());
 	_previewBlock->SetModelCenter(position);
 	_previewBlock->SetColorMultiplier(glm::vec4(0.2, 1, 0.2, 0.5));
+	_previewBlock->SetDrawLight(true);
 	_previewBlock->SetModelInnerMatrix(glm::scale(
 		glm::mat4(1),
 		glm::vec3(1.1, 1.1, 1.1)));
