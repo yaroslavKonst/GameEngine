@@ -144,6 +144,7 @@ void World::Run()
 	textBox.SetTextSize(0.2);
 	textBox.SetText("hello text check");
 	textBox.SetTextColor({0, 1, 1, 0.5});
+	textBox.SetDepth(0);
 	textBox.Activate();
 
 	Light sun;

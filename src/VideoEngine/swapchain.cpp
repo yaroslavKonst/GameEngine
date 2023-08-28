@@ -1197,12 +1197,13 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdEndRenderPass(commandBuffer);
 
 	// Object pipeline.
-	std::map<float, Light*> orderedLights;
+	std::multimap<float, Light*> orderedLights;
 
 	for (auto light : _scene->Lights) {
-		orderedLights[glm::length(
-			light->GetLightPosition() - _scene->CameraPosition)] =
-				light;
+		orderedLights.insert({glm::length(
+			light->GetLightPosition() - _scene->CameraPosition),
+			light
+		});
 	}
 
 	uint32_t selectedLights = 0;
@@ -1418,7 +1419,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::map<float, Model*> transparentModels;
+	std::multimap<float, Model*> transparentModels;
 
 	for (auto& model : _scene->Models) {
 		if (!model.first->IsDrawEnabled()) {
@@ -1430,7 +1431,7 @@ void Swapchain::RecordCommandBuffer(
 				_scene->CameraPosition -
 				model.first->GetModelCenter());
 
-			transparentModels[distance] = model.first;
+			transparentModels.insert({distance, model.first});
 
 			continue;
 		}
@@ -1477,16 +1478,18 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::map<float, Sprite*> orderedSprites;
+	std::multimap<float, Sprite*> orderedSprites;
 
 	for (auto sprite : _scene->Sprites) {
 		if (!sprite->IsDrawEnabled()) {
 			continue;
 		}
 
-		orderedSprites[
+		orderedSprites.insert({
 			glm::length(sprite->GetSpritePosition() -
-				_scene->CameraPosition)] = sprite;
+				_scene->CameraPosition),
+			sprite
+		});
 	}
 
 	for (
@@ -1578,15 +1581,17 @@ void Swapchain::RecordCommandBuffer(
 
 	std::vector<glm::vec4> rectData(2);
 
-	std::map<float, Rectangle*> orderedRectangles;
+	std::multimap<float, Rectangle*> orderedRectangles;
 
 	for (auto& rectangle : _scene->Rectangles) {
 		if (!rectangle.first->IsDrawEnabled()) {
 			continue;
 		}
 
-		orderedRectangles[rectangle.first->GetRectangleDepth()] =
-			rectangle.first;
+		orderedRectangles.insert({
+			rectangle.first->GetRectangleDepth(),
+			rectangle.first
+		});
 	}
 
 	for (auto& rect : orderedRectangles) {

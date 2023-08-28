@@ -18,6 +18,11 @@ public:
 		_color = value;
 	}
 
+	void SetDepth(float value)
+	{
+		_depth = value;
+	}
+
 	void Place();
 
 	void Activate();
@@ -39,6 +44,7 @@ private:
 	bool _textUpdated;
 	float _textSize;
 	float _width;
+	float _depth;
 };
 
 #endif

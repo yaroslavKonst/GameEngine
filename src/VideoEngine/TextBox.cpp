@@ -72,8 +72,7 @@ void TextBox::Place()
 			});
 
 			_line[i]->SetRectangleTexCoords({0, 0, 1, 1});
-			_line[i]->SetRectangleDepth(
-				_position.x + 0.01 * i);
+			_line[i]->SetRectangleDepth(_depth);
 			_line[i]->SetTexture({glyph.Texture});
 			_line[i]->SetColorMultiplier(_color);
 
