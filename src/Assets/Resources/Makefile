@@ -4,8 +4,13 @@ ENTRIES=\
 	Skybox/skybox.png \
 	Models/Archive/field.obj \
 	Models/Archive/floor.jpg \
+	Models/Ship/ShipFloor.obj \
+	Models/Ship/ShipFloor.png \
 	Models/Ship/ShipFloorComm.obj \
-	Models/Ship/ShipFloorComm.png
+	Models/Ship/ShipFloorComm.png \
+	Models/Ship/ShipFloorCommDelim.obj \
+	Models/Ship/ShipFloorCommDelim.png \
+	Models/Ship/ShipFloorCollision.obj
 
 .PHONY: all
 

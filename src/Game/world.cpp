@@ -97,15 +97,6 @@ World::World()
 	_video->SetFOV(80);
 	_video->SetCameraUp({0, 0, 1});
 
-	int tw;
-	int th;
-	auto td = Loader::LoadImage(
-		"Models/Ship/ShipFloorComm.png",
-		tw,
-		th);
-
-	_shipBlockTexture = _video->GetTextures()->AddTexture(tw, th, td);
-
 	_universeThread = new std::thread(UniverseThread, _universe);
 }
 
@@ -181,19 +172,12 @@ void World::Run()
 	sprite2.SetDrawEnabled(true);
 	sprite2.SetTexCount(1);
 	sprite2.SetTexture(0, testTexture);
+	sprite2.SetColorMultiplier({100, 100, 100, 1});
+	sprite2.SetDrawLight(true);
 
 	_video->RegisterSprite(&sprite2);
 
-	Ship ship(_video, _shipBlockTexture, _collisionEngine);
-	ship.InsertBlock({-1, -1, 0}, {0, 0, 0});
-	ship.InsertBlock({-1, 0, 0}, {0, 0, 0});
-	ship.InsertBlock({-1, 1, 0}, {0, 0, 0});
-	ship.InsertBlock({0, -1, 0}, {0, 0, 0});
-	ship.InsertBlock({0, 0, 0}, {0, 0, 0});
-	ship.InsertBlock({0, 1, 0}, {0, 0, 0});
-	ship.InsertBlock({1, -1, 0}, {0, 0, 0});
-	ship.InsertBlock({1, 0, 0}, {0, 0, 0});
-	ship.InsertBlock({1, 1, 0}, {0, 0, 0});
+	Ship ship(_video, _collisionEngine);
 
 	Player player(_video, _collisionEngine, &ship);
 	_universe->RegisterActor(&player);

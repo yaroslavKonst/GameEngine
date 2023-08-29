@@ -19,8 +19,6 @@ private:
 
 	std::mutex _sceneMutex;
 	std::thread* _universeThread;
-
-	uint32_t _shipBlockTexture;
 };
 
 #endif

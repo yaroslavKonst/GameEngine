@@ -5,107 +5,131 @@
 #include "../PhysicalEngine/CollisionEngine.h"
 #include "../UniverseEngine/actor.h"
 
-class Block : public Model
+class BaseGrid;
+
+struct Coord2D
+{
+	int32_t X;
+	int32_t Y;
+
+	bool operator<(const Coord2D& coord) const
+	{
+		if (X != coord.X) {
+			return X < coord.X;
+		}
+
+		return Y < coord.Y;
+	}
+};
+
+class BaseBlock: public Model, public Object
 {
 public:
-	enum class FaceType
+	enum class Type
 	{
-		Solid,
-		AirTransparent,
-		ObjectTransparent
+		Empty,
+		Floor,
+		FloorComm
 	};
 
-	Block(
-		Video* video,
-		const glm::ivec3& position,
-		const glm::vec3& rotation,
-		uint32_t texture);
-	~Block();
+	BaseBlock()
+	{ }
+
+	virtual ~BaseBlock()
+	{ }
+
+	virtual Type GetType() = 0;
+
+	virtual void Update(BaseGrid* grid, int32_t x, int32_t y)
+	{ }
+
+private:
+};
+
+class FloorBlock: public BaseBlock
+{
+public:
+	FloorBlock(uint32_t texture);
+	~FloorBlock()
+	{ }
+
+	Type GetType() override
+	{
+		return Type::Floor;
+	};
+
+private:
+};
+
+class FloorCommBlock: public BaseBlock
+{
+public:
+	FloorCommBlock(uint32_t texture, Video* video, uint32_t delimTexture);
+	~FloorCommBlock();
+
+	Type GetType() override
+	{
+		return Type::FloorComm;
+	};
+
+	virtual void Update(BaseGrid* grid, int32_t x, int32_t y) override;
 
 private:
 	Video* _video;
+	std::vector<Model*> _delims;
+	uint32_t _delimTexture;
 };
 
-class Ship : public Actor
+class BaseGrid
 {
 public:
-	struct BlockCoord
-	{
-		int32_t X;
-		int32_t Y;
-		int32_t Z;
+	BaseGrid(Video* video, CollisionEngine* collisionEngine);
+	~BaseGrid();
 
-		BlockCoord(const glm::ivec3& coord)
-		{
-			X = coord.x;
-			Y = coord.y;
-			Z = coord.z;
-		}
+	void InsertBlock(
+		int32_t x,
+		int32_t y,
+		BaseBlock::Type type,
+		bool force = false);
+	void RemoveBlock(int32_t x, int32_t y);
 
-		bool operator<(const BlockCoord& coord) const
-		{
-			if (X != coord.X) {
-				return X < coord.X;
-			}
+	void PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type);
+	void StopPreview();
 
-			if (Y != coord.Y) {
-				return Y < coord.Y;
-			}
+	BaseBlock::Type GetType(int32_t x, int32_t y);
 
-			if (Z != coord.Z) {
-				return Z < coord.Z;
-			}
+private:
+	std::map<Coord2D, BaseBlock*> _blocks;
 
-			return false;
-		}
-	};
+	BaseBlock* _preview;
 
-	struct BlockDescriptor
-	{
-		glm::mat4 Matrix;
-		Object Collision;
-	};
+	uint32_t _floorTexture;
+	uint32_t _floorCommTexture;
+	uint32_t _floorCommDelimTexture;
 
-	Ship(
-		Video* video,
-		uint32_t blockTexture,
-		CollisionEngine* collisionEngine);
+	Video* _video;
+	CollisionEngine* _collisionEngine;
+};
+
+class Ship : public InputHandler, public Actor
+{
+public:
+	Ship(Video* video, CollisionEngine* collisionEngine);
 	~Ship();
 
 	void Tick() override;
 
-	void InsertBlock(
-		const glm::ivec3& position,
-		const glm::vec3& rotation);
-	void RemoveBlock(const glm::ivec3& position);
-
-	void PreviewBlock(
-		const glm::ivec3& position,
-		const glm::vec3& rotation);
-	void StopPreview();
-
-	void SaveToFile(std::string file);
-	void LoadFromFile(std::string file);
+	void Key(int key, int scancode, int action, int mods) override;
 
 private:
 	Video* _video;
 	CollisionEngine* _collisionEngine;
 
-	std::map<BlockCoord, BlockDescriptor*> _grid;
-	Block* _block;
+	BaseGrid* _baseGrid;
 
-	Block* _previewBlock;
-
-	uint32_t _blockTexture;
-
-	glm::mat4 _globalMatrix;
-
-	glm::vec3 _pos;
-	glm::vec3 _rotation;
-	glm::vec3 _linearSpeed;
-	glm::vec3 _angularSpeed;
-
-	void UpdateView();
+	int32_t _buildX;
+	int32_t _buildY;
+	BaseBlock::Type _buildType;
 };
 
 #endif

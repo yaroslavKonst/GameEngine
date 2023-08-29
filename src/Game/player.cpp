@@ -97,23 +97,20 @@ void Player::Key(
 	} else if (key == GLFW_KEY_B) {
 		if (action == GLFW_PRESS) {
 			if (_buildMode) {
-				_ship->StopPreview();
 				_buildMode = false;
 				Logger::Verbose() << "Build mode off.";
 			} else {
+				_ship->SetInputEnabled(true);
 				_buildMode = true;
 				_buildPos = {0, 0, 0};
 				_buildCamPos = {0, 0, 0};
 				_buildRotation = {0, 0, 0};
-				_ship->PreviewBlock(_buildPos, _buildRotation);
 				Logger::Verbose() << "Build mode on.";
 			}
 		}
 	}
 
-	if (_buildMode) {
-		BuildActions(key, action);
-	} else {
+	if (!_buildMode) {
 		if (key == GLFW_KEY_W) {
 			_mutex.lock();
 			if (action == GLFW_PRESS) {
@@ -146,49 +143,6 @@ void Player::Key(
 				_strafe += 1;
 			}
 			_mutex.unlock();
-		}
-	}
-}
-
-void Player::BuildActions(int key, int action)
-{
-	if (key == GLFW_KEY_W) {
-		if (action == GLFW_PRESS) {
-			++_buildPos.x;
-			_ship->PreviewBlock(_buildPos, _buildRotation);
-		}
-	} else if (key == GLFW_KEY_S) {
-		if (action == GLFW_PRESS) {
-			--_buildPos.x;
-			_ship->PreviewBlock(_buildPos, _buildRotation);
-		}
-	} else if (key == GLFW_KEY_D) {
-		if (action == GLFW_PRESS) {
-			--_buildPos.y;
-			_ship->PreviewBlock(_buildPos, _buildRotation);
-		}
-	} else if (key == GLFW_KEY_A) {
-		if (action == GLFW_PRESS) {
-			++_buildPos.y;
-			_ship->PreviewBlock(_buildPos, _buildRotation);
-		}
-	} else if (key == GLFW_KEY_R) {
-		if (action == GLFW_PRESS) {
-			++_buildPos.z;
-			_ship->PreviewBlock(_buildPos, _buildRotation);
-		}
-	} else if (key == GLFW_KEY_F) {
-		if (action == GLFW_PRESS) {
-			--_buildPos.z;
-			_ship->PreviewBlock(_buildPos, _buildRotation);
-		}
-	} else if (key == GLFW_KEY_E) {
-		if (action == GLFW_PRESS) {
-			_ship->InsertBlock(_buildPos, _buildRotation);
-		}
-	} else if (key == GLFW_KEY_Q) {
-		if (action == GLFW_PRESS) {
-			_ship->RemoveBlock(_buildPos);
 		}
 	}
 }
@@ -289,7 +243,7 @@ void Player::Tick()
 	}
 
 	cameraPosition = cameraPosition * (1.0f - _buildCamCoeff) +
-		(_buildCamPos + glm::vec3(-10, -4, 20)) *
+		(_buildCamPos + glm::vec3(-5, -2, 10)) *
 		_buildCamCoeff;
 
 	cameraDirection = cameraDirection * (1.0f - _buildCamCoeff) +
