@@ -111,12 +111,23 @@ public:
 		_modelCenter = value;
 	}
 
+	virtual bool IsModelHoled()
+	{
+		return _holed;
+	}
+
+	virtual void SetModelHoled(bool value)
+	{
+		_holed = value;
+	}
+
 private:
 	std::vector<glm::vec3> _modelVertexBuffer;
 	std::vector<glm::vec3> _modelNormalBuffer;
 	std::vector<uint32_t> _modelIndexBuffer;
 	std::vector<glm::vec2> _modelTexCoordBuffer;
 	std::vector<glm::mat4> _modelInstances;
+	bool _holed;
 
 	glm::mat4 _modelMatrix;
 	glm::mat4 _modelInnerMatrix;

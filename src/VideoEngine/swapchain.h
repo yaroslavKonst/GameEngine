@@ -118,9 +118,11 @@ private:
 
 	Pipeline* _objectPipeline;
 	Pipeline* _transparentObjectPipeline;
+	Pipeline* _holedObjectPipeline;
 	Pipeline* _rectanglePipeline;
 	Pipeline* _skyboxPipeline;
 	Pipeline* _shadowPipeline;
+	Pipeline* _shadowDiscardPipeline;
 	Pipeline* _postprocessingPipeline;
 	Pipeline* _spritePipeline;
 	void CreatePipelines();

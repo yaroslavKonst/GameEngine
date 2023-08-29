@@ -9,6 +9,7 @@
 
 #include "shaders/spir-v/ObjectShader_vert.spv"
 #include "shaders/spir-v/ObjectShader_frag.spv"
+#include "shaders/spir-v/ObjectShaderDiscard_frag.spv"
 
 #include "shaders/spir-v/RectangleShader_vert.spv"
 #include "shaders/spir-v/RectangleShader_frag.spv"
@@ -19,6 +20,9 @@
 #include "shaders/spir-v/ShadowShader_vert.spv"
 #include "shaders/spir-v/ShadowShader_geom.spv"
 #include "shaders/spir-v/ShadowShader_frag.spv"
+#include "shaders/spir-v/ShadowShaderDiscard_vert.spv"
+#include "shaders/spir-v/ShadowShaderDiscard_geom.spv"
+#include "shaders/spir-v/ShadowShaderDiscard_frag.spv"
 
 #include "shaders/spir-v/PostprocessingShader_vert.spv"
 #include "shaders/spir-v/PostprocessingShader_frag.spv"
@@ -722,6 +726,16 @@ void Swapchain::CreatePipelines()
 		{_colorImageView},
 		{_depthImageView});
 
+	initInfo.DepthWriteEnabled = VK_TRUE;
+	initInfo.FragmentShaderCode = ObjectShaderDiscardFrag;
+	initInfo.FragmentShaderSize = sizeof(ObjectShaderDiscardFrag);
+
+	_holedObjectPipeline = new Pipeline(&initInfo);
+	_holedObjectPipeline->CreateFramebuffers(
+		{_hdrImageViews[0]},
+		{_colorImageView},
+		{_depthImageView});
+
 	// Sprite pipeline
 	initInfo.DepthTestEnabled = VK_TRUE;
 	initInfo.DepthWriteEnabled = VK_FALSE;
@@ -758,7 +772,7 @@ void Swapchain::CreatePipelines()
 
 	// Rectangle pipeline
 	initInfo.DepthTestEnabled = VK_FALSE;
-	initInfo.DepthTestEnabled = VK_TRUE;
+	initInfo.DepthWriteEnabled = VK_TRUE;
 	initInfo.ResolveImage = true;
 	initInfo.VertexBindingDescriptions.clear();
 	initInfo.VertexAttributeDescriptions.clear();
@@ -835,8 +849,10 @@ void Swapchain::CreatePipelines()
 	initInfo.VertexAttributeDescriptions =
 		ModelDescriptor::GetAttributeDescriptions();
 	initInfo.DepthTestEnabled = VK_TRUE;
+	initInfo.DepthWriteEnabled = VK_TRUE;
 	initInfo.ResolveImage = false;
 	initInfo.ClearColorImage = false;
+	initInfo.ClearDepthImage = true;
 	initInfo.ColorImage = false;
 	initInfo.DepthImage = true;
 	initInfo.InvertFace = true;
@@ -855,6 +871,26 @@ void Swapchain::CreatePipelines()
 
 	_shadowPipeline = new Pipeline(&initInfo);
 	_shadowPipeline->CreateFramebuffers(
+		{_imageViews[0]},
+		{_colorImageView},
+		_shadowMap2DImageViews,
+		6);
+
+	initInfo.DescriptorSetLayouts = {
+		_lightDescriptorSetLayout,
+		_descriptorSetLayout
+	};
+
+	initInfo.VertexShaderCode = ShadowShaderDiscardVert;
+	initInfo.VertexShaderSize = sizeof(ShadowShaderDiscardVert);
+	initInfo.FragmentShaderCode = ShadowShaderDiscardFrag;
+	initInfo.FragmentShaderSize = sizeof(ShadowShaderDiscardFrag);
+	initInfo.GeometryShaderCode = ShadowShaderDiscardGeom;
+	initInfo.GeometryShaderSize = sizeof(ShadowShaderDiscardGeom);
+	initInfo.ClearDepthImage = false;
+
+	_shadowDiscardPipeline = new Pipeline(&initInfo);
+	_shadowDiscardPipeline->CreateFramebuffers(
 		{_imageViews[0]},
 		{_colorImageView},
 		_shadowMap2DImageViews,
@@ -913,6 +949,8 @@ void Swapchain::DestroyPipelines()
 
 	_shadowPipeline->DestroyFramebuffers();
 	delete _shadowPipeline;
+	_shadowDiscardPipeline->DestroyFramebuffers();
+	delete _shadowDiscardPipeline;
 
 	_skyboxPipeline->DestroyFramebuffers();
 	delete _skyboxPipeline;
@@ -925,6 +963,9 @@ void Swapchain::DestroyPipelines()
 
 	_transparentObjectPipeline->DestroyFramebuffers();
 	delete _transparentObjectPipeline;
+
+	_holedObjectPipeline->DestroyFramebuffers();
+	delete _holedObjectPipeline;
 }
 
 void Swapchain::CreateLightBuffers()
@@ -1327,6 +1368,8 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdSetViewport(commandBuffer, 5, 1, &shadowViewport);
 		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
 
+		std::map<Model*, ModelDescriptor> holedModels;
+
 		for (auto& model : _scene->Models) {
 			if (!model.first->IsDrawEnabled()) {
 				continue;
@@ -1337,6 +1380,11 @@ void Swapchain::RecordCommandBuffer(
 			}
 
 			if (model.first->GetColorMultiplier().a < 1.0f) {
+				continue;
+			}
+
+			if (model.first->IsModelHoled()) {
+				holedModels[model.first] = model.second;
 				continue;
 			}
 
@@ -1373,6 +1421,7 @@ void Swapchain::RecordCommandBuffer(
 			vkCmdPushConstants(
 				commandBuffer,
 				_shadowPipeline->GetPipelineLayout(),
+				VK_SHADER_STAGE_GEOMETRY_BIT |
 				VK_SHADER_STAGE_FRAGMENT_BIT,
 				192,
 				sizeof(uint32_t),
@@ -1386,6 +1435,97 @@ void Swapchain::RecordCommandBuffer(
 				commandBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				_shadowPipeline->GetPipelineLayout(),
+				0,
+				descriptorSets.size(),
+				descriptorSets.data(),
+				0,
+				nullptr);
+
+			vkCmdDrawIndexed(
+				commandBuffer,
+				model.second.IndexCount,
+				model.second.InstanceCount,
+				0,
+				0,
+				0);
+		}
+
+		vkCmdEndRenderPass(commandBuffer);
+
+		_shadowDiscardPipeline->RecordCommandBuffer(
+			commandBuffer,
+			lightIndex);
+
+		vkCmdSetViewport(commandBuffer, 0, 1, &shadowViewport);
+		vkCmdSetScissor(commandBuffer, 0, 1, &shadowScissor);
+
+		vkCmdSetViewport(commandBuffer, 1, 1, &shadowViewport);
+		vkCmdSetScissor(commandBuffer, 1, 1, &shadowScissor);
+
+		vkCmdSetViewport(commandBuffer, 2, 1, &shadowViewport);
+		vkCmdSetScissor(commandBuffer, 2, 1, &shadowScissor);
+
+		vkCmdSetViewport(commandBuffer, 3, 1, &shadowViewport);
+		vkCmdSetScissor(commandBuffer, 3, 1, &shadowScissor);
+
+		vkCmdSetViewport(commandBuffer, 4, 1, &shadowViewport);
+		vkCmdSetScissor(commandBuffer, 4, 1, &shadowScissor);
+
+		vkCmdSetViewport(commandBuffer, 5, 1, &shadowViewport);
+		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
+
+		for (auto& model : holedModels) {
+			mvp.Model = model.first->GetModelMatrix();
+			mvp.InnerModel = model.first->GetModelInnerMatrix();
+
+			VkBuffer vertexBuffers[] = {
+				model.second.VertexBuffer.Buffer,
+				model.second.InstanceBuffer.Buffer
+			};
+
+			VkDeviceSize offsets[] = {0, 0};
+			vkCmdBindVertexBuffers(
+				commandBuffer,
+				0,
+				2,
+				vertexBuffers,
+				offsets);
+
+			vkCmdBindIndexBuffer(
+				commandBuffer,
+				model.second.IndexBuffer.Buffer,
+				0,
+				VK_INDEX_TYPE_UINT32);
+
+			vkCmdPushConstants(
+				commandBuffer,
+				_shadowDiscardPipeline->GetPipelineLayout(),
+				VK_SHADER_STAGE_VERTEX_BIT,
+				0,
+				sizeof(MVP),
+				&mvp);
+
+			vkCmdPushConstants(
+				commandBuffer,
+				_shadowDiscardPipeline->GetPipelineLayout(),
+				VK_SHADER_STAGE_GEOMETRY_BIT |
+				VK_SHADER_STAGE_FRAGMENT_BIT,
+				192,
+				sizeof(uint32_t),
+				&lightIndex);
+
+			auto& texDiff = _scene->Textures->GetTexture(
+				model.second.Textures[0]);
+
+			std::vector<VkDescriptorSet> descriptorSets = {
+				_lightDescriptorSets[currentFrame],
+				texDiff.DescriptorSet
+			};
+
+			vkCmdBindDescriptorSets(
+				commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				_shadowDiscardPipeline->GetPipelineLayout(),
 				0,
 				descriptorSets.size(),
 				descriptorSets.data(),
@@ -1420,6 +1560,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	std::multimap<float, Model*> transparentModels;
+	std::map<Model*, ModelDescriptor> holedModels;
 
 	for (auto& model : _scene->Models) {
 		if (!model.first->IsDrawEnabled()) {
@@ -1436,6 +1577,11 @@ void Swapchain::RecordCommandBuffer(
 			continue;
 		}
 
+		if (model.first->IsModelHoled()) {
+			holedModels[model.first] = model.second;
+			continue;
+		}
+
 		RecordObjectCommandBuffer(
 			commandBuffer,
 			imageIndex,
@@ -1443,6 +1589,23 @@ void Swapchain::RecordCommandBuffer(
 			model,
 			mvp,
 			_objectPipeline);
+	}
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	_holedObjectPipeline->RecordCommandBuffer(commandBuffer, 0);
+
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	for (auto& model : holedModels) {
+		RecordObjectCommandBuffer(
+			commandBuffer,
+			imageIndex,
+			currentFrame,
+			model,
+			mvp,
+			_holedObjectPipeline);
 	}
 
 	vkCmdEndRenderPass(commandBuffer);

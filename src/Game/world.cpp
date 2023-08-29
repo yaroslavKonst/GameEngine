@@ -6,6 +6,7 @@
 #include "ship.h"
 #include "../VideoEngine/TextBox.h"
 #include "../Logger/logger.h"
+#include "../Assets/board.h"
 
 class Field : public Model, public Object
 {
@@ -147,6 +148,12 @@ void World::Run()
 	textBox.SetDepth(0);
 	textBox.Activate();
 
+	Board board;
+	board.SetTexture({testTexture});
+	board.SetModelHoled(true);
+
+	_video->RegisterModel(&board);
+
 	Light sun;
 	sun.SetLightType(Light::Type::Point);
 	sun.SetLightColor({2000, 2000, 2000});
@@ -210,4 +217,6 @@ void World::Run()
 	_video->RemoveSprite(&sprite2);
 
 	_video->RemoveLight(&sun);
+
+	_video->RemoveModel(&board);
 }

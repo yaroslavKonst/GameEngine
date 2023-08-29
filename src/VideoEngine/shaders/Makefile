@@ -8,6 +8,7 @@ shaders: \
 	../../../build/converter \
 	spir-v/ObjectShader_vert.spv \
 	spir-v/ObjectShader_frag.spv \
+	spir-v/ObjectShaderDiscard_frag.spv \
 	spir-v/RectangleShader_vert.spv \
 	spir-v/RectangleShader_frag.spv \
 	spir-v/SkyboxShader_vert.spv \
@@ -15,6 +16,9 @@ shaders: \
 	spir-v/ShadowShader_vert.spv \
 	spir-v/ShadowShader_geom.spv \
 	spir-v/ShadowShader_frag.spv \
+	spir-v/ShadowShaderDiscard_vert.spv \
+	spir-v/ShadowShaderDiscard_geom.spv \
+	spir-v/ShadowShaderDiscard_frag.spv \
 	spir-v/PostprocessingShader_vert.spv \
 	spir-v/PostprocessingShader_frag.spv \
 	spir-v/SpriteShader_vert.spv \
