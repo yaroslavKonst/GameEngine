@@ -100,7 +100,7 @@ World::World()
 	int tw;
 	int th;
 	auto td = Loader::LoadImage(
-		"../src/Assets/Resources/Models/Ship/ShipFloor.png",
+		"../src/Assets/Resources/Models/Ship/ShipFloorComm.png",
 		tw,
 		th);
 

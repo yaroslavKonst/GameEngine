@@ -276,7 +276,7 @@ void Player::Tick()
 
 	//cameraPosition -= glm::normalize(cameraDirection) * 1.5f;
 
-	glm::vec3 buildCamPosTarget = glm::vec3(_buildPos * 2);
+	glm::vec3 buildCamPosTarget = glm::vec3(_buildPos);
 
 	float buildCamDist = glm::length(_buildCamPos - buildCamPosTarget);
 
