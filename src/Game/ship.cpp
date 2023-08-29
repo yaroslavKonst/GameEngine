@@ -65,7 +65,7 @@ void Ship::InsertBlock(
 
 	glm::mat4 matrix = glm::translate(
 		glm::mat4(1),
-		glm::vec3(position) * 2.0f);
+		glm::vec3(position * 3) * 2.0f);
 
 	matrix = glm::rotate(
 		matrix,
@@ -115,7 +115,12 @@ void Ship::PreviewBlock(
 	const glm::vec3& rotation)
 {
 	StopPreview();
-	_previewBlock = new Block(_video, position, rotation, _blockTexture);
+	_previewBlock = new Block(
+		_video,
+		position * 3,
+		rotation,
+		_blockTexture);
+
 	_previewBlock->SetDrawEnabled(true);
 	_previewBlock->SetModelMatrix(
 		_globalMatrix * _previewBlock->GetModelMatrix());
@@ -161,7 +166,7 @@ Block::Block(
 	_video = video;
 
 	auto model = Loader::LoadModel(
-		"../src/Assets/Resources/Models/ship_wall.obj");
+		"../src/Assets/Resources/Models/Ship/ShipFloor.obj");
 
 	SetModelVertices(model.Vertices);
 	SetModelIndices(model.Indices);

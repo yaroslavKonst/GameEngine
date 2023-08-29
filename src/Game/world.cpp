@@ -36,7 +36,7 @@ public:
 		SetModelInstances({glm::mat4(1.0)});
 
 		auto model = Loader::LoadModel(
-			"../src/Assets/Resources/Models/field.obj");
+			"../src/Assets/Resources/Models/Archive/field.obj");
 
 		for (auto& coord : model.TexCoords) {
 			coord *= 100;
@@ -50,7 +50,7 @@ public:
 		int texWidth;
 		int texHeight;
 		auto texData = Loader::LoadImage(
-			"../src/Assets/Resources/Models/floor.jpg",
+			"../src/Assets/Resources/Models/Archive/floor.jpg",
 			texWidth,
 			texHeight);
 
@@ -100,7 +100,7 @@ World::World()
 	int tw;
 	int th;
 	auto td = Loader::LoadImage(
-		"../src/Assets/Resources/Models/wall.png",
+		"../src/Assets/Resources/Models/Ship/ShipFloor.png",
 		tw,
 		th);
 
