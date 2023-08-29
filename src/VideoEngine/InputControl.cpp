@@ -60,10 +60,16 @@ void InputControl::KeyCallback(
 	InputControl* control = reinterpret_cast<InputControl*>(
 		glfwGetWindowUserPointer(window));
 
+	std::set<InputHandler*> activeHandlers;
+
 	for (auto handler : control->_handlers) {
 		if (handler->IsInputEnabled()) {
-			handler->Key(key, scancode, action, mods);
+			activeHandlers.insert(handler);
 		}
+	}
+
+	for (auto handler : activeHandlers) {
+		handler->Key(key, scancode, action, mods);
 	}
 }
 
