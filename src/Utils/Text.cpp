@@ -5,10 +5,12 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
+#include "../Assets/package.h"
+
 namespace Text
 {
 	GlyphCollection LoadFont(
-		std::string fileName,
+		std::string name,
 		const std::vector<uint32_t> codes)
 	{
 		FT_Library library;
@@ -24,7 +26,14 @@ namespace Text
 
 		FT_Face face;
 
-		error = FT_New_Face(library, fileName.c_str(), 0, &face);
+		auto fileData = Package::Instance()->GetData(name);
+
+		error = FT_New_Memory_Face(
+			library,
+			fileData.data(),
+			fileData.size(),
+			0,
+			&face);
 
 		if (error) {
 			throw std::runtime_error(

@@ -11,7 +11,7 @@ namespace TextFileParser
 	typedef std::vector<Line> File;
 
 	File ParseFile(
-		std::string path,
+		std::string name,
 		std::set<char> wordDelims = {' '},
 		std::set<char> lineDelims = {'\n'});
 }

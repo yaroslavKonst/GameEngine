@@ -1,7 +1,6 @@
 #include "loader.h"
 
 #include <cstring>
-#include <fstream>
 #include <map>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -9,18 +8,22 @@
 
 #include "TextFileParser.h"
 #include "../Logger/logger.h"
+#include "../Assets/package.h"
 
 namespace Loader
 {
 	std::vector<uint8_t> LoadImage(
-		std::string file,
+		std::string name,
 		int& width,
 		int& height)
 	{
 		int channels;
 
-		stbi_uc* pixels = stbi_load(
-			file.c_str(),
+		auto imageData = Package::Instance()->GetData(name);
+
+		stbi_uc* pixels = stbi_load_from_memory(
+			imageData.data(),
+			imageData.size(),
 			&width,
 			&height,
 			&channels,
@@ -28,7 +31,7 @@ namespace Loader
 
 		if (!pixels) {
 			throw std::runtime_error(
-				"Failed to load image from file");
+				"Failed to load image.");
 		}
 
 		std::vector<uint8_t> data(width * height * 4);
@@ -39,7 +42,7 @@ namespace Loader
 		return data;
 	}
 
-	VertexData LoadModel(std::string file)
+	VertexData LoadModel(std::string name)
 	{
 		struct Vertex
 		{
@@ -75,7 +78,7 @@ namespace Loader
 		VertexData data;
 
 		auto modelFile = TextFileParser::ParseFile(
-			file,
+			name,
 			{' ', '/'});
 
 		std::vector<Vertex> vertices;

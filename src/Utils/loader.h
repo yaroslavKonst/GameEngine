@@ -17,7 +17,7 @@
 namespace Loader
 {
 	std::vector<uint8_t> LoadImage(
-		std::string file,
+		std::string name,
 		int& width,
 		int& height);
 
@@ -29,7 +29,7 @@ namespace Loader
 		std::vector<uint32_t> Indices;
 	};
 
-	VertexData LoadModel(std::string file);
+	VertexData LoadModel(std::string name);
 }
 
 #endif

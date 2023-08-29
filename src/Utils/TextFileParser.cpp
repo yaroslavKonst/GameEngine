@@ -1,21 +1,18 @@
 #include "TextFileParser.h"
 
-#include <fstream>
 #include <stdexcept>
+
+#include "../Assets/package.h"
 
 namespace TextFileParser
 {
 	File ParseFile(
-		std::string path,
+		std::string name,
 		std::set<char> wordDelims,
 		std::set<char> lineDelims)
 	{
-		std::fstream inFile(path, std::ios::in);
-
-		if (!inFile.is_open()) {
-			throw std::runtime_error(
-				"Failed to open file for parsing.");
-		}
+		auto inFile = Package::Instance()->GetData(name);
+		size_t currPos = 0;
 
 		File file;
 		Line line;
@@ -23,7 +20,10 @@ namespace TextFileParser
 
 		char currChar;
 
-		while (!inFile.get(currChar).eof()) {
+		while (currPos < inFile.size()) {
+			currChar = inFile[currPos];
+			++currPos;
+
 			bool isWordDelim =
 				wordDelims.find(currChar) != wordDelims.end();
 			bool isLineDelim =

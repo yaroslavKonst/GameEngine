@@ -166,7 +166,7 @@ Block::Block(
 	_video = video;
 
 	auto model = Loader::LoadModel(
-		"../src/Assets/Resources/Models/Ship/ShipFloorComm.obj");
+		"Models/Ship/ShipFloorComm.obj");
 
 	SetModelVertices(model.Vertices);
 	SetModelIndices(model.Indices);

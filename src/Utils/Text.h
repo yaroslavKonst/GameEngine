@@ -21,7 +21,7 @@ namespace Text
 	typedef std::map<uint32_t, Glyph> GlyphCollection;
 
 	GlyphCollection LoadFont(
-		std::string fileName,
+		std::string name,
 		const std::vector<uint32_t> codes);
 }
 

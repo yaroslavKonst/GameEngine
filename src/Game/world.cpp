@@ -36,7 +36,7 @@ public:
 		SetModelInstances({glm::mat4(1.0)});
 
 		auto model = Loader::LoadModel(
-			"../src/Assets/Resources/Models/Archive/field.obj");
+			"Models/Archive/field.obj");
 
 		for (auto& coord : model.TexCoords) {
 			coord *= 100;
@@ -50,7 +50,7 @@ public:
 		int texWidth;
 		int texHeight;
 		auto texData = Loader::LoadImage(
-			"../src/Assets/Resources/Models/Archive/floor.jpg",
+			"Models/Archive/floor.jpg",
 			texWidth,
 			texHeight);
 
@@ -87,7 +87,7 @@ World::World()
 	int skyboxWidth;
 	int skyboxHeight;
 	auto skyboxData = Loader::LoadImage(
-		"../src/Assets/Resources/Skybox/skybox.png",
+		"Skybox/skybox.png",
 		skyboxWidth,
 		skyboxHeight);
 
@@ -100,7 +100,7 @@ World::World()
 	int tw;
 	int th;
 	auto td = Loader::LoadImage(
-		"../src/Assets/Resources/Models/Ship/ShipFloorComm.png",
+		"Models/Ship/ShipFloorComm.png",
 		tw,
 		th);
 
@@ -125,7 +125,7 @@ void World::Run()
 	int tw;
 	int th;
 	auto td = Loader::LoadImage(
-		"../src/Assets/Resources/Images/transparent.png",
+		"Images/transparent.png",
 		tw,
 		th);
 
@@ -133,7 +133,7 @@ void World::Run()
 
 	TextHandler textHandler(_video->GetTextures());
 	auto glyphs = Text::LoadFont(
-		"../src/Assets/Resources/Fonts/DroidSans.ttf",
+		"Fonts/DroidSans.ttf",
 		{'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a',
 		's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c',
 		'v', 'b', 'n', 'm', ' '});
