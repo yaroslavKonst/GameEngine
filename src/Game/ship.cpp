@@ -34,43 +34,59 @@ void Ship::Key(int key, int scancode, int action, int mods)
 	if (key == GLFW_KEY_W) {
 		if (action == GLFW_PRESS) {
 			++_buildX;
+			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
+			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_S) {
 		if (action == GLFW_PRESS) {
 			--_buildX;
+			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
+			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_D) {
 		if (action == GLFW_PRESS) {
 			--_buildY;
+			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
+			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_A) {
 		if (action == GLFW_PRESS) {
 			++_buildY;
+			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
+			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_E) {
 		if (action == GLFW_PRESS) {
+			_video->LockSceneMutex();
 			_baseGrid->InsertBlock(_buildX, _buildY, _buildType);
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
+			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_Q) {
 		if (action == GLFW_PRESS) {
+			_video->LockSceneMutex();
 			_baseGrid->RemoveBlock(_buildX, _buildY);
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
+			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_R) {
 		if (action == GLFW_PRESS) {
+			_video->LockSceneMutex();
 			_buildType = _buildType == BaseBlock::Type::Floor ?
 				BaseBlock::Type::FloorComm :
 				BaseBlock::Type::Floor;
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
+			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_B) {
 		if (action == GLFW_PRESS) {
+			_video->LockSceneMutex();
 			_baseGrid->StopPreview();
+			_video->UnlockSceneMutex();
 			SetInputEnabled(false);
 		}
 	}
@@ -159,6 +175,8 @@ void BaseGrid::InsertBlock(
 	block->SetObjectIndices(model.Indices);
 	block->SetObjectCenter();
 	block->SetObjectMatrix(matrix);
+	block->SetObjectDynamic(true);
+	block->SetObjectDomain(1);
 
 	_video->RegisterModel(block);
 	_collisionEngine->RegisterObject(block);

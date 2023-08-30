@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "../VideoEngine/video.h"
+#include "../VideoEngine/TextBox.h"
 #include "../UniverseEngine/universe.h"
 #include "../Utils/loader.h"
 #include "../Assets/animation.h"
@@ -15,7 +16,8 @@ public:
 	Player(
 		Video* video,
 		CollisionEngine* rayEngine,
-		Ship* ship);
+		Ship* ship,
+		TextHandler* textHandler);
 	~Player();
 
 	void Key(
@@ -35,6 +37,8 @@ public:
 private:
 	Video* _video;
 	CollisionEngine* _rayEngine;
+	TextHandler* _textHandler;
+
 	glm::vec3 _pos;
 	float _angleH;
 	float _angleV;
@@ -54,6 +58,8 @@ private:
 	glm::vec3 _buildRotation;
 	float _buildCamCoeff;
 	glm::vec3 _buildCamPos;
+
+	TextBox* _centerTextBox;
 };
 
 #endif

@@ -5,10 +5,12 @@
 Player::Player(
 	Video* video,
 	CollisionEngine* rayEngine,
-	Ship* ship)
+	Ship* ship,
+	TextHandler* textHandler)
 {
 	_video = video;
 	_rayEngine = rayEngine;
+	_textHandler = textHandler;
 	_pos = glm::vec3(0.0, 0.0, 5.0);
 	_angleH = 0;
 	_angleV = 0;
@@ -55,10 +57,21 @@ Player::Player(
 
 	_video->RegisterLight(&_light);
 	_video->GetInputControl()->Subscribe(this);
+
+	_centerTextBox = new TextBox(_video, _textHandler);
+	_centerTextBox->SetPosition(-0, -0);
+	_centerTextBox->SetTextSize(0.1);
+	_centerTextBox->SetText("Center text");
+	_centerTextBox->SetTextColor({1, 1, 1, 1});
+	_centerTextBox->SetDepth(0);
+	_centerTextBox->Activate();
 }
 
 Player::~Player()
 {
+	_centerTextBox->Deactivate();
+	delete _centerTextBox;
+
 	_video->GetInputControl()->UnSubscribe(this);
 	_video->RemoveLight(&_light);
 }
@@ -268,11 +281,19 @@ void Player::Tick()
 			sinf(glm::radians(_angleV))));
 	_mutex.unlock();
 
-	/*_rayEngine->RayCast(
+	Object* object = _rayEngine->RayCast(
 		_pos + glm::vec3(0, 0, 1.85),
 		glm::vec3(
 			hdir * cosf(glm::radians(_angleV)),
 			sinf(glm::radians(_angleV))),
-		5,
-		nullptr);*/
+		3,
+		nullptr);
+
+	if (object) {
+		_centerTextBox->SetText("Object");
+	} else {
+		_centerTextBox->SetText("None");
+	}
+
+	_centerTextBox->Activate();
 }

@@ -7,6 +7,7 @@ TextBox::TextBox(Video* video, TextHandler* textHandler)
 	_video = video;
 	_textHandler = textHandler;
 	_textUpdated = false;
+	_positionUpdated = false;
 	_color = glm::vec4(1.0f);
 }
 
@@ -29,6 +30,7 @@ void TextBox::SetText(std::string text)
 void TextBox::SetPosition(float x, float y)
 {
 	_position = {x, y};
+	_positionUpdated = false;
 }
 
 void TextBox::SetTextSize(float size)
@@ -38,15 +40,17 @@ void TextBox::SetTextSize(float size)
 
 void TextBox::Place()
 {
-	for (auto rectangle : _line) {
-		if (rectangle) {
-			_video->RemoveRectangle(rectangle);
-			delete rectangle;
+	if (!_textUpdated) {
+		for (auto rectangle : _line) {
+			if (rectangle) {
+				_video->RemoveRectangle(rectangle);
+				delete rectangle;
+			}
 		}
-	}
 
-	_line.clear();
-	_line.resize(_text.size(), nullptr);
+		_line.clear();
+		_line.resize(_text.size(), nullptr);
+	}
 
 	float xoffset = _position.x;
 
@@ -57,7 +61,9 @@ void TextBox::Place()
 		auto glyph = _textHandler->GetGlyph(_text[i]);
 
 		if (glyph.HasTexture) {
-			_line[i] = new Rectangle();
+			if (!_textUpdated) {
+				_line[i] = new Rectangle();
+			}
 
 			float xpos = xoffset +
 				coeff * glyph.Data.BearingX;
@@ -71,24 +77,27 @@ void TextBox::Place()
 				ypos + coeff * glyph.Data.Height
 			});
 
-			_line[i]->SetRectangleTexCoords({0, 0, 1, 1});
-			_line[i]->SetRectangleDepth(_depth);
-			_line[i]->SetTexture({glyph.Texture});
-			_line[i]->SetColorMultiplier(_color);
+			if (!_textUpdated) {
+				_line[i]->SetRectangleTexCoords({0, 0, 1, 1});
+				_line[i]->SetRectangleDepth(_depth);
+				_line[i]->SetTexture({glyph.Texture});
+				_line[i]->SetColorMultiplier(_color);
 
-			_video->RegisterRectangle(_line[i]);
+				_video->RegisterRectangle(_line[i]);
+			}
 		}
 
 		xoffset += coeff * ratio * glyph.Data.Advance / 64.0;
 	}
 
 	_textUpdated = true;
+	_positionUpdated = true;
 	_width = xoffset - _position.x;
 }
 
 void TextBox::Activate()
 {
-	if (!_textUpdated) {
+	if (!_textUpdated || !_positionUpdated) {
 		Place();
 	}
 

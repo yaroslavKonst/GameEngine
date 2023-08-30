@@ -15,7 +15,7 @@
 struct SceneDescriptor
 {
 	std::map<Model*, ModelDescriptor> Models;
-	std::map<Rectangle*, ModelDescriptor> Rectangles;
+	std::set<Rectangle*> Rectangles;
 	std::set<Light*> Lights;
 	std::set<Sprite*> Sprites;
 	Skybox skybox;
@@ -28,6 +28,8 @@ struct SceneDescriptor
 	glm::vec3 CameraUp;
 
 	std::mutex* SceneMutex;
+
+	std::list<ModelDescriptor> DeletedModelDescriptors;
 };
 
 #endif

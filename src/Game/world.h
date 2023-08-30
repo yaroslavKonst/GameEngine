@@ -2,6 +2,7 @@
 #define _WORLD_H
 
 #include "../UniverseEngine/universe.h"
+#include "../VideoEngine/TextHandler.h"
 #include "ship.h"
 
 class World
@@ -19,6 +20,8 @@ private:
 
 	std::mutex _sceneMutex;
 	std::thread* _universeThread;
+
+	TextHandler* _textHandler;
 };
 
 #endif

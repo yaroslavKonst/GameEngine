@@ -376,46 +376,22 @@ void Video::Stop()
 
 void Video::RegisterModel(Model* model)
 {
-	auto descriptor = CreateModelDescriptor(model);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
+	auto descriptor = ModelDescriptor::CreateModelDescriptor(
+		model,
+		_device,
+		_memorySystem,
+		&_deviceSupport,
+		_graphicsQueue,
+		_transferCommandPool);
 	_scene.Models[model] = descriptor;
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
-
 	model->_SetDrawReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	model->_SetDrawReady(false);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
-
-	vkQueueWaitIdle(_graphicsQueue);
-
-	DestroyModelDescriptor(_scene.Models[model]);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
+	_scene.DeletedModelDescriptors.push_back(_scene.Models[model]);
 	_scene.Models.erase(model);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
 }
 
 void Video::RemoveAllModels()
@@ -424,194 +400,35 @@ void Video::RemoveAllModels()
 
 	for (auto& model : _scene.Models) {
 		model.first->_SetDrawReady(false);
-		DestroyModelDescriptor(model.second);
+		ModelDescriptor::DestroyModelDescriptor(
+			model.second,
+			_device,
+			_memorySystem);
 	}
 
 	_scene.Models.clear();
-}
 
-ModelDescriptor Video::CreateModelDescriptor(Model* model)
-{
-	ModelDescriptor descriptor;
-
-	// Vertex buffer creation.
-	auto& vertices = model->GetModelVertices();
-	auto& texCoords = model->GetModelTexCoords();
-	auto& normals = model->GetModelNormals();
-
-	std::vector<ModelDescriptor::Vertex> vertexData(vertices.size());
-
-	descriptor.VertexBuffer = BufferHelper::CreateBuffer(
-		_device,
-		sizeof(ModelDescriptor::Vertex) * vertices.size(),
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		_memorySystem,
-		&_deviceSupport);
-
-	for (size_t i = 0; i < vertices.size(); ++i) {
-		vertexData[i].Pos = vertices[i];
-		vertexData[i].TexCoord = texCoords[i];
-		vertexData[i].Normal = normals[i];
+	for (auto& desc : _scene.DeletedModelDescriptors) {
+		ModelDescriptor::DestroyModelDescriptor(
+			desc,
+			_device,
+			_memorySystem);
 	}
 
-	BufferHelper::LoadDataToBuffer(
-		_device,
-		descriptor.VertexBuffer,
-		vertexData.data(),
-		vertexData.size() * sizeof(ModelDescriptor::Vertex),
-		_memorySystem,
-		&_deviceSupport,
-		_transferCommandPool,
-		_graphicsQueue);
-
-	descriptor.VertexCount = vertices.size();
-
-	// Index buffer creation.
-	auto& indices = model->GetModelIndices();
-
-	descriptor.IndexBuffer = BufferHelper::CreateBuffer(
-		_device,
-		sizeof(uint32_t) * indices.size(),
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		_memorySystem,
-		&_deviceSupport);
-
-	BufferHelper::LoadDataToBuffer(
-		_device,
-		descriptor.IndexBuffer,
-		indices.data(),
-		indices.size() * sizeof(uint32_t),
-		_memorySystem,
-		&_deviceSupport,
-		_transferCommandPool,
-		_graphicsQueue);
-
-	descriptor.IndexCount = indices.size();
-
-	// Instance buffer.
-	auto& instances = model->GetModelInstances();
-
-	descriptor.InstanceBuffer = BufferHelper::CreateBuffer(
-		_device,
-		sizeof(glm::mat4) * instances.size(),
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		_memorySystem,
-		&_deviceSupport);
-
-	BufferHelper::LoadDataToBuffer(
-		_device,
-		descriptor.InstanceBuffer,
-		instances.data(),
-		instances.size() * sizeof(glm::mat4),
-		_memorySystem,
-		&_deviceSupport,
-		_transferCommandPool,
-		_graphicsQueue);
-
-	descriptor.InstanceCount = instances.size();
-
-	model->_SetModelInstancesUpdated();
-
-	// Texture image.
-	descriptor.Textures = model->GetTextures();
-
-	return descriptor;
-}
-
-void Video::DestroyModelDescriptor(ModelDescriptor descriptor)
-{
-	BufferHelper::DestroyBuffer(
-		_device,
-		descriptor.VertexBuffer,
-		_memorySystem);
-
-	BufferHelper::DestroyBuffer(
-		_device,
-		descriptor.IndexBuffer,
-		_memorySystem);
-
-	BufferHelper::DestroyBuffer(
-		_device,
-		descriptor.InstanceBuffer,
-		_memorySystem);
+	_scene.DeletedModelDescriptors.clear();
 }
 
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
-	auto descriptor = CreateRectangleDescriptor(rectangle);
-
 	rectangle->SetRectangleScreenRatio(_swapchain->GetScreenRatio());
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
-	_scene.Rectangles[rectangle] = descriptor;
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
-
+	_scene.Rectangles.insert(rectangle);
 	rectangle->_SetDrawReady(true);
 }
 
 void Video::RemoveRectangle(Rectangle* rectangle)
 {
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	rectangle->_SetDrawReady(false);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
-
-	vkQueueWaitIdle(_graphicsQueue);
-
-	DestroyRectangleDescriptor(_scene.Rectangles[rectangle]);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	_scene.Rectangles.erase(rectangle);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
-}
-
-void Video::RemoveAllRectangles()
-{
-	vkQueueWaitIdle(_graphicsQueue);
-
-	for (auto& rectangle : _scene.Rectangles) {
-		rectangle.first->_SetDrawReady(false);
-		DestroyRectangleDescriptor(rectangle.second);
-	}
-
-	_scene.Rectangles.clear();
-}
-
-ModelDescriptor Video::CreateRectangleDescriptor(Rectangle* rectangle)
-{
-	ModelDescriptor descriptor;
-
-	// Texture image.
-	descriptor.Textures = rectangle->GetTextures();
-
-	return descriptor;
-}
-
-void Video::DestroyRectangleDescriptor(ModelDescriptor descriptor)
-{
 }
 
 void Video::CreateSkybox(
@@ -713,18 +530,8 @@ void Video::DestroySkybox()
 		return;
 	}
 
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	_scene.skybox._SetDrawReady(false);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
-
 	vkQueueWaitIdle(_graphicsQueue);
-
 	_scene.Textures->RemoveTexture(_scene.skybox.Descriptor.Textures[0]);
 }
 
@@ -766,55 +573,22 @@ void Video::DestroyDescriptorSetLayout()
 
 void Video::RegisterLight(Light* light)
 {
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	_scene.Lights.insert(light);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
 }
 
 void Video::RemoveLight(Light* light)
 {
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	_scene.Lights.erase(light);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
 }
 
 void Video::RegisterSprite(Sprite* sprite)
 {
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	_scene.Sprites.insert(sprite);
 	sprite->_SetDrawReady(true);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
 }
 
 void Video::RemoveSprite(Sprite* sprite)
 {
 	sprite->_SetDrawReady(false);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->lock();
-	}
-
 	_scene.Sprites.erase(sprite);
-
-	if (_scene.SceneMutex) {
-		_scene.SceneMutex->unlock();
-	}
 }

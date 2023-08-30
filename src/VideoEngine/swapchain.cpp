@@ -242,7 +242,7 @@ void Swapchain::Create()
 	float ratio = GetScreenRatio();
 
 	for (auto& rectangle : _scene->Rectangles) {
-		rectangle.first->SetRectangleScreenRatio(ratio);
+		rectangle->SetRectangleScreenRatio(ratio);
 	}
 
 	_currentFrame = 0;
@@ -1746,24 +1746,22 @@ void Swapchain::RecordCommandBuffer(
 
 	std::multimap<float, Rectangle*> orderedRectangles;
 
-	for (auto& rectangle : _scene->Rectangles) {
-		if (!rectangle.first->IsDrawEnabled()) {
+	for (auto rectangle : _scene->Rectangles) {
+		if (!rectangle->IsDrawEnabled()) {
 			continue;
 		}
 
 		orderedRectangles.insert({
-			rectangle.first->GetRectangleDepth(),
-			rectangle.first
+			rectangle->GetRectangleDepth(),
+			rectangle
 		});
 	}
 
 	for (auto& rect : orderedRectangles) {
-		auto rectangle = std::pair<Rectangle*, ModelDescriptor>(
-			rect.second,
-			(_scene->Rectangles)[rect.second]);
+		auto rectangle = rect.second;
 
-		rectData[0] = rectangle.first->GetRectanglePosition();
-		rectData[1] = rectangle.first->GetRectangleTexCoords();
+		rectData[0] = rectangle->GetRectanglePosition();
+		rectData[1] = rectangle->GetRectangleTexCoords();
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1774,7 +1772,7 @@ void Swapchain::RecordCommandBuffer(
 			rectData.data());
 
 		glm::vec4 colorMultiplier =
-			rectangle.first->GetColorMultiplier();
+			rectangle->GetColorMultiplier();
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1785,7 +1783,7 @@ void Swapchain::RecordCommandBuffer(
 			&colorMultiplier);
 
 		auto& tex = _scene->Textures->GetTexture(
-			rectangle.second.Textures[0]);
+			rectangle->GetTexture(0));
 
 		vkCmdBindDescriptorSets(
 			commandBuffer,
@@ -2060,6 +2058,27 @@ void Swapchain::DrawFrame()
 
 	if (_scene->SceneMutex) {
 		_scene->SceneMutex->lock();
+	}
+
+	auto it = _scene->DeletedModelDescriptors.begin();
+
+	while (it != _scene->DeletedModelDescriptors.end()) {
+		if (it->MarkedFrameIndex == _currentFrame) {
+			ModelDescriptor::DestroyModelDescriptor(
+				*it,
+				_device,
+				_memorySystem);
+
+			auto remIt = it;
+			++it;
+			_scene->DeletedModelDescriptors.erase(remIt);
+		} else {
+			if (it->MarkedFrameIndex == -1) {
+				it->MarkedFrameIndex = _currentFrame;
+			}
+
+			++it;
+		}
 	}
 
 	try {

@@ -345,11 +345,11 @@ bool CollisionEngine::FindRayIntersection(
 		return false;
 	}
 
-	if (!(p1 <= distance || p2 <= distance)) {
+	if (p1 < 0 && p2 < 0) {
 		return false;
 	}
 
-	if (p1 < 0 && p2 < 0) {
+	if (p1 > distance && p2 > distance) {
 		return false;
 	}
 
@@ -372,14 +372,6 @@ bool CollisionEngine::FindRayIntersection(
 		uint32_t index2 = indices[index + 1];
 		uint32_t index3 = indices[index + 2];
 
-		float d1 = glm::length(point - verticesWorld[index1]);
-		float d2 = glm::length(point - verticesWorld[index2]);
-		float d3 = glm::length(point - verticesWorld[index3]);
-
-		if (std::min(std::min(d1, d2), d3) > closestHitDistance) {
-			continue;
-		}
-
 		Plane plane = PlaneByThreePoints(
 			verticesWorld[index1],
 			verticesWorld[index2],
@@ -393,7 +385,7 @@ bool CollisionEngine::FindRayIntersection(
 			plane,
 			dist);
 
-		if (!isIntersect || dist < 0) {
+		if (!isIntersect || dist < 0 || dist > closestHitDistance) {
 			continue;
 		}
 

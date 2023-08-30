@@ -42,6 +42,7 @@ private:
 	glm::vec4 _color;
 
 	bool _textUpdated;
+	bool _positionUpdated;
 	float _textSize;
 	float _width;
 	float _depth;

@@ -98,6 +98,18 @@ World::World()
 	_video->SetCameraUp({0, 0, 1});
 
 	_universeThread = new std::thread(UniverseThread, _universe);
+
+	_textHandler = new TextHandler(_video->GetTextures());
+	auto glyphs = Text::LoadFont(
+		"Fonts/DroidSans.ttf",
+		{'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A',
+		'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C',
+		'V', 'B', 'N', 'M', 'q', 'w', 'e', 'r', 't', 'y', 'u',
+		'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k',
+		'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ' ', '0', '1',
+		'2', '3', '4', '5', '6', '7', '8', '9'});
+
+	_textHandler->LoadFont(glyphs);
 }
 
 World::~World()
@@ -105,6 +117,8 @@ World::~World()
 	_universe->Stop();
 	_universeThread->join();
 	delete _universeThread;
+
+	delete _textHandler;
 
 	delete _collisionEngine;
 	delete _universe;
@@ -122,17 +136,8 @@ void World::Run()
 
 	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
-	TextHandler textHandler(_video->GetTextures());
-	auto glyphs = Text::LoadFont(
-		"Fonts/DroidSans.ttf",
-		{'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a',
-		's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c',
-		'v', 'b', 'n', 'm', ' '});
-
-	textHandler.LoadFont(glyphs);
-
-	TextBox textBox(_video, &textHandler);
-	textBox.SetPosition(-0.9, -0.5);
+	TextBox textBox(_video, _textHandler);
+	textBox.SetPosition(-0.9, -0.9);
 	textBox.SetTextSize(0.2);
 	textBox.SetText("hello text check");
 	textBox.SetTextColor({0, 1, 1, 0.5});
@@ -179,7 +184,7 @@ void World::Run()
 
 	Ship ship(_video, _collisionEngine);
 
-	Player player(_video, _collisionEngine, &ship);
+	Player player(_video, _collisionEngine, &ship, _textHandler);
 	_universe->RegisterActor(&player);
 	_universe->RegisterActor(&ship);
 	_collisionEngine->RegisterObject(&player);

@@ -96,6 +96,20 @@ public:
 		_scene.SceneMutex = mutex;
 	}
 
+	void LockSceneMutex()
+	{
+		if (_scene.SceneMutex) {
+			_scene.SceneMutex->lock();
+		}
+	}
+
+	void UnlockSceneMutex()
+	{
+		if (_scene.SceneMutex) {
+			_scene.SceneMutex->unlock();
+		}
+	}
+
 	float GetScreenRatio()
 	{
 		return _swapchain->GetScreenRatio();
@@ -141,13 +155,7 @@ private:
 	void DestroySwapchain();
 
 	SceneDescriptor _scene;
-	ModelDescriptor CreateModelDescriptor(Model* model);
-	void DestroyModelDescriptor(ModelDescriptor descriptor);
 	void RemoveAllModels();
-
-	ModelDescriptor CreateRectangleDescriptor(Rectangle* rectangle);
-	void DestroyRectangleDescriptor(ModelDescriptor descriptor);
-	void RemoveAllRectangles();
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();

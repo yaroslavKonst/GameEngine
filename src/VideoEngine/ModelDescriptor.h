@@ -13,6 +13,7 @@
 #include "MemorySystem.h"
 #include "BufferHelper.h"
 #include "ImageHelper.h"
+#include "model.h"
 
 struct ModelDescriptor
 {
@@ -34,10 +35,24 @@ struct ModelDescriptor
 
 	std::vector<uint32_t> Textures;
 
+	int64_t MarkedFrameIndex;
+
 	static std::vector<VkVertexInputBindingDescription>
 		GetVertexBindingDescription();
 	static std::vector<VkVertexInputAttributeDescription>
 		GetAttributeDescriptions();
+
+	static ModelDescriptor CreateModelDescriptor(
+		Model* model,
+		VkDevice device,
+		MemorySystem* memorySystem,
+		PhysicalDeviceSupport* deviceSupport,
+		VkQueue graphicsQueue,
+		CommandPool* commandPool);
+	static void DestroyModelDescriptor(
+		ModelDescriptor descriptor,
+		VkDevice device,
+		MemorySystem* memorySystem);
 };
 
 #endif

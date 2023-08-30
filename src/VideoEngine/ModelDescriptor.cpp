@@ -66,3 +66,126 @@ ModelDescriptor::GetAttributeDescriptions()
 
 	return attributeDescriptions;
 }
+
+ModelDescriptor ModelDescriptor::CreateModelDescriptor(
+	Model* model,
+	VkDevice device,
+	MemorySystem* memorySystem,
+	PhysicalDeviceSupport* deviceSupport,
+	VkQueue graphicsQueue,
+	CommandPool* commandPool)
+{
+	ModelDescriptor descriptor;
+
+	// Vertex buffer creation.
+	auto& vertices = model->GetModelVertices();
+	auto& texCoords = model->GetModelTexCoords();
+	auto& normals = model->GetModelNormals();
+
+	std::vector<ModelDescriptor::Vertex> vertexData(vertices.size());
+
+	descriptor.VertexBuffer = BufferHelper::CreateBuffer(
+		device,
+		sizeof(ModelDescriptor::Vertex) * vertices.size(),
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		memorySystem,
+		deviceSupport);
+
+	for (size_t i = 0; i < vertices.size(); ++i) {
+		vertexData[i].Pos = vertices[i];
+		vertexData[i].TexCoord = texCoords[i];
+		vertexData[i].Normal = normals[i];
+	}
+
+	BufferHelper::LoadDataToBuffer(
+		device,
+		descriptor.VertexBuffer,
+		vertexData.data(),
+		vertexData.size() * sizeof(ModelDescriptor::Vertex),
+		memorySystem,
+		deviceSupport,
+		commandPool,
+		graphicsQueue);
+
+	descriptor.VertexCount = vertices.size();
+
+	// Index buffer creation.
+	auto& indices = model->GetModelIndices();
+
+	descriptor.IndexBuffer = BufferHelper::CreateBuffer(
+		device,
+		sizeof(uint32_t) * indices.size(),
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		memorySystem,
+		deviceSupport);
+
+	BufferHelper::LoadDataToBuffer(
+		device,
+		descriptor.IndexBuffer,
+		indices.data(),
+		indices.size() * sizeof(uint32_t),
+		memorySystem,
+		deviceSupport,
+		commandPool,
+		graphicsQueue);
+
+	descriptor.IndexCount = indices.size();
+
+	// Instance buffer.
+	auto& instances = model->GetModelInstances();
+
+	descriptor.InstanceBuffer = BufferHelper::CreateBuffer(
+		device,
+		sizeof(glm::mat4) * instances.size(),
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		memorySystem,
+		deviceSupport);
+
+	BufferHelper::LoadDataToBuffer(
+		device,
+		descriptor.InstanceBuffer,
+		instances.data(),
+		instances.size() * sizeof(glm::mat4),
+		memorySystem,
+		deviceSupport,
+		commandPool,
+		graphicsQueue);
+
+	descriptor.InstanceCount = instances.size();
+
+	model->_SetModelInstancesUpdated();
+
+	// Texture image.
+	descriptor.Textures = model->GetTextures();
+
+	descriptor.MarkedFrameIndex = -1;
+
+	return descriptor;
+}
+
+void ModelDescriptor::DestroyModelDescriptor(
+	ModelDescriptor descriptor,
+	VkDevice device,
+	MemorySystem* memorySystem)
+{
+	BufferHelper::DestroyBuffer(
+		device,
+		descriptor.VertexBuffer,
+		memorySystem);
+
+	BufferHelper::DestroyBuffer(
+		device,
+		descriptor.IndexBuffer,
+		memorySystem);
+
+	BufferHelper::DestroyBuffer(
+		device,
+		descriptor.InstanceBuffer,
+		memorySystem);
+}
