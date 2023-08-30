@@ -32,6 +32,7 @@ uint32_t TextureHandler::AddTexture(
 	uint32_t width,
 	uint32_t height,
 	const std::vector<uint8_t>& texture,
+	bool repeat,
 	TextureType type,
 	VkImageCreateFlagBits flags,
 	uint32_t layerCount)
@@ -49,6 +50,7 @@ uint32_t TextureHandler::AddTexture(
 		width,
 		height,
 		texture,
+		repeat,
 		flags,
 		layerCount);
 
@@ -66,6 +68,7 @@ TextureHandler::TextureDescriptor TextureHandler::CreateTextureDescriptor(
 	uint32_t width,
 	uint32_t height,
 	const std::vector<uint8_t>& texture,
+	bool repeat,
 	VkImageCreateFlagBits flags,
 	uint32_t layerCount)
 {
@@ -100,10 +103,17 @@ TextureHandler::TextureDescriptor TextureHandler::CreateTextureDescriptor(
 		vType,
 		layerCount);
 
+	VkSamplerAddressMode addressMode =
+		repeat ? VK_SAMPLER_ADDRESS_MODE_REPEAT :
+		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
 	descriptor.Sampler = ImageHelper::CreateImageSampler(
 		_device,
 		_deviceSupport->GetPhysicalDevice(),
-		mipLevels);
+		mipLevels,
+		addressMode,
+		addressMode,
+		addressMode);
 
 	CreateDescriptorSets(&descriptor);
 

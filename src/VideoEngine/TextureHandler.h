@@ -37,6 +37,7 @@ public:
 		uint32_t width,
 		uint32_t height,
 		const std::vector<uint8_t>& texture,
+		bool repeat = true,
 		TextureType type = TextureType::T2D,
 		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
 		uint32_t layerCount = 1);
@@ -65,6 +66,7 @@ private:
 		uint32_t width,
 		uint32_t height,
 		const std::vector<uint8_t>& texture,
+		bool repeat,
 		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
 		uint32_t layerCount = 1);
 	void DestroyTextureDescriptor(TextureDescriptor& descriptor);

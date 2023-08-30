@@ -514,6 +514,7 @@ void Video::CreateSkybox(
 		texWidth,
 		texHeight,
 		texDataTransformed,
+		true,
 		TextureHandler::TextureType::TCube,
 		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 		layerCount);

@@ -37,7 +37,8 @@ void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 			uint32_t texId = _textureHandler->AddTexture(
 				glyph.Data.Width,
 				glyph.Data.Height,
-				buffer);
+				buffer,
+				false);
 
 			glyph.Texture = texId;
 			glyph.HasTexture = true;
