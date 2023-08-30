@@ -24,6 +24,7 @@ namespace Logger
 		Logger& operator<<(const char* message);
 		Logger& operator<<(int32_t message);
 		Logger& operator<<(uint32_t message);
+		Logger& operator<<(uint64_t message);
 		Logger& operator<<(float message);
 		Logger& operator<<(double message);
 

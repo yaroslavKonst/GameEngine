@@ -133,6 +133,15 @@ namespace Logger
 		return *this;
 	}
 
+	Logger& Logger::operator<<(uint64_t message)
+	{
+		if (_logLevel >= _level) {
+			std::cout << message;
+		}
+
+		return *this;
+	}
+
 	Logger& Logger::operator<<(float message)
 	{
 		if (_logLevel >= _level) {
