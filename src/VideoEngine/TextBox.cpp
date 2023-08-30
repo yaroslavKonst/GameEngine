@@ -66,7 +66,7 @@ void TextBox::Place()
 			}
 
 			float xpos = xoffset +
-				coeff * glyph.Data.BearingX;
+				coeff * glyph.Data.BearingX * ratio;
 			float ypos = _position.y -
 				coeff * glyph.Data.BearingY;
 
