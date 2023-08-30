@@ -28,8 +28,7 @@ void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 			buffer[i * 4] = glyph.Data.Bitmap[i];
 			buffer[i * 4 + 1] = glyph.Data.Bitmap[i];
 			buffer[i * 4 + 2] = glyph.Data.Bitmap[i];
-			buffer[i * 4 + 3] = 255 *
-				((float)glyph.Data.Bitmap[i] / 255.0);
+			buffer[i * 4 + 3] = glyph.Data.Bitmap[i];
 		}
 
 		glyph.HasTexture = false;
