@@ -59,18 +59,26 @@ Player::Player(
 	_video->GetInputControl()->Subscribe(this);
 
 	_centerTextBox = new TextBox(_video, _textHandler);
-	_centerTextBox->SetPosition(-0, -0);
+	_centerTextBox->SetPosition(0, 0);
 	_centerTextBox->SetTextSize(0.1);
 	_centerTextBox->SetText("Center text");
 	_centerTextBox->SetTextColor({1, 1, 1, 1});
 	_centerTextBox->SetDepth(0);
 	_centerTextBox->Activate();
+
+	_cornerTextBox = new TextBox(_video, _textHandler);
+	_cornerTextBox->SetPosition(-0.8, -0.8);
+	_cornerTextBox->SetTextSize(0.15);
+	_cornerTextBox->SetText("Build mode");
+	_cornerTextBox->SetTextColor({1, 1, 1, 1});
+	_cornerTextBox->SetDepth(0);
 }
 
 Player::~Player()
 {
 	_centerTextBox->Deactivate();
 	delete _centerTextBox;
+	delete _cornerTextBox;
 
 	_video->GetInputControl()->UnSubscribe(this);
 	_video->RemoveLight(&_light);
@@ -296,4 +304,10 @@ void Player::Tick()
 	}
 
 	_centerTextBox->Activate();
+
+	if (_buildMode) {
+		_cornerTextBox->Activate();
+	} else {
+		_cornerTextBox->Deactivate();
+	}
 }

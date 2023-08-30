@@ -40,7 +40,7 @@ namespace Text
 				"Failed to load font.");
 		}
 
-		FT_Set_Pixel_Sizes(face, 0, 48);
+		FT_Set_Pixel_Sizes(face, 0, 100);
 
 		for (uint32_t code : codes) {
 			error = FT_Load_Char(face, code, FT_LOAD_RENDER);

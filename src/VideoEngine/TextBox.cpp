@@ -54,7 +54,7 @@ void TextBox::Place()
 
 	float xoffset = _position.x;
 
-	float coeff = _textSize / 100.0;
+	float coeff = _textSize / 200.0;
 	float ratio = 1.0 / _video->GetScreenRatio();
 
 	for (size_t i = 0; i < _text.size(); ++i) {

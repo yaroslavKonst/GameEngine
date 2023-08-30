@@ -136,14 +136,6 @@ void World::Run()
 
 	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
-	TextBox textBox(_video, _textHandler);
-	textBox.SetPosition(-0.9, -0.9);
-	textBox.SetTextSize(0.2);
-	textBox.SetText("hello text check");
-	textBox.SetTextColor({0, 1, 1, 0.5});
-	textBox.SetDepth(0);
-	textBox.Activate();
-
 	Board board;
 	board.SetTexture({testTexture});
 	board.SetModelHoled(true);

@@ -60,6 +60,7 @@ private:
 	glm::vec3 _buildCamPos;
 
 	TextBox* _centerTextBox;
+	TextBox* _cornerTextBox;
 };
 
 #endif
