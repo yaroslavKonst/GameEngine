@@ -13,8 +13,8 @@ namespace Text
 		std::vector<uint8_t> Bitmap;
 		uint32_t Width;
 		uint32_t Height;
-		uint32_t BearingX;
-		uint32_t BearingY;
+		int32_t BearingX;
+		int32_t BearingY;
 		uint32_t Advance;
 	};
 
