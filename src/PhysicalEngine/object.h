@@ -146,12 +146,12 @@ public:
 		_domain = value;
 	}
 
-	virtual glm::mat4* GetObjectExternMatrix()
+	virtual glm::mat4* GetObjectExternalMatrix()
 	{
 		return _externMatrix;
 	}
 
-	virtual void SetObjectExternMatrix(glm::mat4* value)
+	virtual void SetObjectExternalMatrix(glm::mat4* value)
 	{
 		_externMatrix = value;
 	}

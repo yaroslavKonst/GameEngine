@@ -121,6 +121,16 @@ public:
 		_holed = value;
 	}
 
+	virtual const glm::mat4* GetModelExternalMatrix()
+	{
+		return _externMatrix;
+	}
+
+	virtual void SetModelExternalMatrix(const glm::mat4* matrix)
+	{
+		_externMatrix = matrix;
+	}
+
 private:
 	std::vector<glm::vec3> _modelVertexBuffer;
 	std::vector<glm::vec3> _modelNormalBuffer;
@@ -131,6 +141,7 @@ private:
 
 	glm::mat4 _modelMatrix;
 	glm::mat4 _modelInnerMatrix;
+	const glm::mat4* _externMatrix;
 
 	glm::vec3 _modelCenter;
 

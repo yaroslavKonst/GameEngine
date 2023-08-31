@@ -1476,6 +1476,13 @@ void Swapchain::RecordCommandBuffer(
 
 		for (auto& model : holedModels) {
 			mvp.Model = model.first->GetModelMatrix();
+
+			const glm::mat4* extMat =
+				model.first->GetModelExternalMatrix();
+			if (extMat) {
+				mvp.Model = *extMat * mvp.Model;
+			}
+
 			mvp.InnerModel = model.first->GetModelInnerMatrix();
 
 			VkBuffer vertexBuffers[] = {
@@ -1861,6 +1868,13 @@ void Swapchain::RecordObjectCommandBuffer(
 	Pipeline* pipeline)
 {
 	mvp.Model = model.first->GetModelMatrix();
+
+	const glm::mat4* extMat =
+		model.first->GetModelExternalMatrix();
+	if (extMat) {
+		mvp.Model = *extMat * mvp.Model;
+	}
+
 	mvp.InnerModel = model.first->GetModelInnerMatrix();
 
 	if (!model.first->_GetModelInstancesUpdated()) {
