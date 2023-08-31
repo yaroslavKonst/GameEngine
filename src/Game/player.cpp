@@ -22,6 +22,7 @@ Player::Player(
 	_ship = ship;
 	_buildMode = false;
 	_buildCamCoeff = 0;
+	_actionRequested = false;
 
 	std::vector<glm::vec3> vertices;
 	vertices.push_back(glm::vec3(0.1, -0.1, 0.0));
@@ -51,7 +52,7 @@ Player::Player(
 	SetInputEnabled(true);
 
 	_light.SetLightType(Light::Type::Spot);
-	_light.SetLightColor({1, 1, 1});
+	_light.SetLightColor({0.7, 0.7, 0.7});
 	_light.SetLightAngle(30);
 	_light.SetLightAngleFade(10);
 
@@ -162,6 +163,12 @@ void Player::Key(
 				_strafe -= 1;
 			} else if (action == GLFW_RELEASE) {
 				_strafe += 1;
+			}
+			_mutex.unlock();
+		} else if (key == GLFW_KEY_E) {
+			_mutex.lock();
+			if (action == GLFW_PRESS) {
+				_actionRequested = true;
 			}
 			_mutex.unlock();
 		}
@@ -287,9 +294,8 @@ void Player::Tick()
 	_light.SetLightDirection(glm::vec3(
 			hdir * cosf(glm::radians(_angleV)),
 			sinf(glm::radians(_angleV))));
-	_mutex.unlock();
 
-	Object* object = _rayEngine->RayCast(
+	CollisionEngine::RayCastResult object = _rayEngine->RayCast(
 		_pos + glm::vec3(0, 0, 1.85),
 		glm::vec3(
 			hdir * cosf(glm::radians(_angleV)),
@@ -297,17 +303,27 @@ void Player::Tick()
 		3,
 		nullptr);
 
-	if (object) {
-		_centerTextBox->SetText("Object");
-	} else {
-		_centerTextBox->SetText("None");
-	}
+	if (object.Code) {
+		_centerTextBox->SetText("[E] Object action");
+		_centerTextBox->Activate();
 
-	_centerTextBox->Activate();
+		if (_actionRequested) {
+			FloorCommBlock* block = static_cast<FloorCommBlock*>(
+				object.object);
+
+			block->SetPowerCable(!block->GetPowerCable());
+		}
+	} else {
+		_centerTextBox->Deactivate();
+	}
 
 	if (_buildMode) {
 		_cornerTextBox->Activate();
 	} else {
 		_cornerTextBox->Deactivate();
 	}
+
+	_actionRequested = false;
+
+	_mutex.unlock();
 }

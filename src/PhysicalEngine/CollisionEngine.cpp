@@ -259,7 +259,7 @@ glm::vec3 CollisionEngine::CalculateEffectOnPoint(
 	return projectedPoint - point;
 }
 
-Object* CollisionEngine::RayCast(
+CollisionEngine::RayCastResult CollisionEngine::RayCast(
 	const glm::vec3& point,
 	const glm::vec3& direction,
 	float distance,
@@ -306,11 +306,15 @@ Object* CollisionEngine::RayCast(
 
 	_mutex.unlock();
 
+	RayCastResult result;
+	result.object = closestObject;
+	result.Code = 0;
+
 	if (closestObject) {
-		closestObject->RayCastCallback(userPointer);
+		result.Code = closestObject->RayCastCallback(userPointer);
 	}
 
-	return closestObject;
+	return result;
 }
 
 bool CollisionEngine::FindRayIntersection(

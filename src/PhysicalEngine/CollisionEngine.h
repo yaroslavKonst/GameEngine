@@ -9,6 +9,12 @@
 class CollisionEngine
 {
 public:
+	struct RayCastResult
+	{
+		Object* object;
+		uint32_t Code;
+	};
+
 	CollisionEngine();
 	~CollisionEngine();
 
@@ -17,7 +23,7 @@ public:
 	void RegisterObject(Object* object);
 	void RemoveObject(Object* object);
 
-	Object* RayCast(
+	RayCastResult RayCast(
 		const glm::vec3& point,
 		const glm::vec3& direction,
 		float distance,

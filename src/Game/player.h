@@ -59,6 +59,8 @@ private:
 	float _buildCamCoeff;
 	glm::vec3 _buildCamPos;
 
+	bool _actionRequested;
+
 	TextBox* _centerTextBox;
 	TextBox* _cornerTextBox;
 };

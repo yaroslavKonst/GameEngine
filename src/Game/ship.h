@@ -64,7 +64,11 @@ private:
 class FloorCommBlock: public BaseBlock
 {
 public:
-	FloorCommBlock(uint32_t texture, Video* video, uint32_t delimTexture);
+	FloorCommBlock(
+		uint32_t texture,
+		Video* video,
+		uint32_t delimTexture,
+		uint32_t powerCableHubTexture);
 	~FloorCommBlock();
 
 	Type GetType() override
@@ -74,10 +78,25 @@ public:
 
 	virtual void Update(BaseGrid* grid, int32_t x, int32_t y) override;
 
+	virtual uint32_t RayCastCallback(void* userPointer) override
+	{
+		return 1;
+	}
+
+	bool GetPowerCable();
+	void SetPowerCable(bool value);
+
 private:
 	Video* _video;
 	std::vector<Model*> _delims;
+	Model* _powerCableHub;
+	std::vector<Model*> _powerCables;
+
 	uint32_t _delimTexture;
+	uint32_t _powerCableTexture;
+	uint32_t _powerCableHubTexture;
+
+	bool _hasPowerCable;
 };
 
 class BaseGrid
@@ -97,6 +116,7 @@ public:
 	void StopPreview();
 
 	BaseBlock::Type GetType(int32_t x, int32_t y);
+	BaseBlock* GetBlock(int32_t x, int32_t y);
 
 private:
 	std::map<Coord2D, BaseBlock*> _blocks;
@@ -106,6 +126,7 @@ private:
 	uint32_t _floorTexture;
 	uint32_t _floorCommTexture;
 	uint32_t _floorCommDelimTexture;
+	uint32_t _powerCableHubTexture;
 
 	Video* _video;
 	CollisionEngine* _collisionEngine;

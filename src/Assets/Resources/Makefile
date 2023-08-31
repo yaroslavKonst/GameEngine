@@ -10,7 +10,9 @@ ENTRIES=\
 	Models/Ship/ShipFloorComm.png \
 	Models/Ship/ShipFloorCommDelim.obj \
 	Models/Ship/ShipFloorCommDelim.png \
-	Models/Ship/ShipFloorCollision.obj
+	Models/Ship/ShipFloorCollision.obj \
+	Models/Ship/ShipPowerCableHub.obj \
+	Models/Ship/ShipPowerCableHub.png
 
 .PHONY: all
 

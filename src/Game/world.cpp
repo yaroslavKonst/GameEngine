@@ -107,7 +107,7 @@ World::World()
 		'V', 'B', 'N', 'M', 'q', 'w', 'e', 'r', 't', 'y', 'u',
 		'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k',
 		'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ' ', '0', '1',
-		'2', '3', '4', '5', '6', '7', '8', '9'});
+		'2', '3', '4', '5', '6', '7', '8', '9', '[', ']'});
 
 	_textHandler->LoadFont(glyphs);
 }
@@ -144,8 +144,8 @@ void World::Run()
 
 	Light sun;
 	sun.SetLightType(Light::Type::Point);
-	sun.SetLightColor({2000, 2000, 2000});
-	sun.SetLightPosition({0, 0, 200});
+	sun.SetLightColor({200, 200, 200});
+	sun.SetLightPosition({0, 0, 50});
 	sun.SetLightActive(true);
 
 	_video->RegisterLight(&sun);

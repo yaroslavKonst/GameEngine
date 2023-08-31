@@ -156,8 +156,9 @@ public:
 		_externMatrix = value;
 	}
 
-	virtual void RayCastCallback(void* userPointer)
+	virtual uint32_t RayCastCallback(void* userPointer)
 	{
+		return 0;
 	}
 
 private:
