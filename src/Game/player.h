@@ -63,6 +63,9 @@ private:
 
 	TextBox* _centerTextBox;
 	TextBox* _cornerTextBox;
+
+	Rectangle _cross;
+	uint32_t _crossTexture;
 };
 
 #endif

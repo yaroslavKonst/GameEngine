@@ -1202,7 +1202,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	if (_scene->skybox.IsDrawEnabled()) {
+	if (_scene->skybox._IsDrawEnabled()) {
 		Skybox::ShaderData shaderData;
 		shaderData.Direction = _scene->CameraDirection;
 		shaderData.Up = _scene->CameraUp;
@@ -1371,7 +1371,7 @@ void Swapchain::RecordCommandBuffer(
 		std::map<Model*, ModelDescriptor> holedModels;
 
 		for (auto& model : _scene->Models) {
-			if (!model.first->IsDrawEnabled()) {
+			if (!model.first->_IsDrawEnabled()) {
 				continue;
 			}
 
@@ -1570,7 +1570,7 @@ void Swapchain::RecordCommandBuffer(
 	std::map<Model*, ModelDescriptor> holedModels;
 
 	for (auto& model : _scene->Models) {
-		if (!model.first->IsDrawEnabled()) {
+		if (!model.first->_IsDrawEnabled()) {
 			continue;
 		}
 
@@ -1651,7 +1651,7 @@ void Swapchain::RecordCommandBuffer(
 	std::multimap<float, Sprite*> orderedSprites;
 
 	for (auto sprite : _scene->Sprites) {
-		if (!sprite->IsDrawEnabled()) {
+		if (!sprite->_IsDrawEnabled()) {
 			continue;
 		}
 
@@ -1754,7 +1754,7 @@ void Swapchain::RecordCommandBuffer(
 	std::multimap<float, Rectangle*> orderedRectangles;
 
 	for (auto rectangle : _scene->Rectangles) {
-		if (!rectangle->IsDrawEnabled()) {
+		if (!rectangle->_IsDrawEnabled()) {
 			continue;
 		}
 

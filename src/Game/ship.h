@@ -32,24 +32,31 @@ public:
 		FloorComm
 	};
 
-	BaseBlock()
-	{ }
+	BaseBlock(int32_t x, int32_t y, BaseGrid* grid)
+	{
+		_x = x;
+		_y = y;
+		_grid = grid;
+	}
 
 	virtual ~BaseBlock()
 	{ }
 
 	virtual Type GetType() = 0;
 
-	virtual void Update(BaseGrid* grid, int32_t x, int32_t y)
+	virtual void Update()
 	{ }
 
-private:
+protected:
+	int32_t _x;
+	int32_t _y;
+	BaseGrid* _grid;
 };
 
 class FloorBlock: public BaseBlock
 {
 public:
-	FloorBlock(uint32_t texture);
+	FloorBlock(int32_t x, int32_t y, BaseGrid* grid, uint32_t texture);
 	~FloorBlock()
 	{ }
 
@@ -65,10 +72,15 @@ class FloorCommBlock: public BaseBlock
 {
 public:
 	FloorCommBlock(
+		int32_t x,
+		int32_t y,
+		BaseGrid* grid,
 		uint32_t texture,
 		Video* video,
 		uint32_t delimTexture,
-		uint32_t powerCableHubTexture);
+		uint32_t powerCableTexture,
+		uint32_t powerCableHubTexture,
+		uint32_t dataCableTexture);
 	~FloorCommBlock();
 
 	Type GetType() override
@@ -76,7 +88,7 @@ public:
 		return Type::FloorComm;
 	};
 
-	virtual void Update(BaseGrid* grid, int32_t x, int32_t y) override;
+	virtual void Update() override;
 
 	virtual uint32_t RayCastCallback(void* userPointer) override
 	{
@@ -91,12 +103,20 @@ private:
 	std::vector<Model*> _delims;
 	Model* _powerCableHub;
 	std::vector<Model*> _powerCables;
+	std::vector<Model*> _dataCables;
 
 	uint32_t _delimTexture;
 	uint32_t _powerCableTexture;
 	uint32_t _powerCableHubTexture;
+	uint32_t _dataCableTexture;
+
+	bool _forceUpdate;
 
 	bool _hasPowerCable;
+
+	Model* CreateDelim(size_t i);
+	Model* CreatePowerCable(size_t i);
+	Model* CreateDataCable(size_t i);
 };
 
 class BaseGrid
@@ -126,7 +146,9 @@ private:
 	uint32_t _floorTexture;
 	uint32_t _floorCommTexture;
 	uint32_t _floorCommDelimTexture;
+	uint32_t _powerCableTexture;
 	uint32_t _powerCableHubTexture;
+	uint32_t _dataCableTexture;
 
 	Video* _video;
 	CollisionEngine* _collisionEngine;

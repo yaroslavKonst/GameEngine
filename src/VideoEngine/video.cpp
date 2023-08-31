@@ -526,7 +526,7 @@ void Video::CreateSkybox(
 
 void Video::DestroySkybox()
 {
-	if (!_scene.skybox.IsDrawEnabled())
+	if (!_scene.skybox._IsDrawEnabled())
 	{
 		return;
 	}

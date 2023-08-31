@@ -59,8 +59,10 @@ Player::Player(
 	_video->RegisterLight(&_light);
 	_video->GetInputControl()->Subscribe(this);
 
+	float ratio = 1.0 / _video->GetScreenRatio();
+
 	_centerTextBox = new TextBox(_video, _textHandler);
-	_centerTextBox->SetPosition(0, 0);
+	_centerTextBox->SetPosition(0.03 * ratio, 0.03);
 	_centerTextBox->SetTextSize(0.1);
 	_centerTextBox->SetText("Center text");
 	_centerTextBox->SetTextColor({1, 1, 1, 1});
@@ -73,10 +75,25 @@ Player::Player(
 	_cornerTextBox->SetText("Build mode");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
+
+	int tw;
+	int th;
+	auto td = Loader::LoadImage("Images/Cross.png", tw, th);
+	_crossTexture = _video->GetTextures()->AddTexture(tw, th, td);
+
+	_cross.SetRectanglePosition({-0.02 * ratio, -0.02, 0.02 * ratio, 0.02});
+	_cross.SetRectangleTexCoords({0, 0, 1, 1});
+	_cross.SetRectangleDepth(0);
+	_cross.SetTexture({_crossTexture});
+	_cross.SetDrawEnabled(true);
+
+	_video->RegisterRectangle(&_cross);
 }
 
 Player::~Player()
 {
+	_video->RemoveRectangle(&_cross);
+
 	_centerTextBox->Deactivate();
 	delete _centerTextBox;
 	delete _cornerTextBox;

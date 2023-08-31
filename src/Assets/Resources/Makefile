@@ -1,6 +1,7 @@
 ENTRIES=\
 	Fonts/DroidSans.ttf \
 	Images/transparent.png \
+	Images/Cross.png \
 	Skybox/skybox.png \
 	Models/Archive/field.obj \
 	Models/Archive/floor.jpg \
@@ -11,8 +12,12 @@ ENTRIES=\
 	Models/Ship/ShipFloorCommDelim.obj \
 	Models/Ship/ShipFloorCommDelim.png \
 	Models/Ship/ShipFloorCollision.obj \
+	Models/Ship/ShipPowerCable.obj \
+	Models/Ship/ShipPowerCable.png \
 	Models/Ship/ShipPowerCableHub.obj \
-	Models/Ship/ShipPowerCableHub.png
+	Models/Ship/ShipPowerCableHub.png \
+	Models/Ship/ShipDataCable.obj \
+	Models/Ship/ShipDataCable.png
 
 .PHONY: all
 
