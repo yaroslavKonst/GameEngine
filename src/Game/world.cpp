@@ -4,7 +4,6 @@
 #include "../Utils/Text.h"
 #include "player.h"
 #include "ship.h"
-#include "../VideoEngine/TextBox.h"
 #include "../Logger/logger.h"
 #include "../Assets/board.h"
 

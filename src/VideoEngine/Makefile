@@ -1,4 +1,4 @@
-.PHONY: all shaders
+.PHONY: all shaders gui
 
 all: \
 	shaders \
@@ -20,10 +20,13 @@ all: \
 	../../build/InputControl.o \
 	../../build/TextureHandler.o \
 	../../build/TextHandler.o \
-	../../build/TextBox.o
+	gui
 
 shaders:
 	cd shaders ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
+
+gui:
+	cd GUI ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 
 ../../build/%.o: %.cpp %.h
 	$(CC) $(CC_OPTS) $(CC_OBJ) -o $@ $<

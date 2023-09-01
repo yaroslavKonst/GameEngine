@@ -1,6 +1,6 @@
 #include "TextBox.h"
 
-#include "../Logger/logger.h"
+#include "../../Logger/logger.h"
 
 TextBox::TextBox(Video* video, TextHandler* textHandler)
 {

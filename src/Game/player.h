@@ -4,7 +4,7 @@
 #include <algorithm>
 
 #include "../VideoEngine/video.h"
-#include "../VideoEngine/TextBox.h"
+#include "../VideoEngine/GUI/TextBox.h"
 #include "../UniverseEngine/universe.h"
 #include "../Utils/loader.h"
 #include "../Assets/animation.h"

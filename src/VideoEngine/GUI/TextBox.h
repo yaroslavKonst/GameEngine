@@ -1,8 +1,8 @@
 #ifndef _TEXTBOX_H
 #define _TEXTBOX_H
 
-#include "video.h"
-#include "TextHandler.h"
+#include "../video.h"
+#include "../TextHandler.h"
 
 class TextBox
 {
