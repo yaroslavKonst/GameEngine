@@ -131,6 +131,12 @@ public:
 		_externMatrix = matrix;
 	}
 
+	virtual bool _IsDrawEnabled() override
+	{
+		return Drawable::_IsDrawEnabled() &&
+			_modelInstances.size() > 0;
+	}
+
 private:
 	std::vector<glm::vec3> _modelVertexBuffer;
 	std::vector<glm::vec3> _modelNormalBuffer;

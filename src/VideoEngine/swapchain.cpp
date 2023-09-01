@@ -1238,6 +1238,61 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdEndRenderPass(commandBuffer);
 
 	// Object pipeline.
+	// Instance buffers update.
+	for (auto& buffer : _stagingBuffers) {
+		BufferHelper::DestroyBuffer(
+			_device,
+			buffer,
+			_memorySystem);
+	}
+
+	_stagingBuffers.clear();
+
+	for (auto& model : _scene->Models) {
+		if (!model.first->_IsDrawEnabled()) {
+			continue;
+		}
+
+		if (!model.first->_GetModelInstancesUpdated()) {
+			BufferHelper::DestroyBuffer(
+				_device,
+				model.second.InstanceBuffer,
+				_memorySystem);
+
+			auto& instances = model.first->GetModelInstances();
+
+			model.second.InstanceBuffer =
+				BufferHelper::CreateBuffer(
+					_device,
+					instances.size() * sizeof(glm::mat4),
+					VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+					VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+					_memorySystem,
+					_deviceSupport);
+
+			BufferHelper::Buffer stagingBuffer;
+
+			BufferHelper::LoadDataToBuffer(
+				_device,
+				model.second.InstanceBuffer,
+				instances.data(),
+				instances.size() * sizeof(glm::mat4),
+				_memorySystem,
+				_deviceSupport,
+				nullptr,
+				VK_NULL_HANDLE,
+				&stagingBuffer,
+				commandBuffer);
+
+			model.second.InstanceCount = instances.size();
+
+			_stagingBuffers.push_back(stagingBuffer);
+			model.first->_SetModelInstancesUpdated();
+		}
+	}
+
+	// Light transforms.
 	std::multimap<float, Light*> orderedLights;
 
 	for (auto light : _scene->Lights) {
@@ -1550,15 +1605,6 @@ void Swapchain::RecordCommandBuffer(
 
 		vkCmdEndRenderPass(commandBuffer);
 	}
-
-	for (auto& buffer : _stagingBuffers) {
-		BufferHelper::DestroyBuffer(
-			_device,
-			buffer,
-			_memorySystem);
-	}
-
-	_stagingBuffers.clear();
 
 	// Object pass.
 	_objectPipeline->RecordCommandBuffer(commandBuffer, 0);
@@ -1876,44 +1922,6 @@ void Swapchain::RecordObjectCommandBuffer(
 	}
 
 	mvp.InnerModel = model.first->GetModelInnerMatrix();
-
-	if (!model.first->_GetModelInstancesUpdated()) {
-		BufferHelper::DestroyBuffer(
-			_device,
-			model.second.InstanceBuffer,
-			_memorySystem);
-
-		auto& instances = model.first->GetModelInstances();
-
-		model.second.InstanceBuffer =
-			BufferHelper::CreateBuffer(
-				_device,
-				instances.size() * sizeof(glm::mat4),
-				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-				VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				_memorySystem,
-				_deviceSupport);
-
-		BufferHelper::Buffer stagingBuffer;
-
-		BufferHelper::LoadDataToBuffer(
-			_device,
-			model.second.InstanceBuffer,
-			instances.data(),
-			instances.size() * sizeof(glm::mat4),
-			_memorySystem,
-			_deviceSupport,
-			nullptr,
-			VK_NULL_HANDLE,
-			&stagingBuffer,
-			commandBuffer);
-
-		model.second.InstanceCount = instances.size();
-
-		_stagingBuffers.push_back(stagingBuffer);
-		model.first->_SetModelInstancesUpdated();
-	}
 
 	VkBuffer vertexBuffers[] = {
 		model.second.VertexBuffer.Buffer,
