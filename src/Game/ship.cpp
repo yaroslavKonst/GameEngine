@@ -263,7 +263,8 @@ void BaseGrid::PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type)
 			x,
 			y,
 			this,
-			_video);
+			_video,
+			true);
 		break;
 	default:
 		return;
@@ -335,7 +336,8 @@ FloorCommBlock::FloorCommBlock(
 	int32_t x,
 	int32_t y,
 	BaseGrid* grid,
-	Video* video) :
+	Video* video,
+	bool preview) :
 	BaseBlock(x, y, grid)
 {
 	_video = video;
@@ -349,7 +351,10 @@ FloorCommBlock::FloorCommBlock(
 
 	_hasPowerCable = false;
 	_hasDataCable = false;
-	_forceUpdate = false;
+
+	if (preview) {
+		return;
+	}
 
 	for (size_t i = 0; i < 4; ++i) {
 		_delims[i] = CreateDelim(i);

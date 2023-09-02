@@ -77,7 +77,8 @@ public:
 		int32_t x,
 		int32_t y,
 		BaseGrid* grid,
-		Video* video);
+		Video* video,
+		bool preview = false);
 	~FloorCommBlock();
 
 	Type GetType() override
@@ -105,8 +106,6 @@ private:
 	Model* _dataCableHub;
 	std::vector<Model*> _powerCables;
 	std::vector<Model*> _dataCables;
-
-	bool _forceUpdate;
 
 	bool _hasPowerCable;
 	bool _hasDataCable;
