@@ -61,7 +61,7 @@ void TextBox::Place()
 	for (size_t i = 0; i < _text.size(); ++i) {
 		if (_text[i] == '\n') {
 			xoffset = _position.x;
-			yoffset += _textSize / 2.0;
+			yoffset += _textSize / 1.9;
 			continue;
 		}
 

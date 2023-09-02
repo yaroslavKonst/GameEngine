@@ -20,7 +20,9 @@ ENTRIES=\
 	Models/Ship/ShipDataCable.obj \
 	Models/Ship/ShipDataCable.png \
 	Models/Ship/ShipDataCableHub.obj \
-	Models/Ship/ShipDataCableHub.png
+	Models/Ship/ShipDataCableHub.png \
+	Models/Ship/MainBlocks/Wall.obj \
+	Models/Ship/MainBlocks/Wall.png
 
 .PHONY: all
 

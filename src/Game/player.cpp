@@ -32,8 +32,8 @@ Player::Player(
 	SetObjectCenter();
 	SetObjectMatrix(glm::mat4(1.0));
 	SetObjectDynamic(true);
-	SetObjectSphereCenter({0, 0, 0.5});
-	SetObjectSphereRadius(0.5);
+	SetObjectSphereCenter({0, 0, 0.45});
+	SetObjectSphereRadius(0.45);
 
 	SetInputEnabled(true);
 
@@ -58,7 +58,9 @@ Player::Player(
 	_cornerTextBox = new TextBox(_video, _textHandler);
 	_cornerTextBox->SetPosition(-0.8, -0.8);
 	_cornerTextBox->SetTextSize(0.15);
-	_cornerTextBox->SetText("Build mode");
+	_cornerTextBox->SetText(
+		"Build mode\n[WASD] Move\n[E] Set\n[Q] Remove\n\
+[T] Change type\n[R] Next layer\n[F] Previous layer");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
 
