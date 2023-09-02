@@ -307,7 +307,7 @@ void Player::Tick()
 		{this});
 
 	if (object.Code) {
-		_centerTextBox->SetText("[E] Object action");
+		_centerTextBox->SetText("Communications\n[E] Object action");
 		_centerTextBox->Activate();
 		_cross.SetColorMultiplier({0.3, 1.0, 0.3, 1.0});
 

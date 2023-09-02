@@ -53,11 +53,18 @@ void TextBox::Place()
 	}
 
 	float xoffset = _position.x;
+	float yoffset = _position.y;
 
 	float coeff = _textSize / 200.0;
 	float ratio = 1.0 / _video->GetScreenRatio();
 
 	for (size_t i = 0; i < _text.size(); ++i) {
+		if (_text[i] == '\n') {
+			xoffset = _position.x;
+			yoffset += _textSize / 2.0;
+			continue;
+		}
+
 		auto glyph = _textHandler->GetGlyph(_text[i]);
 
 		if (glyph.HasTexture) {
@@ -67,7 +74,7 @@ void TextBox::Place()
 
 			float xpos = xoffset +
 				coeff * glyph.Data.BearingX * ratio;
-			float ypos = _position.y -
+			float ypos = yoffset -
 				coeff * glyph.Data.BearingY;
 
 			_line[i]->SetRectanglePosition({
