@@ -18,7 +18,8 @@ public:
 		CommGrate,
 		Door,
 		Engine,
-		Container
+		Container,
+		Cockpit
 	};
 
 	MainBlock(int32_t x, int32_t y, float rotation, MainGrid* grid)

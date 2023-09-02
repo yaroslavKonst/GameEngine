@@ -56,10 +56,10 @@ Player::Player(
 	_centerTextBox->Activate();
 
 	_cornerTextBox = new TextBox(_video, _textHandler);
-	_cornerTextBox->SetPosition(-0.8, -0.8);
-	_cornerTextBox->SetTextSize(0.15);
+	_cornerTextBox->SetPosition(-0.9, -0.9);
+	_cornerTextBox->SetTextSize(0.1);
 	_cornerTextBox->SetText(
-		"Build mode\n[WASD] Move\n[E] Set\n[Q] Remove\n\
+		"Build mode\n\n[WASD] Move\n[E] Set\n[Q] Remove\n\
 [T] Change type\n[R] Next layer\n[F] Previous layer");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);

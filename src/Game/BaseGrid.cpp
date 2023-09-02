@@ -351,6 +351,46 @@ void FloorCommBlock::Update()
 			_dataCables[i]->SetDrawEnabled(data);
 		}
 	}
+
+	if (_hasPowerCable) {
+		if (
+			_powerCables[0]->GetDrawEnabled() &&
+			_powerCables[1]->GetDrawEnabled() &&
+			!_powerCables[2]->GetDrawEnabled() &&
+			!_powerCables[3]->GetDrawEnabled())
+		{
+			_powerCableHub->SetDrawEnabled(false);
+		} else if (
+			!_powerCables[0]->GetDrawEnabled() &&
+			!_powerCables[1]->GetDrawEnabled() &&
+			_powerCables[2]->GetDrawEnabled() &&
+			_powerCables[3]->GetDrawEnabled())
+		{
+			_powerCableHub->SetDrawEnabled(false);
+		} else {
+			_powerCableHub->SetDrawEnabled(true);
+		}
+	}
+
+	if (_hasDataCable) {
+		if (
+			_dataCables[0]->GetDrawEnabled() &&
+			_dataCables[1]->GetDrawEnabled() &&
+			!_dataCables[2]->GetDrawEnabled() &&
+			!_dataCables[3]->GetDrawEnabled())
+		{
+			_dataCableHub->SetDrawEnabled(false);
+		} else if (
+			!_dataCables[0]->GetDrawEnabled() &&
+			!_dataCables[1]->GetDrawEnabled() &&
+			_dataCables[2]->GetDrawEnabled() &&
+			_dataCables[3]->GetDrawEnabled())
+		{
+			_dataCableHub->SetDrawEnabled(false);
+		} else {
+			_dataCableHub->SetDrawEnabled(true);
+		}
+	}
 }
 
 bool FloorCommBlock::GetPowerCable()
