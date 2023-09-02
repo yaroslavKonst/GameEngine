@@ -27,6 +27,8 @@ namespace Loader
 		std::vector<glm::vec3> Normals;
 		std::vector<glm::vec2> TexCoords;
 		std::vector<uint32_t> Indices;
+
+		std::vector<glm::mat4> Instances;
 	};
 
 	VertexData LoadModel(std::string name);

@@ -2,7 +2,6 @@
 
 all: \
 	../../build/square.o \
-	../../build/ExternModel.o \
 	../../build/animation.o \
 	../../build/ScriptHandler.o \
 	../../build/package.o \

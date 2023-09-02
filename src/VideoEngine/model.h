@@ -29,45 +29,14 @@ public:
 		_modelMatrix = matrix;
 	}
 
-	virtual const std::vector<glm::vec3>& GetModelVertices()
+	virtual const std::vector<uint32_t>& GetModels()
 	{
-		return _modelVertexBuffer;
+		return _models;
 	}
 
-	virtual const std::vector<uint32_t>& GetModelIndices()
+	virtual void SetModels(const std::vector<uint32_t>& models)
 	{
-		return _modelIndexBuffer;
-	}
-
-	virtual void SetModelVertices(const std::vector<glm::vec3>& vertices)
-	{
-		_modelVertexBuffer = vertices;
-	}
-
-	virtual void SetModelIndices(const std::vector<uint32_t>& indices)
-	{
-		_modelIndexBuffer = indices;
-	}
-
-	const std::vector<glm::vec2>& GetModelTexCoords()
-	{
-		return _modelTexCoordBuffer;
-	}
-
-	void SetModelTexCoords(const std::vector<glm::vec2>& coords)
-	{
-		_modelTexCoordBuffer = coords;
-	}
-
-	const std::vector<glm::mat4>& GetModelInstances()
-	{
-		return _modelInstances;
-	}
-
-	void SetModelInstances(const std::vector<glm::mat4>& instances)
-	{
-		_updatedInstances = false;
-		_modelInstances = instances;
+		_models = models;
 	}
 
 	virtual const glm::mat4& GetModelInnerMatrix()
@@ -79,27 +48,6 @@ public:
 	{
 		_modelInnerMatrix = matrix;
 	}
-
-	virtual const std::vector<glm::vec3>& GetModelNormals()
-	{
-		return _modelNormalBuffer;
-	}
-
-	virtual void SetModelNormals(const std::vector<glm::vec3>& normals)
-	{
-		_modelNormalBuffer = normals;
-	}
-
-	virtual bool _GetModelInstancesUpdated()
-	{
-		return _updatedInstances;
-	}
-
-	virtual void _SetModelInstancesUpdated()
-	{
-		_updatedInstances = true;
-	}
-
 
 	virtual const glm::vec3& GetModelCenter()
 	{
@@ -131,18 +79,8 @@ public:
 		_externMatrix = matrix;
 	}
 
-	virtual bool _IsDrawEnabled() override
-	{
-		return Drawable::_IsDrawEnabled() &&
-			_modelInstances.size() > 0;
-	}
-
 private:
-	std::vector<glm::vec3> _modelVertexBuffer;
-	std::vector<glm::vec3> _modelNormalBuffer;
-	std::vector<uint32_t> _modelIndexBuffer;
-	std::vector<glm::vec2> _modelTexCoordBuffer;
-	std::vector<glm::mat4> _modelInstances;
+	std::vector<uint32_t> _models;
 	bool _holed;
 
 	glm::mat4 _modelMatrix;
@@ -150,8 +88,6 @@ private:
 	const glm::mat4* _externMatrix;
 
 	glm::vec3 _modelCenter;
-
-	bool _updatedInstances;
 };
 
 #endif

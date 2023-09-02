@@ -1208,7 +1208,7 @@ void Swapchain::RecordCommandBuffer(
 		shaderData.Up = _scene->CameraUp;
 		shaderData.FOV = glm::radians((float)_scene->FOV);
 		shaderData.Ratio = (float)_extent.width / (float)_extent.height;
-		shaderData.ColorModifier = _scene->skybox.ColorModifier;
+		shaderData.ColorModifier = _scene->skybox.GetColorMultiplier();
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1220,7 +1220,7 @@ void Swapchain::RecordCommandBuffer(
 			&shaderData);
 
 		auto& tex = _scene->Textures->GetTexture(
-			_scene->skybox.Descriptor.Textures[0]);
+			_scene->skybox.Texture);
 
 		vkCmdBindDescriptorSets(
 			commandBuffer,
@@ -1248,11 +1248,12 @@ void Swapchain::RecordCommandBuffer(
 
 	_stagingBuffers.clear();
 
-	for (auto& model : _scene->Models) {
-		if (!model.first->_IsDrawEnabled()) {
+	/*for (auto& model : _scene->Models) {
+		if (!model->_IsDrawEnabled()) {
 			continue;
 		}
 
+		// TODO
 		if (!model.first->_GetModelInstancesUpdated()) {
 			BufferHelper::DestroyBuffer(
 				_device,
@@ -1290,7 +1291,7 @@ void Swapchain::RecordCommandBuffer(
 			_stagingBuffers.push_back(stagingBuffer);
 			model.first->_SetModelInstancesUpdated();
 		}
-	}
+	}*/
 
 	// Light transforms.
 	std::multimap<float, Light*> orderedLights;
@@ -1423,32 +1424,46 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdSetViewport(commandBuffer, 5, 1, &shadowViewport);
 		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
 
-		std::map<Model*, ModelDescriptor> holedModels;
+		std::set<Model*> holedModels;
 
 		for (auto& model : _scene->Models) {
-			if (!model.first->_IsDrawEnabled()) {
+			if (!model->_IsDrawEnabled()) {
 				continue;
 			}
 
-			if (model.first->DrawLight()) {
+			if (model->DrawLight()) {
 				continue;
 			}
 
-			if (model.first->GetColorMultiplier().a < 1.0f) {
+			if (model->GetColorMultiplier().a < 1.0f) {
 				continue;
 			}
 
-			if (model.first->IsModelHoled()) {
-				holedModels[model.first] = model.second;
+			if (model->IsModelHoled()) {
+				holedModels.insert(model);
 				continue;
 			}
 
-			mvp.Model = model.first->GetModelMatrix();
-			mvp.InnerModel = model.first->GetModelInnerMatrix();
+			mvp.Model = model->GetModelMatrix();
+
+			const glm::mat4* extMat =
+				model->GetModelExternalMatrix();
+			if (extMat) {
+				mvp.Model = *extMat * mvp.Model;
+			}
+
+			mvp.InnerModel = model->GetModelInnerMatrix();
+
+			auto& desc =
+				_scene->ModelDescriptors[model->GetModels()[0]];
+
+			if (desc.InstanceCount == 0) {
+				continue;
+			}
 
 			VkBuffer vertexBuffers[] = {
-				model.second.VertexBuffer.Buffer,
-				model.second.InstanceBuffer.Buffer
+				desc.VertexBuffer.Buffer,
+				desc.InstanceBuffer.Buffer
 			};
 
 			VkDeviceSize offsets[] = {0, 0};
@@ -1461,7 +1476,7 @@ void Swapchain::RecordCommandBuffer(
 
 			vkCmdBindIndexBuffer(
 				commandBuffer,
-				model.second.IndexBuffer.Buffer,
+				desc.IndexBuffer.Buffer,
 				0,
 				VK_INDEX_TYPE_UINT32);
 
@@ -1498,8 +1513,8 @@ void Swapchain::RecordCommandBuffer(
 
 			vkCmdDrawIndexed(
 				commandBuffer,
-				model.second.IndexCount,
-				model.second.InstanceCount,
+				desc.IndexCount,
+				desc.InstanceCount,
 				0,
 				0,
 				0);
@@ -1530,19 +1545,26 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
 
 		for (auto& model : holedModels) {
-			mvp.Model = model.first->GetModelMatrix();
+			mvp.Model = model->GetModelMatrix();
 
 			const glm::mat4* extMat =
-				model.first->GetModelExternalMatrix();
+				model->GetModelExternalMatrix();
 			if (extMat) {
 				mvp.Model = *extMat * mvp.Model;
 			}
 
-			mvp.InnerModel = model.first->GetModelInnerMatrix();
+			mvp.InnerModel = model->GetModelInnerMatrix();
+
+			auto& desc =
+				_scene->ModelDescriptors[model->GetModels()[0]];
+
+			if (desc.InstanceCount == 0) {
+				continue;
+			}
 
 			VkBuffer vertexBuffers[] = {
-				model.second.VertexBuffer.Buffer,
-				model.second.InstanceBuffer.Buffer
+				desc.VertexBuffer.Buffer,
+				desc.InstanceBuffer.Buffer
 			};
 
 			VkDeviceSize offsets[] = {0, 0};
@@ -1555,7 +1577,7 @@ void Swapchain::RecordCommandBuffer(
 
 			vkCmdBindIndexBuffer(
 				commandBuffer,
-				model.second.IndexBuffer.Buffer,
+				desc.IndexBuffer.Buffer,
 				0,
 				VK_INDEX_TYPE_UINT32);
 
@@ -1577,7 +1599,7 @@ void Swapchain::RecordCommandBuffer(
 				&lightIndex);
 
 			auto& texDiff = _scene->Textures->GetTexture(
-				model.second.Textures[0]);
+				model->GetTextures()[0]);
 
 			std::vector<VkDescriptorSet> descriptorSets = {
 				_lightDescriptorSets[currentFrame],
@@ -1596,8 +1618,8 @@ void Swapchain::RecordCommandBuffer(
 
 			vkCmdDrawIndexed(
 				commandBuffer,
-				model.second.IndexCount,
-				model.second.InstanceCount,
+				desc.IndexCount,
+				desc.InstanceCount,
 				0,
 				0,
 				0);
@@ -1613,25 +1635,25 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	std::multimap<float, Model*> transparentModels;
-	std::map<Model*, ModelDescriptor> holedModels;
+	std::set<Model*> holedModels;
 
 	for (auto& model : _scene->Models) {
-		if (!model.first->_IsDrawEnabled()) {
+		if (!model->_IsDrawEnabled()) {
 			continue;
 		}
 
-		if (model.first->GetColorMultiplier().a < 1.0f) {
+		if (model->GetColorMultiplier().a < 1.0f) {
 			float distance = glm::length(
 				_scene->CameraPosition -
-				model.first->GetModelCenter());
+				model->GetModelCenter());
 
-			transparentModels.insert({distance, model.first});
+			transparentModels.insert({distance, model});
 
 			continue;
 		}
 
-		if (model.first->IsModelHoled()) {
-			holedModels[model.first] = model.second;
+		if (model->IsModelHoled()) {
+			holedModels.insert(model);
 			continue;
 		}
 
@@ -1673,15 +1695,11 @@ void Swapchain::RecordCommandBuffer(
 		it != transparentModels.rend();
 		++it)
 	{
-		std::pair<Model* const, ModelDescriptor> modelDesc(
-			it->second,
-			_scene->Models[it->second]);
-
 		RecordObjectCommandBuffer(
 			commandBuffer,
 			imageIndex,
 			currentFrame,
-			modelDesc,
+			it->second,
 			mvp,
 			_transparentObjectPipeline);
 	}
@@ -1909,23 +1927,30 @@ void Swapchain::RecordObjectCommandBuffer(
 	VkCommandBuffer commandBuffer,
 	uint32_t imageIndex,
 	uint32_t currentFrame,
-	std::pair<Model* const, ModelDescriptor>& model,
+	Model* model,
 	MVP mvp,
 	Pipeline* pipeline)
 {
-	mvp.Model = model.first->GetModelMatrix();
+	mvp.Model = model->GetModelMatrix();
 
 	const glm::mat4* extMat =
-		model.first->GetModelExternalMatrix();
+		model->GetModelExternalMatrix();
 	if (extMat) {
 		mvp.Model = *extMat * mvp.Model;
 	}
 
-	mvp.InnerModel = model.first->GetModelInnerMatrix();
+	mvp.InnerModel = model->GetModelInnerMatrix();
+
+	auto& desc =
+		_scene->ModelDescriptors[model->GetModels()[0]];
+
+	if (desc.InstanceCount == 0) {
+		return;
+	}
 
 	VkBuffer vertexBuffers[] = {
-		model.second.VertexBuffer.Buffer,
-		model.second.InstanceBuffer.Buffer
+		desc.VertexBuffer.Buffer,
+		desc.InstanceBuffer.Buffer
 	};
 
 	VkDeviceSize offsets[] = {0, 0};
@@ -1938,7 +1963,7 @@ void Swapchain::RecordObjectCommandBuffer(
 
 	vkCmdBindIndexBuffer(
 		commandBuffer,
-		model.second.IndexBuffer.Buffer,
+		desc.IndexBuffer.Buffer,
 		0,
 		VK_INDEX_TYPE_UINT32);
 
@@ -1958,7 +1983,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		sizeof(glm::vec3),
 		&_scene->CameraPosition);
 
-	uint32_t isLight = model.first->DrawLight() ? 1 : 0;
+	uint32_t isLight = model->DrawLight() ? 1 : 0;
 
 	vkCmdPushConstants(
 		commandBuffer,
@@ -1969,7 +1994,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		&isLight);
 
 	glm::vec4 colorMultiplier =
-		model.first->GetColorMultiplier();
+		model->GetColorMultiplier();
 
 	vkCmdPushConstants(
 		commandBuffer,
@@ -1979,11 +2004,12 @@ void Swapchain::RecordObjectCommandBuffer(
 		sizeof(glm::vec4),
 		&colorMultiplier);
 
-	auto& texDiff = _scene->Textures->GetTexture(
-		model.second.Textures[0]);
+	auto& textures = model->GetTextures();
 
-	auto& texSpec = model.second.Textures.size() > 1 ?
-		_scene->Textures->GetTexture(model.second.Textures[1]) :
+	auto& texDiff = _scene->Textures->GetTexture(textures[0]);
+
+	auto& texSpec = textures.size() > 1 ?
+		_scene->Textures->GetTexture(textures[1]) :
 		texDiff;
 
 	std::vector<VkDescriptorSet> descriptorSets = {
@@ -2004,8 +2030,8 @@ void Swapchain::RecordObjectCommandBuffer(
 
 	vkCmdDrawIndexed(
 		commandBuffer,
-		model.second.IndexCount,
-		model.second.InstanceCount,
+		desc.IndexCount,
+		desc.InstanceCount,
 		0,
 		0,
 		0);

@@ -1,14 +1,18 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include "../VideoEngine/model.h"
+#include "../VideoEngine/video.h"
 
 class Board : public Model
 {
 public:
-	Board()
+	Board(Video* video)
 	{
-		std::vector<glm::vec3> vertices = {
+		_video = video;
+
+		Loader::VertexData model;
+
+		model.Vertices = {
 			{0+5, 0, 0},
 			{1+5, 0, 0},
 			{0+5, 0, 1},
@@ -19,7 +23,7 @@ public:
 			{1+5, 0, 1}
 		};
 
-		std::vector<glm::vec3> normals = {
+		model.Normals = {
 			{0, -1, 0},
 			{0, -1, 0},
 			{0, -1, 0},
@@ -30,7 +34,7 @@ public:
 			{0, 1, 0}
 		};
 
-		std::vector<glm::vec2> texCoords = {
+		model.TexCoords = {
 			{0, 0},
 			{1, 0},
 			{0, 1},
@@ -41,29 +45,36 @@ public:
 			{1, 1}
 		};
 
-		std::vector<uint32_t> indices = {
+		model.Indices = {
 			0, 1, 2, 2, 1, 3,
 			4, 6, 5, 6, 7, 5
 		};
-
-
-		SetModelVertices(vertices);
-		SetModelNormals(normals);
-		SetModelTexCoords(texCoords);
-		SetModelIndices(indices);
-
-		SetModelMatrix(glm::mat4(1.0f));
-		SetModelInnerMatrix(glm::mat4(1.0f));
 
 		glm::mat4 instance1 = glm::mat4(1.0f);
 		glm::mat4 instance2 = glm::translate(
 			glm::mat4(1.0f),
 			glm::vec3(0, 0.2, 0));
 
-		SetModelInstances({instance1, instance2});
+		model.Instances = {instance1, instance2};
+
+		_model = _video->LoadModel(model);
+
+		SetModels({_model});
+
+		SetModelMatrix(glm::mat4(1.0f));
+		SetModelInnerMatrix(glm::mat4(1.0f));
 
 		SetDrawEnabled(true);
 	}
+
+	~Board()
+	{
+		_video->UnloadModel(_model);
+	}
+
+private:
+	Video* _video;
+	uint32_t _model;
 };
 
 #endif

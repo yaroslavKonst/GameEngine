@@ -42,6 +42,9 @@ public:
 	void RegisterModel(Model* model);
 	void RemoveModel(Model* model);
 
+	uint32_t LoadModel(Loader::VertexData& model);
+	void UnloadModel(uint32_t model);
+
 	void RegisterRectangle(Rectangle* rectangle);
 	void RemoveRectangle(Rectangle* rectangle);
 
@@ -88,7 +91,7 @@ public:
 	void DestroySkybox();
 	void SetSkyboxColor(glm::vec3 color)
 	{
-		_scene.skybox.ColorModifier = color;
+		_scene.skybox.SetColorMultiplier(glm::vec4(color, 1.0));
 	}
 
 	void SetSceneMutex(std::mutex* mutex)

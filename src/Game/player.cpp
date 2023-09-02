@@ -212,9 +212,8 @@ bool Player::MouseMoveRaw(
 	return true;
 }
 
-void Player::Tick()
+void Player::TickEarly()
 {
-	_mutex.lock();
 	glm::vec2 hdir(
 		sinf(glm::radians(_angleH)),
 		cosf(glm::radians(_angleH)));
@@ -228,9 +227,37 @@ void Player::Tick()
 
 	_vspeed -= 0.098 / 1;
 
+	_pos.x += hspeed.x / 10;
+	_pos.y += hspeed.y / 10;
+	_pos.z += _vspeed / 100;
+
+	/*SetObjectSpeed(glm::vec3(
+		hspeed.x / 10,
+		hspeed.y / 10,
+		_vspeed / 100));*/
+
+	SetObjectMatrix(
+		glm::rotate(glm::translate(glm::mat4(1.0), _pos),
+			glm::radians(_angleH), glm::vec3(0, 0, 1)));
+}
+
+void Player::Tick()
+{
+	_mutex.lock();
+
+	glm::vec2 hdir(
+		sinf(glm::radians(_angleH)),
+		cosf(glm::radians(_angleH)));
+
+	glm::vec2 hdirStrafe(
+		sinf(glm::radians(_angleH + 90)),
+		cosf(glm::radians(_angleH + 90)));
+
 	glm::vec3 effect = GetObjectEffect();
 
 	if (effect.z > 0 && _vspeed < 0) {
+		_pos.z += effect.z - 0.0000001;
+
 		if (fabs(_vspeed) > 0.0001) {
 			_vspeed = -_vspeed * 0.4;
 		} else {
@@ -244,6 +271,7 @@ void Player::Tick()
 
 	if (effect.z < 0 && _vspeed > 0) {
 		_vspeed = 0;
+		_pos.z += effect.z;
 	}
 
 	if (effect.z > 0 && _jump) {
@@ -251,22 +279,9 @@ void Player::Tick()
 	}
 
 	if (fabs(effect.x) + fabs(effect.y) > 0.0001) {
-		if (effect.x * hspeed.x + effect.y * hspeed.y < 0) {
-			hspeed = glm::vec2(effect.x, effect.y);
-		}
+		_pos.x += effect.x;
+		_pos.y += effect.y;
 	}
-
-	_pos.x += hspeed.x / 10;
-	_pos.y += hspeed.y / 10;
-	_pos.z += _vspeed / 100;
-
-	SetObjectMatrix(
-		glm::rotate(glm::translate(glm::mat4(1.0), _pos),
-			glm::radians(_angleH), glm::vec3(0, 0, 1)));
-	SetObjectSpeed(glm::vec3(
-		hspeed.x / 10,
-		hspeed.y / 10,
-		_vspeed / 100));
 
 	glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
 	glm::vec3 cameraDirection = glm::vec3(

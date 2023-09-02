@@ -54,6 +54,21 @@ void Universe::MainLoop()
 	{
 		auto start = std::chrono::high_resolution_clock::now();
 
+		if (_sceneMutex) {
+			_sceneMutex->lock();
+		}
+
+		_actorMutex.lock();
+		std::set<Actor*> actors = _actors;
+		_actorMutex.unlock();
+
+		for (Actor* actor : actors) {
+			_threadPool->Enqueue(
+				[actor]() -> void {actor->TickEarly();});
+		}
+
+		_threadPool->Wait();
+
 		_collisionMutex.lock();
 		for (CollisionEngine* engine : _collisionEngines) {
 			engine->Run();
@@ -61,13 +76,7 @@ void Universe::MainLoop()
 
 		_collisionMutex.unlock();
 
-		_actorMutex.lock();
-
-		if (_sceneMutex) {
-			_sceneMutex->lock();
-		}
-
-		for (Actor* actor : _actors) {
+		for (Actor* actor : actors) {
 			_threadPool->Enqueue(
 				[actor]() -> void {actor->Tick();});
 		}
@@ -77,8 +86,6 @@ void Universe::MainLoop()
 		if (_sceneMutex) {
 			_sceneMutex->unlock();
 		}
-
-		_actorMutex.unlock();
 
 		auto stop = std::chrono::high_resolution_clock::now();
 

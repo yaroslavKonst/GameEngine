@@ -140,7 +140,7 @@ private:
 		VkCommandBuffer commandBuffer,
 		uint32_t imageIndex,
 		uint32_t currentFrame,
-		std::pair<Model* const, ModelDescriptor>& model,
+		Model* model,
 		MVP mvp,
 		Pipeline* pipeline);
 

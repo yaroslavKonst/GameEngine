@@ -6,6 +6,8 @@ class Actor
 public:
 	virtual ~Actor();
 	virtual void Tick() = 0;
+	virtual void TickEarly()
+	{ }
 };
 
 #endif

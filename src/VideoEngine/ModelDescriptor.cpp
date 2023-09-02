@@ -68,7 +68,7 @@ ModelDescriptor::GetAttributeDescriptions()
 }
 
 ModelDescriptor ModelDescriptor::CreateModelDescriptor(
-	Model* model,
+	Loader::VertexData* model,
 	VkDevice device,
 	MemorySystem* memorySystem,
 	PhysicalDeviceSupport* deviceSupport,
@@ -78,9 +78,9 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 	ModelDescriptor descriptor;
 
 	// Vertex buffer creation.
-	auto& vertices = model->GetModelVertices();
-	auto& texCoords = model->GetModelTexCoords();
-	auto& normals = model->GetModelNormals();
+	auto& vertices = model->Vertices;
+	auto& texCoords = model->TexCoords;
+	auto& normals = model->Normals;
 
 	std::vector<ModelDescriptor::Vertex> vertexData(vertices.size());
 
@@ -112,7 +112,7 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 	descriptor.VertexCount = vertices.size();
 
 	// Index buffer creation.
-	auto& indices = model->GetModelIndices();
+	auto& indices = model->Indices;
 
 	descriptor.IndexBuffer = BufferHelper::CreateBuffer(
 		device,
@@ -136,7 +136,7 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 	descriptor.IndexCount = indices.size();
 
 	// Instance buffer.
-	auto& instances = model->GetModelInstances();
+	auto& instances = model->Instances;
 
 	descriptor.InstanceBuffer = BufferHelper::CreateBuffer(
 		device,
@@ -158,11 +158,6 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 		graphicsQueue);
 
 	descriptor.InstanceCount = instances.size();
-
-	model->_SetModelInstancesUpdated();
-
-	// Texture image.
-	descriptor.Textures = model->GetTextures();
 
 	descriptor.MarkedFrameIndex = -1;
 

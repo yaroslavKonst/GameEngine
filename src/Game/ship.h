@@ -7,6 +7,8 @@
 
 class BaseGrid;
 
+typedef std::map<std::string, uint32_t> Library;
+
 struct Coord2D
 {
 	int32_t X;
@@ -56,7 +58,7 @@ protected:
 class FloorBlock: public BaseBlock
 {
 public:
-	FloorBlock(int32_t x, int32_t y, BaseGrid* grid, uint32_t texture);
+	FloorBlock(int32_t x, int32_t y, BaseGrid* grid);
 	~FloorBlock()
 	{ }
 
@@ -75,12 +77,7 @@ public:
 		int32_t x,
 		int32_t y,
 		BaseGrid* grid,
-		uint32_t texture,
-		Video* video,
-		uint32_t delimTexture,
-		uint32_t powerCableTexture,
-		uint32_t powerCableHubTexture,
-		uint32_t dataCableTexture);
+		Video* video);
 	~FloorCommBlock();
 
 	Type GetType() override
@@ -105,11 +102,6 @@ private:
 	std::vector<Model*> _powerCables;
 	std::vector<Model*> _dataCables;
 
-	uint32_t _delimTexture;
-	uint32_t _powerCableTexture;
-	uint32_t _powerCableHubTexture;
-	uint32_t _dataCableTexture;
-
 	bool _forceUpdate;
 
 	bool _hasPowerCable;
@@ -122,6 +114,9 @@ private:
 class BaseGrid
 {
 public:
+	Library Textures;
+	Library Models;
+
 	BaseGrid(Video* video, CollisionEngine* collisionEngine);
 	~BaseGrid();
 
@@ -142,13 +137,6 @@ private:
 	std::map<Coord2D, BaseBlock*> _blocks;
 
 	BaseBlock* _preview;
-
-	uint32_t _floorTexture;
-	uint32_t _floorCommTexture;
-	uint32_t _floorCommDelimTexture;
-	uint32_t _powerCableTexture;
-	uint32_t _powerCableHubTexture;
-	uint32_t _dataCableTexture;
 
 	Video* _video;
 	CollisionEngine* _collisionEngine;

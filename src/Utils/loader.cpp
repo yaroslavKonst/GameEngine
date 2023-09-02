@@ -145,6 +145,8 @@ namespace Loader
 			data.Indices.push_back(indexedVertices[vertex]);
 		}
 
+		data.Instances = {glm::mat4(1.0)};
+
 		return data;
 	}
 };

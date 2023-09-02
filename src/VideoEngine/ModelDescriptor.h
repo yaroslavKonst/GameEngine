@@ -14,6 +14,7 @@
 #include "BufferHelper.h"
 #include "ImageHelper.h"
 #include "model.h"
+#include "../Utils/loader.h"
 
 struct ModelDescriptor
 {
@@ -33,8 +34,6 @@ struct ModelDescriptor
 	uint32_t InstanceCount;
 	BufferHelper::Buffer InstanceBuffer;
 
-	std::vector<uint32_t> Textures;
-
 	int64_t MarkedFrameIndex;
 
 	static std::vector<VkVertexInputBindingDescription>
@@ -43,7 +42,7 @@ struct ModelDescriptor
 		GetAttributeDescriptions();
 
 	static ModelDescriptor CreateModelDescriptor(
-		Model* model,
+		Loader::VertexData* model,
 		VkDevice device,
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,

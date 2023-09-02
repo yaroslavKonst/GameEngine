@@ -31,6 +31,7 @@ public:
 		double yoffset) override;
 
 	void Tick() override;
+	void TickEarly() override;
 
 	void BuildActions(int key, int action);
 

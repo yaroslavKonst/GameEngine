@@ -102,24 +102,44 @@ BaseGrid::BaseGrid(Video* video, CollisionEngine* collisionEngine)
 	int tw;
 	int th;
 	auto td = Loader::LoadImage("Models/Ship/ShipFloor.png", tw, th);
-	_floorTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	Textures["Floor"] = _video->GetTextures()->AddTexture(tw, th, td);
 
 	td = Loader::LoadImage("Models/Ship/ShipFloorComm.png", tw, th);
-	_floorCommTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	Textures["FloorComm"] = _video->GetTextures()->AddTexture(tw, th, td);
 
 	td = Loader::LoadImage("Models/Ship/ShipFloorCommDelim.png", tw, th);
-	_floorCommDelimTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	Textures["FloorCommDelim"] =
+		_video->GetTextures()->AddTexture(tw, th, td);
 
 	td = Loader::LoadImage("Models/Ship/ShipPowerCableHub.png", tw, th);
-	_powerCableHubTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	Textures["PowerCableHub"] =
+		_video->GetTextures()->AddTexture(tw, th, td);
 
 	td = Loader::LoadImage("Models/Ship/ShipPowerCable.png", tw, th);
-	_powerCableTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	Textures["PowerCable"] = _video->GetTextures()->AddTexture(tw, th, td);
 
 	td = Loader::LoadImage("Models/Ship/ShipDataCable.png", tw, th);
-	_dataCableTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	Textures["DataCable"] = _video->GetTextures()->AddTexture(tw, th, td);
 
 	_preview = nullptr;
+
+	auto model = Loader::LoadModel("Models/Ship/ShipFloor.obj");
+	Models["Floor"] = _video->LoadModel(model);
+
+	model = Loader::LoadModel("Models/Ship/ShipFloorComm.obj");
+	Models["FloorComm"] = _video->LoadModel(model);
+
+	model = Loader::LoadModel("Models/Ship/ShipFloorCommDelim.obj");
+	Models["FloorCommDelim"] = _video->LoadModel(model);
+
+	model = Loader::LoadModel("Models/Ship/ShipPowerCable.obj");
+	Models["PowerCable"] = _video->LoadModel(model);
+
+	model = Loader::LoadModel("Models/Ship/ShipPowerCableHub.obj");
+	Models["PowerCableHub"] = _video->LoadModel(model);
+
+	model = Loader::LoadModel("Models/Ship/ShipDataCable.obj");
+	Models["DataCable"] = _video->LoadModel(model);
 }
 
 BaseGrid::~BaseGrid()
@@ -131,12 +151,13 @@ BaseGrid::~BaseGrid()
 
 	StopPreview();
 
-	_video->GetTextures()->RemoveTexture(_floorTexture);
-	_video->GetTextures()->RemoveTexture(_floorCommTexture);
-	_video->GetTextures()->RemoveTexture(_floorCommDelimTexture);
-	_video->GetTextures()->RemoveTexture(_powerCableHubTexture);
-	_video->GetTextures()->RemoveTexture(_powerCableTexture);
-	_video->GetTextures()->RemoveTexture(_dataCableTexture);
+	for (auto& texture : Textures) {
+		_video->GetTextures()->RemoveTexture(texture.second);
+	}
+
+	for (auto& model : Models) {
+		_video->UnloadModel(model.second);
+	}
 }
 
 void BaseGrid::InsertBlock(
@@ -162,19 +183,14 @@ void BaseGrid::InsertBlock(
 
 	switch (type) {
 	case BaseBlock::Type::Floor:
-		block = new FloorBlock(x, y, this, _floorTexture);
+		block = new FloorBlock(x, y, this);
 		break;
 	case BaseBlock::Type::FloorComm:
 		block = new FloorCommBlock(
 			x,
 			y,
 			this,
-			_floorCommTexture,
-			_video,
-			_floorCommDelimTexture,
-			_powerCableTexture,
-			_powerCableHubTexture,
-			_dataCableTexture);
+			_video);
 		break;
 	default:
 		return;
@@ -188,7 +204,6 @@ void BaseGrid::InsertBlock(
 	block->SetModelMatrix(matrix);
 
 	block->SetModelInnerMatrix(glm::mat4(1.0));
-	block->SetModelInstances({glm::mat4(1.0)});
 
 	auto model = Loader::LoadModel("Models/Ship/ShipFloorCollision.obj");
 	block->SetObjectVertices(model.Vertices);
@@ -231,19 +246,14 @@ void BaseGrid::PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type)
 
 	switch (type) {
 	case BaseBlock::Type::Floor:
-		_preview = new FloorBlock(x, y, this, _floorTexture);
+		_preview = new FloorBlock(x, y, this);
 		break;
 	case BaseBlock::Type::FloorComm:
 		_preview = new FloorCommBlock(
 			x,
 			y,
 			this,
-			_floorCommTexture,
-			_video,
-			_floorCommDelimTexture,
-			_powerCableTexture,
-			_powerCableHubTexture,
-			_dataCableTexture);
+			_video);
 		break;
 	default:
 		return;
@@ -270,7 +280,6 @@ void BaseGrid::PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type)
 	_preview->SetModelInnerMatrix(glm::scale(
 		glm::mat4(1.0),
 		glm::vec3(1,1,1.1)));
-	_preview->SetModelInstances({glm::mat4(1.0)});
 
 	_video->RegisterModel(_preview);
 }
@@ -305,48 +314,27 @@ BaseBlock* BaseGrid::GetBlock(int32_t x, int32_t y)
 FloorBlock::FloorBlock(
 	int32_t x,
 	int32_t y,
-	BaseGrid* grid,
-	uint32_t texture) :
+	BaseGrid* grid) :
 	BaseBlock(x, y, grid)
 {
-	SetTexture({texture});
-
-	auto model = Loader::LoadModel("Models/Ship/ShipFloor.obj");
-	SetModelVertices(model.Vertices);
-	SetModelTexCoords(model.TexCoords);
-	SetModelIndices(model.Indices);
-	SetModelNormals(model.Normals);
+	SetTexture({grid->Textures["Floor"]});
+	SetModels({grid->Models["Floor"]});
 }
 
 FloorCommBlock::FloorCommBlock(
 	int32_t x,
 	int32_t y,
 	BaseGrid* grid,
-	uint32_t texture,
-	Video* video,
-	uint32_t delimTexture,
-	uint32_t powerCableTexture,
-	uint32_t powerCableHubTexture,
-	uint32_t dataCableTexture) :
+	Video* video) :
 	BaseBlock(x, y, grid)
 {
 	_video = video;
-	SetTexture({texture});
+	SetTexture({grid->Textures["FloorComm"]});
+	SetModels({grid->Models["FloorComm"]});
 	_delims.resize(4, nullptr);
 	_powerCables.resize(4, nullptr);
 	_dataCables.resize(4, nullptr);
 	_powerCableHub = nullptr;
-
-	_delimTexture = delimTexture;
-	_powerCableHubTexture = powerCableHubTexture;
-	_powerCableTexture = powerCableTexture;
-	_dataCableTexture = dataCableTexture;
-
-	auto model = Loader::LoadModel("Models/Ship/ShipFloorComm.obj");
-	SetModelVertices(model.Vertices);
-	SetModelTexCoords(model.TexCoords);
-	SetModelIndices(model.Indices);
-	SetModelNormals(model.Normals);
 
 	_hasPowerCable = false;
 	_forceUpdate = false;
@@ -354,10 +342,18 @@ FloorCommBlock::FloorCommBlock(
 	for (size_t i = 0; i < 4; ++i) {
 		_delims[i] = CreateDelim(i);
 		_delims[i]->SetDrawEnabled(true);
+		_delims[i]->SetTexture({grid->Textures["FloorCommDelim"]});
+		_delims[i]->SetModels({grid->Models["FloorCommDelim"]});
+
 		_powerCables[i] = CreatePowerCable(i);
 		_powerCables[i]->SetDrawEnabled(false);
+		_powerCables[i]->SetTexture({grid->Textures["PowerCable"]});
+		_powerCables[i]->SetModels({grid->Models["PowerCable"]});
+
 		_dataCables[i] = CreateDataCable(i);
 		_dataCables[i]->SetDrawEnabled(false);
+		_dataCables[i]->SetTexture({grid->Textures["DataCable"]});
+		_dataCables[i]->SetModels({grid->Models["DataCable"]});
 
 		_video->RegisterModel(_delims[i]);
 		_video->RegisterModel(_powerCables[i]);
@@ -470,13 +466,8 @@ void FloorCommBlock::SetPowerCable(bool value)
 	if (value && !_powerCableHub) {
 		_powerCableHub = new Model;
 
-		auto model = Loader::LoadModel(
-			"Models/Ship/ShipPowerCableHub.obj");
-		_powerCableHub->SetModelVertices(model.Vertices);
-		_powerCableHub->SetModelTexCoords(model.TexCoords);
-		_powerCableHub->SetModelIndices(model.Indices);
-		_powerCableHub->SetModelNormals(model.Normals);
-		_powerCableHub->SetTexture({_delimTexture});
+		_powerCableHub->SetModels({_grid->Models["PowerCableHub"]});
+		_powerCableHub->SetTexture({_grid->Textures["PowerCableHub"]});
 		_powerCableHub->SetColorMultiplier({1, 0.8, 0.8, 1});
 
 		glm::mat4 matrix = GetModelMatrix();
@@ -489,7 +480,6 @@ void FloorCommBlock::SetPowerCable(bool value)
 		_powerCableHub->SetModelMatrix(matrix);
 
 		_powerCableHub->SetModelInnerMatrix(glm::mat4(1.0));
-		_powerCableHub->SetModelInstances({glm::mat4(1.0)});
 
 		_video->RegisterModel(_powerCableHub);
 
@@ -549,14 +539,6 @@ Model* FloorCommBlock::CreateDelim(size_t i)
 {
 	Model* delim = new Model;
 
-	auto model = Loader::LoadModel(
-		"Models/Ship/ShipFloorCommDelim.obj");
-	delim->SetModelVertices(model.Vertices);
-	delim->SetModelTexCoords(model.TexCoords);
-	delim->SetModelIndices(model.Indices);
-	delim->SetModelNormals(model.Normals);
-	delim->SetTexture({_delimTexture});
-
 	glm::mat4 matrix = glm::translate(
 		glm::mat4(1.0),
 		glm::vec3(_x, _y, 0.8));
@@ -589,7 +571,6 @@ Model* FloorCommBlock::CreateDelim(size_t i)
 	delim->SetModelMatrix(matrix);
 
 	delim->SetModelInnerMatrix(glm::mat4(1.0));
-	delim->SetModelInstances({glm::mat4(1.0)});
 
 	return delim;
 }
@@ -598,13 +579,6 @@ Model* FloorCommBlock::CreatePowerCable(size_t i)
 {
 	Model* cable = new Model;
 
-	auto model = Loader::LoadModel(
-		"Models/Ship/ShipPowerCable.obj");
-	cable->SetModelVertices(model.Vertices);
-	cable->SetModelTexCoords(model.TexCoords);
-	cable->SetModelIndices(model.Indices);
-	cable->SetModelNormals(model.Normals);
-	cable->SetTexture({_powerCableTexture});
 	cable->SetColorMultiplier({1, 0.8, 0.8, 1});
 
 	glm::mat4 matrix = glm::translate(
@@ -643,7 +617,6 @@ Model* FloorCommBlock::CreatePowerCable(size_t i)
 	cable->SetModelMatrix(matrix);
 
 	cable->SetModelInnerMatrix(glm::mat4(1.0));
-	cable->SetModelInstances({glm::mat4(1.0)});
 
 	return cable;
 }
@@ -652,13 +625,6 @@ Model* FloorCommBlock::CreateDataCable(size_t i)
 {
 	Model* cable = new Model;
 
-	auto model = Loader::LoadModel(
-		"Models/Ship/ShipDataCable.obj");
-	cable->SetModelVertices(model.Vertices);
-	cable->SetModelTexCoords(model.TexCoords);
-	cable->SetModelIndices(model.Indices);
-	cable->SetModelNormals(model.Normals);
-	cable->SetTexture({_dataCableTexture});
 	cable->SetColorMultiplier({0.8, 0.8, 1, 1});
 
 	glm::mat4 matrix = glm::translate(
@@ -693,7 +659,6 @@ Model* FloorCommBlock::CreateDataCable(size_t i)
 	cable->SetModelMatrix(matrix);
 
 	cable->SetModelInnerMatrix(glm::mat4(1.0));
-	cable->SetModelInstances({glm::mat4(1.0)});
 
 	return cable;
 }

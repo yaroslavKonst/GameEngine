@@ -2,7 +2,6 @@
 
 Model::Model()
 {
-	_updatedInstances = false;
 	_holed = false;
 	_externMatrix = nullptr;
 }

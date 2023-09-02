@@ -374,23 +374,46 @@ void Video::Stop()
 	_swapchain->Stop();
 }
 
-void Video::RegisterModel(Model* model)
+uint32_t Video::LoadModel(Loader::VertexData& model)
 {
 	auto descriptor = ModelDescriptor::CreateModelDescriptor(
-		model,
+		&model,
 		_device,
 		_memorySystem,
 		&_deviceSupport,
 		_graphicsQueue,
 		_transferCommandPool);
-	_scene.Models[model] = descriptor;
+
+	uint32_t index = _scene.LastModelIndex + 1;
+
+	while (_scene.ModelDescriptors.find(index) !=
+		_scene.ModelDescriptors.end())
+	{
+		++index;
+	}
+
+	_scene.LastModelIndex = index;
+
+	_scene.ModelDescriptors[index] = descriptor;
+	return index;
+}
+
+void Video::UnloadModel(uint32_t model)
+{
+	_scene.DeletedModelDescriptors.push_back(
+		_scene.ModelDescriptors[model]);
+	_scene.ModelDescriptors.erase(model);
+}
+
+void Video::RegisterModel(Model* model)
+{
+	_scene.Models.insert(model);
 	model->_SetDrawReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
 	model->_SetDrawReady(false);
-	_scene.DeletedModelDescriptors.push_back(_scene.Models[model]);
 	_scene.Models.erase(model);
 }
 
@@ -398,8 +421,7 @@ void Video::RemoveAllModels()
 {
 	vkQueueWaitIdle(_graphicsQueue);
 
-	for (auto& model : _scene.Models) {
-		model.first->_SetDrawReady(false);
+	for (auto& model : _scene.ModelDescriptors) {
 		ModelDescriptor::DestroyModelDescriptor(
 			model.second,
 			_device,
@@ -518,7 +540,7 @@ void Video::CreateSkybox(
 		TextureHandler::TextureType::TCube,
 		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 		layerCount);
-	_scene.skybox.Descriptor.Textures = {skyboxTexture};
+	_scene.skybox.Texture = skyboxTexture;
 
 	_scene.skybox._SetDrawReady(true);
 	_scene.skybox.SetDrawEnabled(true);
@@ -533,7 +555,7 @@ void Video::DestroySkybox()
 
 	_scene.skybox._SetDrawReady(false);
 	vkQueueWaitIdle(_graphicsQueue);
-	_scene.Textures->RemoveTexture(_scene.skybox.Descriptor.Textures[0]);
+	_scene.Textures->RemoveTexture(_scene.skybox.Texture);
 }
 
 void Video::CreateDescriptorSetLayout()

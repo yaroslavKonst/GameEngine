@@ -20,8 +20,7 @@ struct Skybox : public Drawable
 		alignas(4) float Ratio;
 	};
 	
-	ModelDescriptor Descriptor;
-	glm::vec3 ColorModifier;
+	uint32_t Texture;
 };
 
 #endif

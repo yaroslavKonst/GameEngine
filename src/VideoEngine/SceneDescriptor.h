@@ -14,7 +14,9 @@
 
 struct SceneDescriptor
 {
-	std::map<Model*, ModelDescriptor> Models;
+	std::set<Model*> Models;
+	std::map<uint32_t, ModelDescriptor> ModelDescriptors;
+	uint32_t LastModelIndex;
 	std::set<Rectangle*> Rectangles;
 	std::set<Light*> Lights;
 	std::set<Sprite*> Sprites;
@@ -30,6 +32,11 @@ struct SceneDescriptor
 	std::mutex* SceneMutex;
 
 	std::list<ModelDescriptor> DeletedModelDescriptors;
+
+	SceneDescriptor()
+	{
+		LastModelIndex = 0;
+	}
 };
 
 #endif

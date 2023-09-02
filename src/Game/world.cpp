@@ -32,7 +32,6 @@ public:
 				glm::vec3(10, 10, 1)),
 				glm::vec3(0, 0, -0.251981)));
 		SetModelInnerMatrix(glm::mat4(1.0));
-		SetModelInstances({glm::mat4(1.0)});
 
 		auto model = Loader::LoadModel(
 			"Models/Archive/field.obj");
@@ -41,10 +40,9 @@ public:
 			coord *= 100;
 		}
 
-		SetModelVertices(model.Vertices);
-		SetModelNormals(model.Normals);
-		SetModelTexCoords(model.TexCoords);
-		SetModelIndices(model.Indices);
+		_video = video;
+		_model = _video->LoadModel(model);
+		SetModels({_model});
 
 		int texWidth;
 		int texHeight;
@@ -53,15 +51,26 @@ public:
 			texWidth,
 			texHeight);
 
-		uint32_t woodenTiles = video->GetTextures()->AddTexture(
+		_woodenTiles = video->GetTextures()->AddTexture(
 			texWidth,
 			texHeight,
 			texData);
 
-		SetTexture({woodenTiles});
+		SetTexture({_woodenTiles});
 
 		SetDrawEnabled(true);
 	}
+
+	~Field()
+	{
+		_video->UnloadModel(_model);
+		_video->GetTextures()->RemoveTexture(_woodenTiles);
+	}
+
+private:
+	Video* _video;
+	uint32_t _model;
+	uint32_t _woodenTiles;
 };
 
 static void UniverseThread(Universe* universe)
@@ -135,7 +144,7 @@ void World::Run()
 
 	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
-	Board board;
+	Board board(_video);
 	board.SetTexture({testTexture});
 	board.SetModelHoled(true);
 
