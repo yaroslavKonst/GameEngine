@@ -5,7 +5,7 @@ Package* Package::_instance = nullptr;
 Package* Package::Instance()
 {
 	if (!_instance) {
-		_instance = new Package("package.bin");
+		_instance = new Package("resources.bin");
 	}
 
 	return _instance;

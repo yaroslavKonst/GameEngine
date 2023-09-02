@@ -24,7 +24,7 @@ ENTRIES=\
 
 .PHONY: all
 
-all: ../../../build/package.bin
+all: ../../../build/resources.bin
 
-../../../build/package.bin: $(ENTRIES)
-	../../../build/packer ../../../build/package.bin $(ENTRIES)
+../../../build/resources.bin: $(ENTRIES)
+	../../../build/packer $@ $(ENTRIES)
