@@ -18,7 +18,9 @@ ENTRIES=\
 	Models/Ship/ShipPowerCableHub.obj \
 	Models/Ship/ShipPowerCableHub.png \
 	Models/Ship/ShipDataCable.obj \
-	Models/Ship/ShipDataCable.png
+	Models/Ship/ShipDataCable.png \
+	Models/Ship/ShipDataCableHub.obj \
+	Models/Ship/ShipDataCableHub.png
 
 .PHONY: all
 

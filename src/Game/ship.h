@@ -95,16 +95,21 @@ public:
 	bool GetPowerCable();
 	void SetPowerCable(bool value);
 
+	bool GetDataCable();
+	void SetDataCable(bool value);
+
 private:
 	Video* _video;
 	std::vector<Model*> _delims;
 	Model* _powerCableHub;
+	Model* _dataCableHub;
 	std::vector<Model*> _powerCables;
 	std::vector<Model*> _dataCables;
 
 	bool _forceUpdate;
 
 	bool _hasPowerCable;
+	bool _hasDataCable;
 
 	Model* CreateDelim(size_t i);
 	Model* CreatePowerCable(size_t i);

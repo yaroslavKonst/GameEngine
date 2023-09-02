@@ -121,6 +121,10 @@ BaseGrid::BaseGrid(Video* video, CollisionEngine* collisionEngine)
 	td = Loader::LoadImage("Models/Ship/ShipDataCable.png", tw, th);
 	Textures["DataCable"] = _video->GetTextures()->AddTexture(tw, th, td);
 
+	td = Loader::LoadImage("Models/Ship/ShipDataCableHub.png", tw, th);
+	Textures["DataCableHub"] =
+		_video->GetTextures()->AddTexture(tw, th, td);
+
 	_preview = nullptr;
 
 	auto model = Loader::LoadModel("Models/Ship/ShipFloor.obj");
@@ -140,6 +144,9 @@ BaseGrid::BaseGrid(Video* video, CollisionEngine* collisionEngine)
 
 	model = Loader::LoadModel("Models/Ship/ShipDataCable.obj");
 	Models["DataCable"] = _video->LoadModel(model);
+
+	model = Loader::LoadModel("Models/Ship/ShipDataCableHub.obj");
+	Models["DataCableHub"] = _video->LoadModel(model);
 }
 
 BaseGrid::~BaseGrid()
@@ -338,8 +345,10 @@ FloorCommBlock::FloorCommBlock(
 	_powerCables.resize(4, nullptr);
 	_dataCables.resize(4, nullptr);
 	_powerCableHub = nullptr;
+	_dataCableHub = nullptr;
 
 	_hasPowerCable = false;
+	_hasDataCable = false;
 	_forceUpdate = false;
 
 	for (size_t i = 0; i < 4; ++i) {
@@ -396,63 +405,33 @@ FloorCommBlock::~FloorCommBlock()
 
 void FloorCommBlock::Update()
 {
-	std::vector<bool> currentState(4);
-	std::vector<bool> newState(4);
+	bool power;
+	bool data;
+	bool commBlock;
 
-	newState[0] = _grid->GetType(_x - 1, _y) == BaseBlock::Type::FloorComm;
-	newState[1] = _grid->GetType(_x + 1, _y) == BaseBlock::Type::FloorComm;
-	newState[2] = _grid->GetType(_x, _y - 1) == BaseBlock::Type::FloorComm;
-	newState[3] = _grid->GetType(_x, _y + 1) == BaseBlock::Type::FloorComm;
+	std::vector<int32_t> x = {_x - 1, _x + 1, _x, _x};
+	std::vector<int32_t> y = {_y, _y, _y - 1, _y + 1};
 
-	if (newState[0]) {
-		newState[0] = static_cast<FloorCommBlock*>(
-			_grid->GetBlock(_x - 1, _y))->GetPowerCable();
-	}
+	for (uint32_t i = 0; i < 4; ++i) {
+		commBlock = _grid->GetType(x[i], y[i]) ==
+			BaseBlock::Type::FloorComm;
 
-	if (newState[1]) {
-		newState[1] = static_cast<FloorCommBlock*>(
-			_grid->GetBlock(_x + 1, _y))->GetPowerCable();
-	}
-
-	if (newState[2]) {
-		newState[2] = static_cast<FloorCommBlock*>(
-			_grid->GetBlock(_x, _y - 1))->GetPowerCable();
-	}
-
-	if (newState[3]) {
-		newState[3] = static_cast<FloorCommBlock*>(
-			_grid->GetBlock(_x, _y + 1))->GetPowerCable();
-	}
-
-	currentState[0] = _powerCables[0]->GetDrawEnabled();
-	currentState[1] = _powerCables[1]->GetDrawEnabled();
-	currentState[2] = _powerCables[2]->GetDrawEnabled();
-	currentState[3] = _powerCables[3]->GetDrawEnabled();
-
-	if (!_hasPowerCable) {
-		newState[0] = false;
-		newState[1] = false;
-		newState[2] = false;
-		newState[3] = false;
-	}
-
-	if (!_forceUpdate && currentState == newState) {
-		return;
-	}
-
-	for (size_t i = 0; i < 4; ++i) {
-		if (!_forceUpdate && newState[i] == currentState[i]) {
-			continue;
-		}
-
-		if (!newState[i]) {
+		if (!commBlock) {
 			_delims[i]->SetDrawEnabled(true);
 			_powerCables[i]->SetDrawEnabled(false);
 			_dataCables[i]->SetDrawEnabled(false);
 		} else {
-			_delims[i]->SetDrawEnabled(false);
-			_powerCables[i]->SetDrawEnabled(true);
-			_dataCables[i]->SetDrawEnabled(true);
+			power = static_cast<FloorCommBlock*>(
+				_grid->GetBlock(x[i], y[i]))->GetPowerCable();
+			data = static_cast<FloorCommBlock*>(
+				_grid->GetBlock(x[i], y[i]))->GetDataCable();
+
+			power = power && _hasPowerCable;
+			data = data && _hasDataCable;
+
+			_delims[i]->SetDrawEnabled(!(power || data));
+			_powerCables[i]->SetDrawEnabled(power);
+			_dataCables[i]->SetDrawEnabled(data);
 		}
 	}
 }
@@ -513,6 +492,87 @@ void FloorCommBlock::SetPowerCable(bool value)
 		_video->RemoveModel(_powerCableHub);
 		delete _powerCableHub;
 		_powerCableHub = nullptr;
+
+		Update();
+
+		BaseBlock* block = _grid->GetBlock(_x - 1, _y);
+		if (block) {
+			block->Update();
+		}
+
+		block = _grid->GetBlock(_x + 1, _y);
+		if (block) {
+			block->Update();
+		}
+
+		block = _grid->GetBlock(_x, _y - 1);
+		if (block) {
+			block->Update();
+		}
+
+		block = _grid->GetBlock(_x, _y + 1);
+		if (block) {
+			block->Update();
+		}
+	}
+}
+
+bool FloorCommBlock::GetDataCable()
+{
+	return _hasDataCable;
+}
+
+void FloorCommBlock::SetDataCable(bool value)
+{
+	_hasDataCable = value;
+
+	if (value && !_dataCableHub) {
+		_dataCableHub = new Model;
+
+		_dataCableHub->SetModels({_grid->Models["DataCableHub"]});
+		_dataCableHub->SetTexture({_grid->Textures["DataCableHub"]});
+		_dataCableHub->SetColorMultiplier({0.8, 0.8, 1, 1});
+
+		glm::mat4 matrix = GetModelMatrix();
+
+		matrix = glm::translate(
+			matrix,
+			glm::vec3(0, 0, 0.8));
+
+		_dataCableHub->SetDrawEnabled(true);
+		_dataCableHub->SetModelMatrix(matrix);
+
+		_dataCableHub->SetModelInnerMatrix(glm::mat4(1.0));
+
+		_video->RegisterModel(_dataCableHub);
+
+		Update();
+
+		BaseBlock* block = _grid->GetBlock(_x - 1, _y);
+		if (block) {
+			block->Update();
+		}
+
+		block = _grid->GetBlock(_x + 1, _y);
+		if (block) {
+			block->Update();
+		}
+
+		block = _grid->GetBlock(_x, _y - 1);
+		if (block) {
+			block->Update();
+		}
+
+		block = _grid->GetBlock(_x, _y + 1);
+		if (block) {
+			block->Update();
+		}
+	}
+
+	if (!value && _dataCableHub) {
+		_video->RemoveModel(_dataCableHub);
+		delete _dataCableHub;
+		_dataCableHub = nullptr;
 
 		Update();
 
@@ -658,6 +718,8 @@ Model* FloorCommBlock::CreateDataCable(size_t i)
 	matrix = glm::translate(
 		matrix,
 		glm::vec3(0.25, 0, 0));
+
+	matrix = glm::scale(matrix, glm::vec3(1, 0.4, 1)),
 
 	cable->SetModelMatrix(matrix);
 

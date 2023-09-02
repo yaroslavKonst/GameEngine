@@ -22,7 +22,8 @@ Player::Player(
 	_ship = ship;
 	_buildMode = false;
 	_buildCamCoeff = 0;
-	_actionRequested = false;
+	_actionERequested = false;
+	_actionRRequested = false;
 
 	auto collision = Loader::LoadModel("Models/Player/Collision.obj");
 	SetObjectVertices(collision.Vertices);
@@ -170,7 +171,13 @@ void Player::Key(
 		} else if (key == GLFW_KEY_E) {
 			_mutex.lock();
 			if (action == GLFW_PRESS) {
-				_actionRequested = true;
+				_actionERequested = true;
+			}
+			_mutex.unlock();
+		} else if (key == GLFW_KEY_R) {
+			_mutex.lock();
+			if (action == GLFW_PRESS) {
+				_actionRRequested = true;
 			}
 			_mutex.unlock();
 		}
@@ -307,15 +314,23 @@ void Player::Tick()
 		{this});
 
 	if (object.Code) {
-		_centerTextBox->SetText("Communications\n[E] Object action");
+		_centerTextBox->SetText(
+			"Communications\n[E] Power\n[R] Data");
 		_centerTextBox->Activate();
 		_cross.SetColorMultiplier({0.3, 1.0, 0.3, 1.0});
 
-		if (_actionRequested) {
+		if (_actionERequested) {
 			FloorCommBlock* block = static_cast<FloorCommBlock*>(
 				object.object);
 
 			block->SetPowerCable(!block->GetPowerCable());
+		}
+
+		if (_actionRRequested) {
+			FloorCommBlock* block = static_cast<FloorCommBlock*>(
+				object.object);
+
+			block->SetDataCable(!block->GetDataCable());
 		}
 	} else {
 		_centerTextBox->Deactivate();
@@ -328,7 +343,8 @@ void Player::Tick()
 		_cornerTextBox->Deactivate();
 	}
 
-	_actionRequested = false;
+	_actionERequested = false;
+	_actionRRequested = false;
 
 	_mutex.unlock();
 }
