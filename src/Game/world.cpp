@@ -19,9 +19,18 @@ public:
 			{200, -200, 0.0},
 		};
 
+		std::vector<glm::vec3> objectNormals = {
+			{0, 0, 1.0},
+			{0, 0, 1.0},
+			{0, 0, 1.0},
+			{0, 0, 1.0},
+		};
+
+
 		std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
 
 		SetObjectVertices(objectVertices);
+		SetObjectNormals(objectNormals);
 		SetObjectIndices(indices);
 		SetObjectCenter({0.0f, 0.0f, -300.0f});
 		SetObjectMatrix(glm::mat4(1.0));

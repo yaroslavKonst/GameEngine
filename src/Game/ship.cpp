@@ -208,9 +208,12 @@ void BaseGrid::InsertBlock(
 	auto model = Loader::LoadModel("Models/Ship/ShipFloorCollision.obj");
 	block->SetObjectVertices(model.Vertices);
 	block->SetObjectIndices(model.Indices);
+	block->SetObjectNormals(model.Normals);
 	block->SetObjectCenter();
 	block->SetObjectMatrix(matrix);
 	block->SetObjectDynamic(true);
+	block->SetObjectSphereCenter({0, 0, 0.5});
+	block->SetObjectSphereRadius(0.5);
 	block->SetObjectDomain(1);
 
 	_video->RegisterModel(block);

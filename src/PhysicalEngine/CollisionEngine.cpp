@@ -54,31 +54,24 @@ void CollisionEngine::Run()
 	for (size_t objIdx1 = 0; objIdx1 < objects.size(); ++objIdx1)
 	{
 		bool object1Dynamic = objects[objIdx1]->IsObjectDynamic();
+
+		if (!object1Dynamic) {
+			continue;
+		}
+
 		uint32_t object1Domain = objects[objIdx1]->GetObjectDomain();
 
-		glm::vec3 center1 = objects[objIdx1]->GetObjectCenter();
-		float radius1 = objects[objIdx1]->_GetObjectRadius();
-		glm::mat4 matrix1 = objects[objIdx1]->GetObjectMatrix();
-		glm::mat4* extMatrix1 =
-			objects[objIdx1]->GetObjectExternalMatrix();
-
-		glm::vec3 center1World =
-			(extMatrix1 ? *extMatrix1 : glm::mat4(1)) *
-			matrix1 * glm::vec4(center1, 1.0f);
-
 		for (
-			size_t objIdx2 = objIdx1 + 1;
+			size_t objIdx2 = 0;
 			objIdx2 < objects.size();
 			++objIdx2)
 		{
-			bool object2Dynamic =
-				objects[objIdx2]->IsObjectDynamic();
-			uint32_t object2Domain =
-				objects[objIdx2]->GetObjectDomain();
-
-			if (!(object1Dynamic || object2Dynamic)) {
+			if (objIdx1 == objIdx2) {
 				continue;
 			}
+
+			uint32_t object2Domain =
+				objects[objIdx2]->GetObjectDomain();
 
 			bool uncheckedDomains =
 				object1Domain > 0 &&
@@ -88,39 +81,15 @@ void CollisionEngine::Run()
 				continue;
 			}
 
-			glm::vec3 center2 =
-				objects[objIdx2]->GetObjectCenter();
-			float radius2 =
-				objects[objIdx2]->_GetObjectRadius();
-			glm::mat4 matrix2 =
-				objects[objIdx2]->GetObjectMatrix();
-			glm::mat4* extMatrix2 =
-				objects[objIdx2]->GetObjectExternalMatrix();
-
-			glm::vec3 center2World =
-				(extMatrix2 ? *extMatrix2 : glm::mat4(1)) *
-				matrix2 * glm::vec4(center2, 1.0f);
-
-			float distance =
-				glm::length(center2World - center1World);
-
-			if (distance > radius1 + radius2) {
-				continue;
-			}
-
 			_threadPool->Enqueue(
 				[this,
 				&objects,
-				matrix1,
-				matrix2,
 				objIdx1,
 				objIdx2]() -> void
 			{
 				CalculateCollision(
 					objects[objIdx1],
-					objects[objIdx2],
-					matrix1,
-					matrix2);
+					objects[objIdx2]);
 			});
 		}
 	}
@@ -151,119 +120,204 @@ void CollisionEngine::InitializeObject(Object* object)
 
 void CollisionEngine::CalculateCollision(
 	Object* object1,
-	Object* object2,
-	const glm::mat4& matrix1,
-	const glm::mat4& matrix2)
+	Object* object2)
 {
-	auto& vertices1 = object1->GetObjectVertices();
-	auto& vertices2 = object2->GetObjectVertices();
-	auto& indices1 = object1->GetObjectIndices();
-	auto& indices2 = object2->GetObjectIndices();
-
 	auto& center1 = object1->GetObjectCenter();
 	auto& center2 = object2->GetObjectCenter();
 
-	auto& speed1 = object1->GetObjectSpeed();
-	auto& speed2 = object2->GetObjectSpeed();
+	glm::mat4 matrix1 = object1->GetObjectMatrix();
+	glm::mat4 matrix2 = object2->GetObjectMatrix();
 
 	glm::mat4* extMatrix1 = object1->GetObjectExternalMatrix();
 	glm::mat4* extMatrix2 = object2->GetObjectExternalMatrix();
 
-	std::vector<glm::vec3> verticesWorld1(vertices1.size());
-	std::vector<glm::vec3> verticesWorld2(vertices2.size());
-
-	glm::vec3 center1World = (extMatrix1 ? *extMatrix1 : glm::mat4(1)) *
-		matrix1 * glm::vec4(center1, 1.0f);
-	glm::vec3 center2World = (extMatrix2 ? *extMatrix2 : glm::mat4(1)) *
-		matrix2 * glm::vec4(center2, 1.0f);
-
-	for (size_t i = 0; i < vertices1.size(); ++i) {
-		verticesWorld1[i] =
-			glm::vec3((extMatrix1 ? *extMatrix1 : glm::mat4(1)) *
-				matrix1 * glm::vec4(vertices1[i], 1.0f)) +
-			speed1;
+	if (extMatrix1) {
+		matrix1 = *extMatrix1 * matrix1;
 	}
+
+	if (extMatrix2) {
+		matrix2 = *extMatrix2 * matrix2;
+	}
+
+	float radius1 = object1->_GetObjectRadius();
+	float radius2 = object2->_GetObjectRadius();
+
+	glm::vec3 center1World = matrix1 * glm::vec4(center1, 1.0f);
+	glm::vec3 center2World = matrix2 * glm::vec4(center2, 1.0f);
+
+	float distance = glm::length(center2World - center1World);
+
+	if (distance > radius1 + radius2) {
+		return;
+	}
+
+	auto& vertices2 = object2->GetObjectVertices();
+	auto& normals2 = object2->GetObjectNormals();
+	auto& indices2 = object2->GetObjectIndices();
+
+	std::vector<glm::vec3> verticesWorld2(vertices2.size());
+	std::vector<glm::vec3> normalsWorld2(indices2.size() / 3);
 
 	for (size_t i = 0; i < vertices2.size(); ++i) {
-		verticesWorld2[i] =
-			glm::vec3((extMatrix2 ? *extMatrix2 : glm::mat4(1)) *
-				matrix2 * glm::vec4(vertices2[i], 1.0f)) +
-			speed2;
+		verticesWorld2[i] = matrix2 * glm::vec4(vertices2[i], 1.0f);
 	}
+
+	for (size_t index = 0; index < indices2.size(); index += 3) {
+		glm::vec3 normal =
+			(normals2[indices2[index]] +
+			normals2[indices2[index + 1]] +
+			normals2[indices2[index + 2]]) / 3.0f;
+
+		normalsWorld2[index / 3] = matrix2 * glm::vec4(normal, 0.0f);
+	}
+
+	glm::vec3 sphereCenter1 = matrix1 * glm::vec4(
+		object1->GetObjectSphereCenter(),
+		1.0f);
+	float sphereRadius1 = object1->GetObjectSphereRadius();
 
 	glm::vec3 effect(0.0f);
 
-	for (auto& vertex : verticesWorld1) {
-		for (uint32_t index = 0; index < indices2.size(); index += 3) {
-			effect += CalculateEffectOnPoint(
-				{
-					verticesWorld2[indices2[index]],
-					verticesWorld2[indices2[index + 1]],
-					verticesWorld2[indices2[index + 2]]
-				},
-				vertex,
-				center1World,
-				center2World);
-		}
-	}
+	for (uint32_t index2 = 0; index2 < indices2.size(); index2 += 3)
+	{
+		glm::vec3 eff = CalculateEffect(
+			sphereCenter1,
+			sphereRadius1,
+			{
+				verticesWorld2[indices2[index2]],
+				verticesWorld2[indices2[index2 + 1]],
+				verticesWorld2[indices2[index2 + 2]]
+			},
+			normalsWorld2[index2 / 3]);
 
-	for (auto& vertex : verticesWorld2) {
-		for (uint32_t index = 0; index < indices1.size(); index += 3) {
-			effect -= CalculateEffectOnPoint(
-				{
-					verticesWorld1[indices1[index]],
-					verticesWorld1[indices1[index + 1]],
-					verticesWorld1[indices1[index + 2]]
-				},
-				vertex,
-				center2World,
-				center1World);
+		if (glm::length(eff) > glm::length(effect)) {
+			effect = eff;
 		}
 	}
 
 	object1->IncObjectEffect(effect);
-	object2->IncObjectEffect(-effect);
 }
 
-glm::vec3 CollisionEngine::CalculateEffectOnPoint(
-	const std::vector<glm::vec3>& triangle,
-	const glm::vec3& point,
-	const glm::vec3& centerP,
-	const glm::vec3& centerT)
+bool LineEffectOnSphere(
+	const glm::vec3& center,
+	float radius,
+	const glm::vec3& point1,
+	const glm::vec3& point2,
+	glm::vec3& result)
 {
-	Plane plane = PlaneByThreePoints(
-		triangle[0],
-		triangle[1],
-		triangle[2]);
+	float alpha1;
+	float alpha2;
 
-	float pointInPlane = SetPointToPlane(point, plane);
-	float centerPInPlane = SetPointToPlane(centerP, plane);
-	float centerTInPlane = SetPointToPlane(centerT, plane);
+	bool intersect = RayIntersectSphere(
+		point1,
+		point2 - point1,
+		center,
+		radius,
+		alpha1,
+		alpha2);
 
-	if (centerTInPlane * centerPInPlane > 0) {
+	if (!intersect) {
+		return false;
+	}
+
+	if ((alpha1 < 0 && alpha2 < 0) || (alpha1 > 1 && alpha2 > 1)) {
+		return false;
+	}
+
+	if ((alpha1 + alpha2) / 2.0 <= 0) {
+		result = glm::normalize(center - point1) *
+			(radius - glm::length(center - point1));
+		return true;
+	}
+
+	if ((alpha1 + alpha2) / 2.0 >= 1) {
+		result = glm::normalize(center - point2) *
+			(radius - glm::length(center - point2));
+		return true;
+	}
+
+	glm::vec3 point3 = point1 + (point2 - point1) *
+		((alpha1 + alpha2) / 2.0f);
+
+	result = glm::normalize(center - point3) *
+		(radius - glm::length(center - point3));
+	return true;
+}
+
+glm::vec3 CollisionEngine::CalculateEffect(
+	const glm::vec3& center1,
+	float radius1,
+	const std::vector<glm::vec3>& triangle2,
+	const glm::vec3& normal2)
+{
+	Plane plane2 = PlaneByThreePoints(
+		triangle2[0],
+		triangle2[1],
+		triangle2[2]);
+
+	float nSign = SetPointToPlane(triangle2[0] + normal2, plane2);
+	float sSign = SetPointToPlane(center1, plane2);
+
+	if (nSign * sSign < 0) {
 		return glm::vec3(0.0f);
 	}
 
-	if (pointInPlane * centerPInPlane > 0) {
-		return glm::vec3(0.0f);
+	glm::vec3 projCenter = ProjectPointToPlane(center1, plane2);
+
+	if (PointInTriangle(projCenter, triangle2)) {
+		float dist = PointToPlaneDistance(center1, plane2);
+
+		if (dist >= radius1) {
+			return glm::vec3(0.0f);
+		}
+
+		return glm::normalize(normal2) * (radius1 - dist);
 	}
 
-	glm::vec3 projectedPoint = ProjectPointToPlane(
-		point,
-		plane);
+	glm::vec3 result;
 
-	if (!PointInTriangle(projectedPoint, triangle)) {
-		return glm::vec3(0.0f);
+	// Edge 1
+	if (LineEffectOnSphere(
+		center1,
+		radius1,
+		triangle2[0],
+		triangle2[1],
+		result))
+	{
+		return result;
 	}
 
-	return projectedPoint - point;
+	// Edge 2
+	if (LineEffectOnSphere(
+		center1,
+		radius1,
+		triangle2[1],
+		triangle2[2],
+		result))
+	{
+		return result;
+	}
+
+	// Edge 3
+	if (LineEffectOnSphere(
+		center1,
+		radius1,
+		triangle2[0],
+		triangle2[2],
+		result))
+	{
+		return result;
+	}
+
+	return glm::vec3(0.0f);
 }
 
 CollisionEngine::RayCastResult CollisionEngine::RayCast(
 	const glm::vec3& point,
 	const glm::vec3& direction,
 	float distance,
-	void* userPointer)
+	void* userPointer,
+	std::set<Object*> ignore)
 {
 	glm::vec3 dir = glm::normalize(direction);
 
@@ -275,6 +329,10 @@ CollisionEngine::RayCastResult CollisionEngine::RayCast(
 	for (auto object : _objects) {
 		if (!object->_IsObjectInitialized()) {
 			InitializeObject(object);
+		}
+
+		if (ignore.find(object) != ignore.end()) {
+			continue;
 		}
 
 		glm::vec3 center = object->GetObjectCenter();

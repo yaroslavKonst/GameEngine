@@ -11,7 +11,7 @@ Player::Player(
 	_video = video;
 	_rayEngine = rayEngine;
 	_textHandler = textHandler;
-	_pos = glm::vec3(0.0, 0.0, 5.0);
+	_pos = glm::vec3(0.0, 0.0, 2.0);
 	_angleH = 0;
 	_angleV = 0;
 	_go = 0;
@@ -24,30 +24,15 @@ Player::Player(
 	_buildCamCoeff = 0;
 	_actionRequested = false;
 
-	std::vector<glm::vec3> vertices;
-	vertices.push_back(glm::vec3(0.1, -0.1, 0.0));
-	vertices.push_back(glm::vec3(0.1, 0.1, 0.0));
-	vertices.push_back(glm::vec3(-0.1, 0.0, 0.0));
-	vertices.push_back(glm::vec3(0.1, -0.1, 1.0));
-	vertices.push_back(glm::vec3(0.1, 0.1, 1.0));
-	vertices.push_back(glm::vec3(-0.1, 0.0, 1.0));
-	vertices.push_back(glm::vec3(0.1, -0.1, 1.5));
-	vertices.push_back(glm::vec3(0.1, 0.1, 1.5));
-	vertices.push_back(glm::vec3(-0.1, 0.0, 1.5));
-	vertices.push_back(glm::vec3(0.1, -0.1, 1.9));
-	vertices.push_back(glm::vec3(0.1, 0.1, 1.9));
-	vertices.push_back(glm::vec3(-0.1, 0.0, 1.9));
-	vertices.push_back(glm::vec3(0.1, -0.1, 0.5));
-	vertices.push_back(glm::vec3(0.1, 0.1, 0.5));
-	vertices.push_back(glm::vec3(-0.1, 0.0, 0.5));
-
-	std::vector<uint32_t> indices = {0, 1, 2};
-
-	SetObjectVertices(vertices);
-	SetObjectIndices(indices);
-	SetObjectCenter({0.0f, 0.0f, 1.5f});
+	auto collision = Loader::LoadModel("Models/Player/Collision.obj");
+	SetObjectVertices(collision.Vertices);
+	SetObjectIndices(collision.Indices);
+	SetObjectNormals(collision.Normals);
+	SetObjectCenter();
 	SetObjectMatrix(glm::mat4(1.0));
 	SetObjectDynamic(true);
+	SetObjectSphereCenter({0, 0, 0.5});
+	SetObjectSphereRadius(0.5);
 
 	SetInputEnabled(true);
 
@@ -225,16 +210,11 @@ void Player::TickEarly()
 	glm::vec2 hspeed = hdir * (float)_go +
 		hdirStrafe * (float)_strafe;
 
-	_vspeed -= 0.098 / 1;
+	_vspeed -= 9.8 / 100;
 
 	_pos.x += hspeed.x / 10;
 	_pos.y += hspeed.y / 10;
 	_pos.z += _vspeed / 100;
-
-	/*SetObjectSpeed(glm::vec3(
-		hspeed.x / 10,
-		hspeed.y / 10,
-		_vspeed / 100));*/
 
 	SetObjectMatrix(
 		glm::rotate(glm::translate(glm::mat4(1.0), _pos),
@@ -255,32 +235,22 @@ void Player::Tick()
 
 	glm::vec3 effect = GetObjectEffect();
 
-	if (effect.z > 0 && _vspeed < 0) {
-		_pos.z += effect.z - 0.0000001;
+	_pos += effect;
 
+	if (effect.z > 0 && _vspeed < 0) {
 		if (fabs(_vspeed) > 0.0001) {
 			_vspeed = -_vspeed * 0.4;
 		} else {
-			if (effect.z < 0.0000001) {
-				_vspeed = 0;
-			} else {
-				_vspeed = 0.1;
-			}
+			_vspeed = 0;
 		}
 	}
 
 	if (effect.z < 0 && _vspeed > 0) {
 		_vspeed = 0;
-		_pos.z += effect.z;
 	}
 
 	if (effect.z > 0 && _jump) {
 		_vspeed = 6;
-	}
-
-	if (fabs(effect.x) + fabs(effect.y) > 0.0001) {
-		_pos.x += effect.x;
-		_pos.y += effect.y;
 	}
 
 	glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
@@ -333,11 +303,13 @@ void Player::Tick()
 			hdir * cosf(glm::radians(_angleV)),
 			sinf(glm::radians(_angleV))),
 		3,
-		nullptr);
+		nullptr,
+		{this});
 
 	if (object.Code) {
 		_centerTextBox->SetText("[E] Object action");
 		_centerTextBox->Activate();
+		_cross.SetColorMultiplier({0.3, 1.0, 0.3, 1.0});
 
 		if (_actionRequested) {
 			FloorCommBlock* block = static_cast<FloorCommBlock*>(
@@ -347,6 +319,7 @@ void Player::Tick()
 		}
 	} else {
 		_centerTextBox->Deactivate();
+		_cross.SetColorMultiplier({1.0, 1.0, 1.0, 1.0});
 	}
 
 	if (_buildMode) {

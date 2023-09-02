@@ -5,6 +5,7 @@ ENTRIES=\
 	Skybox/skybox.png \
 	Models/Archive/field.obj \
 	Models/Archive/floor.jpg \
+	Models/Player/Collision.obj \
 	Models/Ship/ShipFloor.obj \
 	Models/Ship/ShipFloor.png \
 	Models/Ship/ShipFloorComm.obj \
