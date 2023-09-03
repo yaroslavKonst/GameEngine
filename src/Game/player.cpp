@@ -21,9 +21,11 @@ Player::Player(
 	_lightActive = false;
 	_ship = ship;
 	_buildMode = false;
+	_flightMode = false;
 	_buildCamCoeff = 0;
 	_actionERequested = false;
 	_actionRRequested = false;
+	_activeFlightControl = nullptr;
 
 	auto collision = Loader::LoadModel("Models/Player/Collision.obj");
 	SetObjectVertices(collision.Vertices);
@@ -60,7 +62,7 @@ Player::Player(
 	_cornerTextBox->SetTextSize(0.1);
 	_cornerTextBox->SetText(
 		"Build mode\n\n[WASD] Move\n[E] Set\n[Q] Remove\n\
-[T] Change type\n[R] Next layer\n[F] Previous layer");
+[T] Change type\n[R] Next layer\n[F] Previous layer\n[Scroll] Rotate block");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
 
@@ -96,6 +98,16 @@ void Player::Key(
 	int action,
 	int mods)
 {
+	if (_flightMode) {
+		if (key == GLFW_KEY_Q) {
+			if (action == GLFW_PRESS) {
+				_flightMode = false;
+			}
+		}
+
+		return;
+	}
+
 	if (key == GLFW_KEY_C) {
 		if (action == GLFW_PRESS) {
 			_mutex.lock();
@@ -128,16 +140,14 @@ void Player::Key(
 				Logger::Verbose() << "Build mode off.";
 			} else {
 				_ship->SetInputEnabled(true);
+				_ship->ActivateBuild();
 				_buildMode = true;
-				_buildPos = {0, 0, 0};
-				_buildCamPos = {0, 0, 0};
-				_buildRotation = {0, 0, 0};
 				Logger::Verbose() << "Build mode on.";
 			}
 		}
 	}
 
-	if (!_buildMode) {
+	if (!(_buildMode || _flightMode)) {
 		if (key == GLFW_KEY_W) {
 			_mutex.lock();
 			if (action == GLFW_PRESS) {
@@ -190,6 +200,10 @@ bool Player::MouseMoveRaw(
 	double xoffset,
 	double yoffset)
 {
+	if (_buildMode || _flightMode) {
+		return false;
+	}
+
 	_mutex.lock();
 	_angleH += xoffset * 0.1;
 	_angleV += yoffset * 0.1;
@@ -219,15 +233,17 @@ void Player::TickEarly()
 	glm::vec2 hspeed = hdir * (float)_go +
 		hdirStrafe * (float)_strafe;
 
-	_vspeed -= 9.8 / 100;
+	if (!_flightMode) {
+		_vspeed -= 9.8 / 100;
 
-	_pos.x += hspeed.x / 10;
-	_pos.y += hspeed.y / 10;
-	_pos.z += _vspeed / 100;
+		_pos.x += hspeed.x / 10;
+		_pos.y += hspeed.y / 10;
+		_pos.z += _vspeed / 100;
 
-	SetObjectMatrix(
-		glm::rotate(glm::translate(glm::mat4(1.0), _pos),
-			glm::radians(_angleH), glm::vec3(0, 0, 1)));
+		SetObjectMatrix(
+			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
+				glm::radians(_angleH), glm::vec3(0, 0, 1)));
+	}
 }
 
 void Player::Tick()
@@ -262,6 +278,27 @@ void Player::Tick()
 		_vspeed = 6;
 	}
 
+	if (_flightMode) {
+		glm::mat4 matrix =
+			*_activeFlightControl->GetObjectExternalMatrix() *
+			_activeFlightControl->GetObjectMatrix();
+
+		glm::vec3 offset = matrix * glm::vec4(0, -1, -1, 0);
+
+		offset = glm::normalize(offset) * 0.5f;
+
+		_pos = glm::vec3(matrix * glm::vec4(
+			_activeFlightControl->GetObjectCenter(), 1.0f)) +
+			offset;
+
+		SetObjectMatrix(
+			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
+				glm::radians(_angleH), glm::vec3(0, 0, 1)));
+
+		glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
+		_video->SetCameraPosition(cameraPosition);
+	}
+
 	glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
 	glm::vec3 cameraDirection = glm::vec3(
 		hdir * cosf(glm::radians(_angleV)),
@@ -269,7 +306,7 @@ void Player::Tick()
 
 	//cameraPosition -= glm::normalize(cameraDirection) * 1.5f;
 
-	glm::vec3 buildCamPosTarget = glm::vec3(_buildPos);
+	glm::vec3 buildCamPosTarget = glm::vec3(0.0);
 
 	float buildCamDist = glm::length(_buildCamPos - buildCamPosTarget);
 
@@ -334,7 +371,7 @@ void Player::Tick()
 
 			block->SetDataCable(!block->GetDataCable());
 		}
-	} else if (object.Code == 2) {
+	} else if (object.Code == 2 && !_flightMode) {
 		_centerTextBox->SetText(
 			"FlightControl\n[E] Use");
 		_centerTextBox->Activate();
@@ -343,6 +380,12 @@ void Player::Tick()
 		if (_actionERequested) {
 			FlightControl* block = static_cast<FlightControl*>(
 				object.object);
+
+			_activeFlightControl = block;
+
+			_ship->ActivateFlight(block);
+			_flightMode = true;
+			_ship->SetInputEnabled(true);
 		}
 	} else {
 		_centerTextBox->Deactivate();

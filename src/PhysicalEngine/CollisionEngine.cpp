@@ -195,7 +195,7 @@ void CollisionEngine::CalculateCollision(
 		}
 	}
 
-	object1->IncObjectEffect(effect);
+	object1->IncObjectEffect(effect, object2);
 }
 
 bool LineEffectOnSphere(

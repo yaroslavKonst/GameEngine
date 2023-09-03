@@ -18,6 +18,7 @@ public:
 	{
 		_initialized = false;
 		_effect = glm::vec3(0.0f);
+		_effectSource = nullptr;
 		_dynamic = false;
 		_dynamicSphereRadius = 1;
 		_dynamicSphereCenter = {0, 0, 0};
@@ -107,16 +108,22 @@ public:
 		return _effect;
 	}
 
+	virtual Object* GetObjectEffectSource()
+	{
+		return _effectSource;
+	}
+
 	virtual void SetObjectEffect(const glm::vec3& value)
 	{
 		_effect = value;
+		_effectSource = nullptr;
 	}
 
-	virtual void IncObjectEffect(const glm::vec3& value)
+	virtual void IncObjectEffect(const glm::vec3& value, Object* object)
 	{
-		//_effect += value;
 		if (glm::length(value) > glm::length(_effect)) {
 			_effect = value;
+			_effectSource = object;
 		}
 	}
 
@@ -195,6 +202,7 @@ private:
 	float _radius;
 	bool _initialized;
 	glm::vec3 _effect;
+	Object* _effectSource;
 
 	bool _dynamic;
 	float _dynamicSphereRadius;

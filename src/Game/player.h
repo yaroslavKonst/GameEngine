@@ -55,8 +55,7 @@ private:
 
 	Ship* _ship;
 	bool _buildMode;
-	glm::ivec3 _buildPos;
-	glm::vec3 _buildRotation;
+	bool _flightMode;
 	float _buildCamCoeff;
 	glm::vec3 _buildCamPos;
 
@@ -68,6 +67,8 @@ private:
 
 	Rectangle _cross;
 	uint32_t _crossTexture;
+
+	FlightControl* _activeFlightControl;
 };
 
 #endif

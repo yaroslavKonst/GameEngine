@@ -23,6 +23,9 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 
 	_video->GetInputControl()->Subscribe(this);
 
+	_flightMode = false;
+	_buildMode = false;
+
 	_buildX = 0;
 	_buildY = 0;
 	_buildRotation = 0;
@@ -32,7 +35,7 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 	_prevBuildLayer = 100;
 
 	_position = {0, 0, 0};
-	_speed = {0, 0, 0.001};
+	_linearSpeed = {0, 0, 0};
 	_force = {0, 0, 0};
 }
 
@@ -46,8 +49,8 @@ Ship::~Ship()
 
 void Ship::TickEarly()
 {
-	_speed += _force;
-	_position += _speed;
+	_linearSpeed += _force;
+	_position += _linearSpeed;
 
 	_shipMatrix = glm::translate(
 		glm::mat4(1.0),
@@ -59,6 +62,15 @@ void Ship::Tick()
 }
 
 void Ship::Key(int key, int scancode, int action, int mods)
+{
+	if (_flightMode) {
+		Flight(key, scancode, action, mods);
+	} else if (_buildMode) {
+		Build(key, scancode, action, mods);
+	}
+}
+
+void Ship::Build(int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_R) {
 		if (action == GLFW_PRESS) {
@@ -75,6 +87,7 @@ void Ship::Key(int key, int scancode, int action, int mods)
 			_mainGrid->StopPreview();
 			_video->UnlockSceneMutex();
 			SetInputEnabled(false);
+			_buildMode = false;
 			_prevBuildLayer = 100;
 			return;
 		}
@@ -297,15 +310,15 @@ bool Ship::Scroll(double xoffset, double yoffset)
 	}
 
 	if (yoffset > 0) {
-		_buildRotation += 10;
+		_buildRotation += 5;
 	} else {
-		_buildRotation -= 10;
+		_buildRotation -= 5;
 	}
 
 	if (_buildRotation >= 360) {
 		_buildRotation = 0;
 	} else if (_buildRotation < 0) {
-		_buildRotation = 350;
+		_buildRotation = 355;
 	}
 
 	_video->LockSceneMutex();
@@ -317,4 +330,50 @@ bool Ship::Scroll(double xoffset, double yoffset)
 	_video->UnlockSceneMutex();
 
 	return true;
+}
+
+void Ship::Flight(int key, int scancode, int action, int mods)
+{
+	glm::vec3 dirF = _shipMatrix *
+		_activeFlightControl->GetModelMatrix() *
+		glm::vec4(0, 1, 0, 0);
+	glm::vec3 dirR = _shipMatrix *
+		_activeFlightControl->GetModelMatrix() *
+		glm::vec4(1, 0, 0, 0);
+
+	dirF *= 0.001;
+	dirR *= 0.001;
+
+	if (key == GLFW_KEY_W) {
+		if (action == GLFW_PRESS) {
+			_force += dirF;
+		} else if (action == GLFW_RELEASE) {
+			_force -= dirF;
+		}
+	} else if (key == GLFW_KEY_S) {
+		if (action == GLFW_PRESS) {
+			_force -= dirF;
+		} else if (action == GLFW_RELEASE) {
+			_force += dirF;
+		}
+	} else if (key == GLFW_KEY_D) {
+		if (action == GLFW_PRESS) {
+			_force += dirR;
+		} else if (action == GLFW_RELEASE) {
+			_force -= dirR;
+		}
+	} else if (key == GLFW_KEY_A) {
+		if (action == GLFW_PRESS) {
+			_force -= dirR;
+		} else if (action == GLFW_RELEASE) {
+			_force += dirR;
+		}
+	} else if (key == GLFW_KEY_Q) {
+		if (action == GLFW_PRESS) {
+			_force = glm::vec3(0.0);
+			SetInputEnabled(false);
+			_flightMode = false;
+			return;
+		}
+	}
 }

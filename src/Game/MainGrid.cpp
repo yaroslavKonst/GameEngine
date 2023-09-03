@@ -230,7 +230,7 @@ FlightControl::FlightControl(
 
 	for (auto& vertex : model.Vertices) {
 		vertex.x *= 0.8;
-		vertex.y *= 0.8;
+		vertex.y *= 0.5;
 		vertex.z *= 1.2 / 3.0;
 	}
 
