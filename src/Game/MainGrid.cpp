@@ -5,11 +5,13 @@
 MainGrid::MainGrid(
 	Video* video,
 	CollisionEngine* collisionEngine,
-	BaseGrid* baseGrid)
+	BaseGrid* baseGrid,
+	glm::mat4* extMat)
 {
 	_video = video;
 	_collisionEngine = collisionEngine;
 	_baseGrid = baseGrid;
+	_extMat = extMat;
 
 	_preview = nullptr;
 
@@ -20,6 +22,16 @@ MainGrid::MainGrid(
 
 	auto model = Loader::LoadModel("Models/Ship/MainBlocks/Wall.obj");
 	Models["Wall"] = _video->LoadModel(model);
+
+	td = Loader::LoadImage(
+		"Models/Ship/MainBlocks/FlightControl.png",
+		tw,
+		th);
+	Textures["FlightControl"] =
+		_video->GetTextures()->AddTexture(tw, th, td);
+
+	model = Loader::LoadModel("Models/Ship/MainBlocks/FlightControl.obj");
+	Models["FlightControl"] = _video->LoadModel(model);
 }
 
 MainGrid::~MainGrid()
@@ -64,13 +76,25 @@ void MainGrid::InsertBlock(
 	case MainBlock::Type::Wall:
 		block = new Wall(x, y, this);
 		break;
+	case MainBlock::Type::FlightControl:
+		block = new FlightControl(x, y, rotation, this);
+		break;
 	default:
 		return;
+	}
+
+	if (block->Rotateable()) {
+		matrix = glm::rotate(
+			matrix,
+			glm::radians(rotation),
+			glm::vec3(0, 0, 1));
 	}
 
 	block->SetDrawEnabled(true);
 	block->SetModelMatrix(matrix);
 	block->SetObjectMatrix(matrix);
+	block->SetModelExternalMatrix(_extMat);
+	block->SetObjectExternalMatrix(_extMat);
 
 	block->SetModelInnerMatrix(glm::mat4(1.0));
 
@@ -112,13 +136,24 @@ void MainGrid::PreviewBlock(
 	case MainBlock::Type::Wall:
 		_preview = new Wall(x, y, this);
 		break;
+	case MainBlock::Type::FlightControl:
+		_preview = new FlightControl(x, y, rotation, this);
+		break;
 	default:
 		return;
+	}
+
+	if (_preview->Rotateable()) {
+		matrix = glm::rotate(
+			matrix,
+			glm::radians(rotation),
+			glm::vec3(0, 0, 1));
 	}
 
 	_preview->SetDrawEnabled(true);
 	_preview->SetDrawLight(true);
 	_preview->SetModelMatrix(matrix);
+	_preview->SetModelExternalMatrix(_extMat);
 
 	_preview->SetModelInnerMatrix(glm::scale(
 		glm::mat4(1.0),
@@ -177,5 +212,34 @@ Wall::Wall(
 	SetObjectDynamic(true);
 	SetObjectSphereCenter({0, 0, 0.5});
 	SetObjectSphereRadius(0.5);
+	SetObjectDomain(1);
+}
+
+FlightControl::FlightControl(
+	int32_t x,
+	int32_t y,
+	float rotation,
+	MainGrid* grid) :
+	MainBlock(x, y, rotation, grid)
+{
+	SetTexture({_grid->Textures["FlightControl"]});
+	SetModels({_grid->Models["FlightControl"]});
+
+	auto model = Loader::LoadModel(
+		"Models/Ship/MainBlocks/Wall.obj");
+
+	for (auto& vertex : model.Vertices) {
+		vertex.x *= 0.8;
+		vertex.y *= 0.8;
+		vertex.z *= 1.2 / 3.0;
+	}
+
+	SetObjectVertices(model.Vertices);
+	SetObjectIndices(model.Indices);
+	SetObjectNormals(model.Normals);
+	SetObjectCenter();
+	SetObjectDynamic(true);
+	SetObjectSphereCenter({0, 0, 0.5});
+	SetObjectSphereRadius(0.3);
 	SetObjectDomain(1);
 }

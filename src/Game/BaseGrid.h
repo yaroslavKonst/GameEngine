@@ -61,6 +61,7 @@ public:
 		int32_t y,
 		BaseGrid* grid,
 		Video* video,
+		glm::mat4* extMat,
 		bool preview = false);
 	~FloorCommBlock();
 
@@ -96,6 +97,8 @@ private:
 	Model* CreateDelim(size_t i);
 	Model* CreatePowerCable(size_t i);
 	Model* CreateDataCable(size_t i);
+
+	glm::mat4* _extMat;
 };
 
 class BaseGrid
@@ -104,7 +107,10 @@ public:
 	Library Textures;
 	Library Models;
 
-	BaseGrid(Video* video, CollisionEngine* collisionEngine);
+	BaseGrid(
+		Video* video,
+		CollisionEngine* collisionEngine,
+		glm::mat4* extMat);
 	~BaseGrid();
 
 	void InsertBlock(
@@ -127,6 +133,7 @@ private:
 
 	Video* _video;
 	CollisionEngine* _collisionEngine;
+	glm::mat4* _extMat;
 };
 
 #endif

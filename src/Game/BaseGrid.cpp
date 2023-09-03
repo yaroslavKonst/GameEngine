@@ -4,10 +4,14 @@
 
 #include "../Logger/logger.h"
 
-BaseGrid::BaseGrid(Video* video, CollisionEngine* collisionEngine)
+BaseGrid::BaseGrid(
+	Video* video,
+	CollisionEngine* collisionEngine,
+	glm::mat4* extMat)
 {
 	_video = video;
 	_collisionEngine = collisionEngine;
+	_extMat = extMat;
 
 	int tw;
 	int th;
@@ -107,7 +111,8 @@ void BaseGrid::InsertBlock(
 			x,
 			y,
 			this,
-			_video);
+			_video,
+			_extMat);
 		break;
 	default:
 		return;
@@ -119,6 +124,8 @@ void BaseGrid::InsertBlock(
 
 	block->SetDrawEnabled(true);
 	block->SetModelMatrix(matrix);
+	block->SetModelExternalMatrix(_extMat);
+	block->SetObjectExternalMatrix(_extMat);
 
 	block->SetModelInnerMatrix(glm::mat4(1.0));
 
@@ -174,6 +181,7 @@ void BaseGrid::PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type)
 			y,
 			this,
 			_video,
+			_extMat,
 			true);
 		break;
 	default:
@@ -199,6 +207,8 @@ void BaseGrid::PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type)
 	_preview->SetModelMatrix(glm::translate(
 		glm::mat4(1.0),
 		glm::vec3(x, y, 0)));
+
+	_preview->SetModelExternalMatrix(_extMat);
 
 	_preview->SetModelInnerMatrix(glm::scale(
 		glm::mat4(1.0),
@@ -249,6 +259,7 @@ FloorCommBlock::FloorCommBlock(
 	int32_t y,
 	BaseGrid* grid,
 	Video* video,
+	glm::mat4* extMat,
 	bool preview) :
 	BaseBlock(x, y, grid)
 {
@@ -260,6 +271,7 @@ FloorCommBlock::FloorCommBlock(
 	_dataCables.resize(4, nullptr);
 	_powerCableHub = nullptr;
 	_dataCableHub = nullptr;
+	_extMat = extMat;
 
 	_hasPowerCable = false;
 	_hasDataCable = false;
@@ -273,16 +285,19 @@ FloorCommBlock::FloorCommBlock(
 		_delims[i]->SetDrawEnabled(true);
 		_delims[i]->SetTexture({grid->Textures["FloorCommDelim"]});
 		_delims[i]->SetModels({grid->Models["FloorCommDelim"]});
+		_delims[i]->SetModelExternalMatrix(extMat);
 
 		_powerCables[i] = CreatePowerCable(i);
 		_powerCables[i]->SetDrawEnabled(false);
 		_powerCables[i]->SetTexture({grid->Textures["PowerCable"]});
 		_powerCables[i]->SetModels({grid->Models["PowerCable"]});
+		_powerCables[i]->SetModelExternalMatrix(extMat);
 
 		_dataCables[i] = CreateDataCable(i);
 		_dataCables[i]->SetDrawEnabled(false);
 		_dataCables[i]->SetTexture({grid->Textures["DataCable"]});
 		_dataCables[i]->SetModels({grid->Models["DataCable"]});
+		_dataCables[i]->SetModelExternalMatrix(extMat);
 
 		_video->RegisterModel(_delims[i]);
 		_video->RegisterModel(_powerCables[i]);
@@ -317,6 +332,12 @@ FloorCommBlock::~FloorCommBlock()
 		_video->RemoveModel(_powerCableHub);
 		delete _powerCableHub;
 		_powerCableHub = nullptr;
+	}
+
+	if (_dataCableHub) {
+		_video->RemoveModel(_dataCableHub);
+		delete _dataCableHub;
+		_dataCableHub = nullptr;
 	}
 }
 
@@ -417,6 +438,7 @@ void FloorCommBlock::SetPowerCable(bool value)
 
 		_powerCableHub->SetDrawEnabled(true);
 		_powerCableHub->SetModelMatrix(matrix);
+		_powerCableHub->SetModelExternalMatrix(_extMat);
 
 		_powerCableHub->SetModelInnerMatrix(glm::mat4(1.0));
 
@@ -498,6 +520,7 @@ void FloorCommBlock::SetDataCable(bool value)
 
 		_dataCableHub->SetDrawEnabled(true);
 		_dataCableHub->SetModelMatrix(matrix);
+		_dataCableHub->SetModelExternalMatrix(_extMat);
 
 		_dataCableHub->SetModelInnerMatrix(glm::mat4(1.0));
 

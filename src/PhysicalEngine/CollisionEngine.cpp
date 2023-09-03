@@ -339,9 +339,12 @@ CollisionEngine::RayCastResult CollisionEngine::RayCast(
 		float radius = object->_GetObjectRadius();
 		glm::mat4 matrix = object->GetObjectMatrix();
 		glm::mat4* extMatrix = object->GetObjectExternalMatrix();
-		glm::vec3 centerWorld =
-			(extMatrix ? *extMatrix : glm::mat4(1)) *
-			matrix * glm::vec4(center, 1.0f);
+
+		if (extMatrix) {
+			matrix = *extMatrix * matrix;
+		}
+
+		glm::vec3 centerWorld = matrix * glm::vec4(center, 1.0f);
 
 		float dist = glm::length(centerWorld - point) - radius;
 
@@ -387,8 +390,11 @@ bool CollisionEngine::FindRayIntersection(
 	glm::mat4 matrix = object->GetObjectMatrix();
 	glm::mat4* extMatrix = object->GetObjectExternalMatrix();
 
-	glm::vec3 centerWorld = (extMatrix ? *extMatrix : glm::mat4(1)) *
-		matrix * glm::vec4(center, 1.0f);
+	if (extMatrix) {
+		matrix = *extMatrix * matrix;
+	}
+
+	glm::vec3 centerWorld = matrix * glm::vec4(center, 1.0f);
 
 	// Sphere: X : length(centerWorld, X) == radius.
 	// Ray: point + alpha * normalize(direction) where
@@ -421,9 +427,7 @@ bool CollisionEngine::FindRayIntersection(
 	std::vector<glm::vec3> verticesWorld(vertices.size());
 
 	for (size_t i = 0; i < vertices.size(); ++i) {
-		verticesWorld[i] =
-			glm::vec3((extMatrix ? *extMatrix : glm::mat4(1)) *
-				matrix * glm::vec4(vertices[i], 1.0f));
+		verticesWorld[i] = matrix * glm::vec4(vertices[i], 1.0f);
 	}
 
 	float closestHitDistance = distance;

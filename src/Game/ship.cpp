@@ -9,19 +9,31 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 	_video = video;
 	_collisionEngine = collisionEngine;
 
-	_baseGrid = new BaseGrid(_video, _collisionEngine);
-	_mainGrid = new MainGrid(_video, _collisionEngine, _baseGrid);
+	_baseGrid = new BaseGrid(_video, _collisionEngine, &_shipMatrix);
+	_mainGrid = new MainGrid(
+		_video,
+		_collisionEngine,
+		_baseGrid,
+		&_shipMatrix);
 
 	_baseGrid->InsertBlock(0, 0, BaseBlock::Type::Floor, true);
+
+	SetInputLayer(0);
+	InputArea = {-1, -1, 1, 1};
 
 	_video->GetInputControl()->Subscribe(this);
 
 	_buildX = 0;
 	_buildY = 0;
+	_buildRotation = 0;
 	_buildType = BaseBlock::Type::Floor;
 	_mainBuildType = MainBlock::Type::Wall;
 	_buildLayer = 0;
 	_prevBuildLayer = 100;
+
+	_position = {0, 0, 0};
+	_speed = {0, 0, 0.001};
+	_force = {0, 0, 0};
 }
 
 Ship::~Ship()
@@ -30,6 +42,16 @@ Ship::~Ship()
 
 	delete _mainGrid;
 	delete _baseGrid;
+}
+
+void Ship::TickEarly()
+{
+	_speed += _force;
+	_position += _speed;
+
+	_shipMatrix = glm::translate(
+		glm::mat4(1.0),
+		_position);
 }
 
 void Ship::Tick()
@@ -93,7 +115,7 @@ void Ship::Key(int key, int scancode, int action, int mods)
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 			break;
@@ -181,7 +203,7 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 		}
@@ -192,7 +214,7 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 		}
@@ -203,7 +225,7 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 		}
@@ -214,7 +236,7 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 		}
@@ -224,12 +246,12 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 			_mainGrid->InsertBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 		}
@@ -240,20 +262,59 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_T) {
 		if (action == GLFW_PRESS) {
+			switch (_mainBuildType) {
+			case MainBlock::Type::Wall:
+				_mainBuildType = MainBlock::Type::FlightControl;
+				break;
+			case MainBlock::Type::FlightControl:
+				_mainBuildType = MainBlock::Type::Wall;
+				break;
+			default:
+				break;
+			}
+
 			_video->LockSceneMutex();
-			_mainBuildType = MainBlock::Type::Wall;
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
-				0,
+				_buildRotation,
 				_mainBuildType);
 			_video->UnlockSceneMutex();
 		}
 	}
+}
+
+bool Ship::Scroll(double xoffset, double yoffset)
+{
+	if (_buildLayer != 1) {
+		return true;
+	}
+
+	if (yoffset > 0) {
+		_buildRotation += 10;
+	} else {
+		_buildRotation -= 10;
+	}
+
+	if (_buildRotation >= 360) {
+		_buildRotation = 0;
+	} else if (_buildRotation < 0) {
+		_buildRotation = 350;
+	}
+
+	_video->LockSceneMutex();
+	_mainGrid->PreviewBlock(
+		_buildX,
+		_buildY,
+		_buildRotation,
+		_mainBuildType);
+	_video->UnlockSceneMutex();
+
+	return true;
 }

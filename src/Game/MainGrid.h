@@ -17,9 +17,10 @@ public:
 		Wall,
 		CommGrate,
 		Door,
-		Engine,
+		Thruster,
+		Generator,
 		Container,
-		Cockpit
+		FlightControl
 	};
 
 	MainBlock(int32_t x, int32_t y, float rotation, MainGrid* grid)
@@ -34,6 +35,8 @@ public:
 	{ }
 
 	virtual Type GetType() = 0;
+
+	virtual bool Rotateable() = 0;
 
 	virtual void Update()
 	{ }
@@ -61,6 +64,34 @@ public:
 	{
 		return Type::Wall;
 	}
+
+	bool Rotateable() override
+	{
+		return false;
+	}
+};
+
+class FlightControl : public MainBlock
+{
+public:
+	FlightControl(int32_t x, int32_t y, float rotation, MainGrid* grid);
+
+	Type GetType() override
+	{
+		return Type::FlightControl;
+	}
+
+	bool Rotateable() override
+	{
+		return true;
+	}
+
+	uint32_t RayCastCallback(void* userPointer) override
+	{
+		return 2;
+	}
+
+private:
 };
 
 class MainGrid
@@ -72,7 +103,8 @@ public:
 	MainGrid(
 		Video* video,
 		CollisionEngine* collisionEngine,
-		BaseGrid* baseGrid);
+		BaseGrid* baseGrid,
+		glm::mat4* extMat);
 	~MainGrid();
 
 	void InsertBlock(
@@ -100,6 +132,8 @@ private:
 	BaseGrid* _baseGrid;
 
 	MainBlock* _preview;
+
+	glm::mat4* _extMat;
 };
 
 #endif

@@ -315,7 +315,7 @@ void Player::Tick()
 		nullptr,
 		{this});
 
-	if (object.Code) {
+	if (object.Code == 1) {
 		_centerTextBox->SetText(
 			"Communications\n[E] Power\n[R] Data");
 		_centerTextBox->Activate();
@@ -333,6 +333,16 @@ void Player::Tick()
 				object.object);
 
 			block->SetDataCable(!block->GetDataCable());
+		}
+	} else if (object.Code == 2) {
+		_centerTextBox->SetText(
+			"FlightControl\n[E] Use");
+		_centerTextBox->Activate();
+		_cross.SetColorMultiplier({0.3, 1.0, 0.3, 1.0});
+
+		if (_actionERequested) {
+			FlightControl* block = static_cast<FlightControl*>(
+				object.object);
 		}
 	} else {
 		_centerTextBox->Deactivate();
