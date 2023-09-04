@@ -43,6 +43,7 @@ private:
 	int32_t _buildX;
 	int32_t _buildY;
 	float _buildRotation;
+	float _buildRotationStep;
 	BaseBlock::Type _buildType;
 	MainBlock::Type _mainBuildType;
 
@@ -53,8 +54,9 @@ private:
 	glm::vec3 _rotation;
 	glm::vec3 _linearSpeed;
 	glm::vec3 _angularSpeed;
-	glm::vec3 _force;
 	glm::mat4 _shipMatrix;
+
+	glm::vec3 _targetSpeed;
 
 	FlightControl* _activeFlightControl;
 

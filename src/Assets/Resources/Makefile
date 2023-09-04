@@ -24,7 +24,14 @@ ENTRIES=\
 	Models/Ship/MainBlocks/Wall.obj \
 	Models/Ship/MainBlocks/Wall.png \
 	Models/Ship/MainBlocks/FlightControl.obj \
-	Models/Ship/MainBlocks/FlightControl.png
+	Models/Ship/MainBlocks/FlightControl.png \
+	Models/Ship/MainBlocks/StaticThruster.obj \
+	Models/Ship/MainBlocks/StaticThruster.png \
+	Models/Ship/MainBlocks/StaticThrusterCollision.obj \
+	Models/Ship/MainBlocks/DynamicThrusterBase.obj \
+	Models/Ship/MainBlocks/DynamicThrusterBase.png \
+	Models/Ship/MainBlocks/DynamicThruster.obj \
+	Models/Ship/MainBlocks/DynamicThruster.png
 
 .PHONY: all
 

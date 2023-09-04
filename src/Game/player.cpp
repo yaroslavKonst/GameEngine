@@ -304,7 +304,9 @@ void Player::Tick()
 		hdir * cosf(glm::radians(_angleV)),
 		sinf(glm::radians(_angleV)));
 
-	//cameraPosition -= glm::normalize(cameraDirection) * 1.5f;
+	if (_flightMode) {
+		cameraPosition -= glm::normalize(cameraDirection) * 20.0f;
+	}
 
 	glm::vec3 buildCamPosTarget = glm::vec3(0.0);
 

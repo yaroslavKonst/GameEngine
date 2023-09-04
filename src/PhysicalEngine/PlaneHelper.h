@@ -15,7 +15,7 @@ namespace PlaneHelper
 {
 	typedef glm::vec4 Plane;
 
-	Plane PlaneByThreePoints(
+	inline Plane PlaneByThreePoints(
 		const glm::vec3& p0,
 		const glm::vec3& p1,
 		const glm::vec3& p2)
@@ -58,7 +58,9 @@ namespace PlaneHelper
 		return plane;
 	}
 
-	float PointToPlaneDistance(const glm::vec3& point, const Plane& plane)
+	inline float PointToPlaneDistance(
+		const glm::vec3& point,
+		const Plane& plane)
 	{
 		float u = fabsf(plane[0] * point[0] +
 			plane[1] * point[1] +
@@ -72,7 +74,9 @@ namespace PlaneHelper
 		return u / d;
 	}
 
-	float SetPointToPlane(const glm::vec3& point, const Plane& plane)
+	inline float SetPointToPlane(
+		const glm::vec3& point,
+		const Plane& plane)
 	{
 		return
 			point[0] * plane[0] +
@@ -80,7 +84,7 @@ namespace PlaneHelper
 			point[2] * plane[2] + plane[3];
 	}
 
-	glm::vec3 ProjectPointToPlane(
+	inline glm::vec3 ProjectPointToPlane(
 		const glm::vec3& point,
 		const Plane& plane)
 	{
@@ -92,7 +96,7 @@ namespace PlaneHelper
 		return point + alpha * glm::vec3(plane[0], plane[1], plane[2]);
 	}
 
-	float TriangleSqr(const std::vector<glm::vec3>& triangle)
+	inline float TriangleSqr(const std::vector<glm::vec3>& triangle)
 	{
 		float l1 = glm::length(triangle[1] - triangle[0]);
 		float l2 = glm::length(triangle[2] - triangle[0]);
@@ -103,7 +107,7 @@ namespace PlaneHelper
 		return sqrtf(h * (h - l1) * (h - l2) * (h - l3));
 	}
 
-	bool PointInTriangle(
+	inline bool PointInTriangle(
 		const glm::vec3& point,
 		const std::vector<glm::vec3>& triangle)
 	{
@@ -137,7 +141,7 @@ namespace PlaneHelper
 		return v1 * v2 >= 0 && v1 * v3 >= 0 && v2 * v3 >= 0;
 	}
 
-	bool RayIntersectSphere(
+	inline bool RayIntersectSphere(
 		const glm::vec3& point,
 		const glm::vec3& direction,
 		const glm::vec3& center,
@@ -174,7 +178,7 @@ namespace PlaneHelper
 		return true;
 	}
 
-	bool RayIntersectPlane(
+	inline bool RayIntersectPlane(
 		const glm::vec3& point,
 		const glm::vec3& direction,
 		const Plane& plane,

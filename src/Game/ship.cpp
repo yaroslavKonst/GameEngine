@@ -29,6 +29,7 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 	_buildX = 0;
 	_buildY = 0;
 	_buildRotation = 0;
+	_buildRotationStep = 90;
 	_buildType = BaseBlock::Type::Floor;
 	_mainBuildType = MainBlock::Type::Wall;
 	_buildLayer = 0;
@@ -36,7 +37,7 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 
 	_position = {0, 0, 0};
 	_linearSpeed = {0, 0, 0};
-	_force = {0, 0, 0};
+	_targetSpeed = {0, 0, 0};
 }
 
 Ship::~Ship()
@@ -49,7 +50,13 @@ Ship::~Ship()
 
 void Ship::TickEarly()
 {
-	_linearSpeed += _force;
+	glm::vec3 g(0, 0, -1);
+
+	glm::vec3 targetForce = _targetSpeed / 10.0f - _linearSpeed;
+
+	glm::vec3 force = g + _mainGrid->SetThrusterForce(targetForce - g);
+
+	_linearSpeed += force / 100.0f;
 	_position += _linearSpeed;
 
 	_shipMatrix = glm::translate(
@@ -59,6 +66,13 @@ void Ship::TickEarly()
 
 void Ship::Tick()
 {
+	glm::vec3 effect = _baseGrid->GetCollisionFeedback();
+
+	_position += effect;
+
+	if (glm::dot(effect, _linearSpeed) < 0) {
+		_linearSpeed = glm::vec3(0, 0, 0);
+	}
 }
 
 void Ship::Key(int key, int scancode, int action, int mods)
@@ -203,6 +217,8 @@ void Ship::BaseLayer(int key, int scancode, int action, int mods)
 				BaseBlock::Type::Floor;
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
 			_video->UnlockSceneMutex();
+
+			_buildRotation = 0;
 		}
 	}
 }
@@ -281,12 +297,26 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 		}
 	} else if (key == GLFW_KEY_T) {
 		if (action == GLFW_PRESS) {
+			_buildRotation = 0;
+
 			switch (_mainBuildType) {
 			case MainBlock::Type::Wall:
+				_mainBuildType =
+					MainBlock::Type::StaticThruster;
+				_buildRotationStep = 90;
+				break;
+			case MainBlock::Type::StaticThruster:
+				_mainBuildType =
+					MainBlock::Type::DynamicThruster;
+				_buildRotationStep = 90;
+				break;
+			case MainBlock::Type::DynamicThruster:
 				_mainBuildType = MainBlock::Type::FlightControl;
+				_buildRotationStep = 5;
 				break;
 			case MainBlock::Type::FlightControl:
 				_mainBuildType = MainBlock::Type::Wall;
+				_buildRotationStep = 90;
 				break;
 			default:
 				break;
@@ -310,15 +340,15 @@ bool Ship::Scroll(double xoffset, double yoffset)
 	}
 
 	if (yoffset > 0) {
-		_buildRotation += 5;
+		_buildRotation += _buildRotationStep;
 	} else {
-		_buildRotation -= 5;
+		_buildRotation -= _buildRotationStep;
 	}
 
 	if (_buildRotation >= 360) {
 		_buildRotation = 0;
 	} else if (_buildRotation < 0) {
-		_buildRotation = 355;
+		_buildRotation = 360 - _buildRotationStep;
 	}
 
 	_video->LockSceneMutex();
@@ -340,37 +370,49 @@ void Ship::Flight(int key, int scancode, int action, int mods)
 	glm::vec3 dirR = _shipMatrix *
 		_activeFlightControl->GetModelMatrix() *
 		glm::vec4(1, 0, 0, 0);
-
-	dirF *= 0.001;
-	dirR *= 0.001;
+	glm::vec3 dirU = _shipMatrix *
+		_activeFlightControl->GetModelMatrix() *
+		glm::vec4(0, 0, 1, 0);
 
 	if (key == GLFW_KEY_W) {
 		if (action == GLFW_PRESS) {
-			_force += dirF;
+			_targetSpeed += dirF;
 		} else if (action == GLFW_RELEASE) {
-			_force -= dirF;
+			_targetSpeed -= dirF;
 		}
 	} else if (key == GLFW_KEY_S) {
 		if (action == GLFW_PRESS) {
-			_force -= dirF;
+			_targetSpeed -= dirF;
 		} else if (action == GLFW_RELEASE) {
-			_force += dirF;
+			_targetSpeed += dirF;
 		}
 	} else if (key == GLFW_KEY_D) {
 		if (action == GLFW_PRESS) {
-			_force += dirR;
+			_targetSpeed += dirR;
 		} else if (action == GLFW_RELEASE) {
-			_force -= dirR;
+			_targetSpeed -= dirR;
 		}
 	} else if (key == GLFW_KEY_A) {
 		if (action == GLFW_PRESS) {
-			_force -= dirR;
+			_targetSpeed -= dirR;
 		} else if (action == GLFW_RELEASE) {
-			_force += dirR;
+			_targetSpeed += dirR;
+		}
+	} else if (key == GLFW_KEY_SPACE) {
+		if (action == GLFW_PRESS) {
+			_targetSpeed += dirU;
+		} else if (action == GLFW_RELEASE) {
+			_targetSpeed -= dirU;
+		}
+	} else if (key == GLFW_KEY_X) {
+		if (action == GLFW_PRESS) {
+			_targetSpeed -= dirU;
+		} else if (action == GLFW_RELEASE) {
+			_targetSpeed += dirU;
 		}
 	} else if (key == GLFW_KEY_Q) {
 		if (action == GLFW_PRESS) {
-			_force = glm::vec3(0.0);
+			_targetSpeed = glm::vec3(0.0);
 			SetInputEnabled(false);
 			_flightMode = false;
 			return;

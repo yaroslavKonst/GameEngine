@@ -126,6 +126,8 @@ public:
 	BaseBlock::Type GetType(int32_t x, int32_t y);
 	BaseBlock* GetBlock(int32_t x, int32_t y);
 
+	glm::vec3 GetCollisionFeedback();
+
 private:
 	std::map<Coord2D, BaseBlock*> _blocks;
 

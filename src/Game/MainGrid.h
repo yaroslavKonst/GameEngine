@@ -17,7 +17,8 @@ public:
 		Wall,
 		CommGrate,
 		Door,
-		Thruster,
+		StaticThruster,
+		DynamicThruster,
 		Generator,
 		Container,
 		FlightControl
@@ -94,6 +95,58 @@ public:
 private:
 };
 
+class StaticThruster : public MainBlock
+{
+public:
+	StaticThruster(int32_t x, int32_t y, float rotation, MainGrid* grid);
+
+	Type GetType() override
+	{
+		return Type::StaticThruster;
+	}
+
+	bool Rotateable() override
+	{
+		return true;
+	}
+
+	glm::vec3 SetDirection(const glm::vec3& value);
+
+private:
+};
+
+class DynamicThruster : public MainBlock
+{
+public:
+	DynamicThruster(
+		int32_t x,
+		int32_t y,
+		float rotation,
+		MainGrid* grid,
+		Video* video,
+		glm::mat4* extMat);
+	~DynamicThruster();
+
+	Type GetType() override
+	{
+		return Type::DynamicThruster;
+	}
+
+	bool Rotateable() override
+	{
+		return true;
+	}
+
+	glm::vec3 SetDirection(const glm::vec3& value);
+
+private:
+	Model* _thruster;
+	Video* _video;
+	glm::mat4* _extMat;
+
+	float _angle;
+};
+
 class MainGrid
 {
 public:
@@ -124,8 +177,13 @@ public:
 	MainBlock::Type GetType(int32_t x, int32_t y);
 	MainBlock* GetBlock(int32_t x, int32_t y);
 
+	glm::vec3 SetThrusterForce(const glm::vec3& force);
+
 private:
 	std::map<Coord2D, MainBlock*> _blocks;
+
+	std::set<StaticThruster*> _staticThrusters;
+	std::set<DynamicThruster*> _dynamicThrusters;
 
 	Video* _video;
 	CollisionEngine* _collisionEngine;

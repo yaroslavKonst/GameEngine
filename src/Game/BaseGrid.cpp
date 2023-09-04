@@ -244,6 +244,21 @@ BaseBlock* BaseGrid::GetBlock(int32_t x, int32_t y)
 	return _blocks[{x, y}];
 }
 
+glm::vec3 BaseGrid::GetCollisionFeedback()
+{
+	glm::vec3 maxForce(0, 0, 0);
+
+	for (auto& block : _blocks) {
+		glm::vec3 effect = block.second->GetObjectEffect();
+
+		if (glm::length(effect) > glm::length(maxForce)) {
+			maxForce = effect;
+		}
+	}
+
+	return maxForce;
+}
+
 FloorBlock::FloorBlock(
 	int32_t x,
 	int32_t y,
