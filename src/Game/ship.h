@@ -18,6 +18,7 @@ public:
 
 	void Key(int key, int scancode, int action, int mods) override;
 	bool Scroll(double xoffset, double yoffset) override;
+	bool MouseMoveRaw(double xoffset, double yoffset) override;
 
 	void ActivateFlight(FlightControl* control)
 	{
@@ -57,6 +58,12 @@ private:
 	glm::mat4 _shipMatrix;
 
 	glm::vec3 _targetSpeed;
+	glm::mat4 _rotationMatrix;
+	bool _grounded;
+
+	float _controlF;
+	float _controlR;
+	float _controlU;
 
 	FlightControl* _activeFlightControl;
 

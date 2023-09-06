@@ -9,6 +9,8 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 	_video = video;
 	_collisionEngine = collisionEngine;
 
+	_shipMatrix = glm::mat4(1.0);
+
 	_baseGrid = new BaseGrid(_video, _collisionEngine, &_shipMatrix);
 	_mainGrid = new MainGrid(
 		_video,
@@ -18,7 +20,7 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 
 	_baseGrid->InsertBlock(0, 0, BaseBlock::Type::Floor, true);
 
-	SetInputLayer(0);
+	SetInputLayer(1);
 	InputArea = {-1, -1, 1, 1};
 
 	_video->GetInputControl()->Subscribe(this);
@@ -35,9 +37,19 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 	_buildLayer = 0;
 	_prevBuildLayer = 100;
 
+	_grounded = false;
+
 	_position = {0, 0, 0};
 	_linearSpeed = {0, 0, 0};
+	_rotation = {0, 0, 0};
+	_angularSpeed = {0, 0, 0};
+
 	_targetSpeed = {0, 0, 0};
+	_rotationMatrix = glm::mat4(1.0f);
+
+	_controlF = 0;
+	_controlR = 0;
+	_controlU = 0;
 }
 
 Ship::~Ship()
@@ -50,18 +62,47 @@ Ship::~Ship()
 
 void Ship::TickEarly()
 {
-	glm::vec3 g(0, 0, -1);
+	if (_flightMode) {
+		glm::vec3 dirF = _shipMatrix *
+			_activeFlightControl->GetModelMatrix() *
+			glm::vec4(0, 1, 0, 0);
+		glm::vec3 dirR = _shipMatrix *
+			_activeFlightControl->GetModelMatrix() *
+			glm::vec4(1, 0, 0, 0);
+		glm::vec3 dirU = _shipMatrix *
+			_activeFlightControl->GetModelMatrix() *
+			glm::vec4(0, 0, 1, 0);
 
+		_targetSpeed =
+			dirF * _controlF +
+			dirR * _controlR +
+			dirU * _controlU;
+	} else {
+		_targetSpeed = {0, 0, 0};
+	}
+
+	glm::vec3 mg(0, 0, -1);
+
+	glm::vec3 thrusterForce;
 	glm::vec3 targetForce = _targetSpeed / 10.0f - _linearSpeed;
 
-	glm::vec3 force = g + _mainGrid->SetThrusterForce(targetForce - g);
+	if (!_flightMode && _grounded) {
+		thrusterForce = glm::vec3(0, 0, 0);
+	} else {
+		thrusterForce = _mainGrid->SetThrusterForce(targetForce - mg);
+		_grounded = false;
+	}
+
+	glm::vec3 force = mg + thrusterForce;
 
 	_linearSpeed += force / 100.0f;
 	_position += _linearSpeed;
 
 	_shipMatrix = glm::translate(
-		glm::mat4(1.0),
+		glm::mat4(1.0f),
 		_position);
+
+	_shipMatrix = _shipMatrix * _rotationMatrix;
 }
 
 void Ship::Tick()
@@ -72,6 +113,7 @@ void Ship::Tick()
 
 	if (glm::dot(effect, _linearSpeed) < 0) {
 		_linearSpeed = glm::vec3(0, 0, 0);
+		_grounded = true;
 	}
 }
 
@@ -333,6 +375,24 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 	}
 }
 
+bool Ship::MouseMoveRaw(double xoffset, double yoffset)
+{
+	if (!_flightMode) {
+		return false;
+	}
+
+	glm::vec3 dirU = _shipMatrix *
+		_activeFlightControl->GetModelMatrix() *
+		glm::vec4(0, 0, 1, 0);
+
+	_rotationMatrix = glm::rotate(
+		_rotationMatrix,
+		glm::radians((float)xoffset),
+		dirU);
+
+	return true;
+}
+
 bool Ship::Scroll(double xoffset, double yoffset)
 {
 	if (_buildLayer != 1) {
@@ -364,51 +424,41 @@ bool Ship::Scroll(double xoffset, double yoffset)
 
 void Ship::Flight(int key, int scancode, int action, int mods)
 {
-	glm::vec3 dirF = _shipMatrix *
-		_activeFlightControl->GetModelMatrix() *
-		glm::vec4(0, 1, 0, 0);
-	glm::vec3 dirR = _shipMatrix *
-		_activeFlightControl->GetModelMatrix() *
-		glm::vec4(1, 0, 0, 0);
-	glm::vec3 dirU = _shipMatrix *
-		_activeFlightControl->GetModelMatrix() *
-		glm::vec4(0, 0, 1, 0);
-
 	if (key == GLFW_KEY_W) {
 		if (action == GLFW_PRESS) {
-			_targetSpeed += dirF;
+			_controlF += 1;
 		} else if (action == GLFW_RELEASE) {
-			_targetSpeed -= dirF;
+			_controlF -= 1;
 		}
 	} else if (key == GLFW_KEY_S) {
 		if (action == GLFW_PRESS) {
-			_targetSpeed -= dirF;
+			_controlF -= 1;
 		} else if (action == GLFW_RELEASE) {
-			_targetSpeed += dirF;
+			_controlF += 1;
 		}
 	} else if (key == GLFW_KEY_D) {
 		if (action == GLFW_PRESS) {
-			_targetSpeed += dirR;
+			_controlR += 1;
 		} else if (action == GLFW_RELEASE) {
-			_targetSpeed -= dirR;
+			_controlR -= 1;
 		}
 	} else if (key == GLFW_KEY_A) {
 		if (action == GLFW_PRESS) {
-			_targetSpeed -= dirR;
+			_controlR -= 1;
 		} else if (action == GLFW_RELEASE) {
-			_targetSpeed += dirR;
+			_controlR += 1;
 		}
 	} else if (key == GLFW_KEY_SPACE) {
 		if (action == GLFW_PRESS) {
-			_targetSpeed += dirU;
+			_controlU += 1;
 		} else if (action == GLFW_RELEASE) {
-			_targetSpeed -= dirU;
+			_controlU -= 1;
 		}
 	} else if (key == GLFW_KEY_X) {
 		if (action == GLFW_PRESS) {
-			_targetSpeed -= dirU;
+			_controlU -= 1;
 		} else if (action == GLFW_RELEASE) {
-			_targetSpeed += dirU;
+			_controlU += 1;
 		}
 	} else if (key == GLFW_KEY_Q) {
 		if (action == GLFW_PRESS) {

@@ -2,6 +2,7 @@
 
 #include "../Utils/loader.h"
 #include "../PhysicalEngine/PlaneHelper.h"
+#include "../Logger/logger.h"
 
 MainGrid::MainGrid(
 	Video* video,
@@ -205,7 +206,10 @@ void MainGrid::PreviewBlock(
 			rotation,
 			this,
 			_video,
-			_extMat);
+			_extMat,
+			available ?
+				glm::vec4(0.5, 1, 0.5, 0.4) :
+				glm::vec4(1.0, 0.5, 0.5, 0.4));
 		break;
 	default:
 		return;
@@ -357,13 +361,16 @@ StaticThruster::StaticThruster(
 
 glm::vec3 StaticThruster::SetDirection(const glm::vec3& value)
 {
-	glm::vec3 thrDir(1, 0, 0);
+	glm::vec3 thrDir(0, 1, 0);
 
 	thrDir = *GetModelExternalMatrix() * GetModelMatrix() *
 		glm::vec4(thrDir, 0.0);
 
-	if (glm::dot(glm::normalize(thrDir), glm::normalize(value)) > 0) {
-		return glm::normalize(thrDir);
+	float angleCos =
+		glm::dot(glm::normalize(thrDir), glm::normalize(value));
+
+	if (angleCos > 0) {
+		return glm::normalize(thrDir) * angleCos;
 	}
 
 	return glm::vec3(0, 0, 0);
@@ -375,7 +382,8 @@ DynamicThruster::DynamicThruster(
 	float rotation,
 	MainGrid* grid,
 	Video* video,
-	glm::mat4* extMat) :
+	glm::mat4* extMat,
+	glm::vec4 colorMultiplier) :
 	MainBlock(x, y, rotation, grid)
 {
 	_video = video;
@@ -425,6 +433,11 @@ DynamicThruster::DynamicThruster(
 	_thruster->SetModelExternalMatrix(_extMat);
 
 	_thruster->SetModelInnerMatrix(glm::mat4(1.0));
+	_thruster->SetColorMultiplier(colorMultiplier);
+
+	if (colorMultiplier.a < 1) {
+		_thruster->SetDrawLight(true);
+	}
 
 	_video->RegisterModel(_thruster);
 }
@@ -464,14 +477,26 @@ glm::vec3 DynamicThruster::SetDirection(const glm::vec3& value)
 	glm::vec3 valueDir =
 		PlaneHelper::ProjectPointToPlane(value, enginePlane);
 
+	valueDir = glm::normalize(valueDir);
+	currentDir = glm::normalize(currentDir);
+
 	glm::vec3 spinDir = glm::cross(valueDir, currentDir);
+	float dot = glm::dot(valueDir, currentDir);
 
-	float dot = glm::dot(spinDir, normal);
+	float crossDot = glm::dot(spinDir, glm::normalize(normal));
 
-	if (dot > 0) {
-		_angle += 0.1;
-	} else if (dot < 0) {
-		_angle -= 0.1;
+	if (crossDot > 0) {
+		if (dot > 0 || fabs(crossDot) > 0.2) {
+			_angle += 1;
+		} else {
+			_angle += 0.1;
+		}
+	} else if (crossDot < 0) {
+		if (dot > 0 || fabs(crossDot) > 0.2) {
+			_angle -= 1;
+		} else {
+			_angle -= 0.1;
+		}
 	}
 
 	if (_angle < 0) {

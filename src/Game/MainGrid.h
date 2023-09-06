@@ -19,6 +19,7 @@ public:
 		Door,
 		StaticThruster,
 		DynamicThruster,
+		Gyroscope,
 		Generator,
 		Container,
 		FlightControl
@@ -124,7 +125,8 @@ public:
 		float rotation,
 		MainGrid* grid,
 		Video* video,
-		glm::mat4* extMat);
+		glm::mat4* extMat,
+		glm::vec4 colorMultiplier = {1, 1, 1, 1});
 	~DynamicThruster();
 
 	Type GetType() override
@@ -145,6 +147,12 @@ private:
 	glm::mat4* _extMat;
 
 	float _angle;
+};
+
+class Gyroscope : public MainBlock
+{
+public:
+private:
 };
 
 class MainGrid

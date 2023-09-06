@@ -102,6 +102,7 @@ void Player::Key(
 		if (key == GLFW_KEY_Q) {
 			if (action == GLFW_PRESS) {
 				_flightMode = false;
+				SetObjectDomain(0);
 			}
 		}
 
@@ -388,6 +389,7 @@ void Player::Tick()
 			_ship->ActivateFlight(block);
 			_flightMode = true;
 			_ship->SetInputEnabled(true);
+			SetObjectDomain(1);
 		}
 	} else {
 		_centerTextBox->Deactivate();

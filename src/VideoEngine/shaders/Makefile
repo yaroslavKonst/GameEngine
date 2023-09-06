@@ -35,7 +35,7 @@ spir-v/%_vert.spv: %.vert
 	../../../build/converter $*Vert $@_raw $@
 	rm $@_raw
 
-spir-v/%_frag.spv: %.frag
+spir-v/%_frag.spv: %.frag shadow.glsl LightProcessing.glsl
 	$(SC) $(SC_OPTS) $< -o $@_raw
 	../../../build/converter $*Frag $@_raw $@
 	rm $@_raw
