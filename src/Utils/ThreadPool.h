@@ -10,6 +10,7 @@
 class ThreadPool
 {
 public:
+	ThreadPool();
 	ThreadPool(uint32_t threadCount);
 	~ThreadPool();
 
@@ -28,6 +29,8 @@ private:
 
 	bool _work;
 	void ThreadFunction();
+
+	void StartThreads(uint32_t threadCount);
 };
 
 #endif

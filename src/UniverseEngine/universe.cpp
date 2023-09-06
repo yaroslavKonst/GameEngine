@@ -6,7 +6,7 @@ Universe::Universe(uint32_t tickDelayMS)
 {
 	_sceneMutex = nullptr;
 	_tickDelayMS = tickDelayMS;
-	_threadPool = new ThreadPool(3);
+	_threadPool = new ThreadPool();
 
 	Logger::Verbose() << "Universe created.";
 }
@@ -71,7 +71,7 @@ void Universe::MainLoop()
 
 		_collisionMutex.lock();
 		for (CollisionEngine* engine : _collisionEngines) {
-			engine->Run();
+			engine->Run(_threadPool);
 		}
 
 		_collisionMutex.unlock();

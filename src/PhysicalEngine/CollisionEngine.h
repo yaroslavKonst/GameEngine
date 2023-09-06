@@ -18,7 +18,7 @@ public:
 	CollisionEngine();
 	~CollisionEngine();
 
-	void Run();
+	void Run(ThreadPool* threadPool);
 
 	void RegisterObject(Object* object);
 	void RemoveObject(Object* object);
@@ -32,8 +32,6 @@ public:
 
 private:
 	std::set<Object*> _objects;
-
-	ThreadPool* _threadPool;
 
 	std::mutex _mutex;
 

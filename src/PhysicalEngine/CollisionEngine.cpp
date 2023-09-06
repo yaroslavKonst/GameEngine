@@ -8,12 +8,10 @@ using namespace PlaneHelper;
 
 CollisionEngine::CollisionEngine()
 {
-	_threadPool = new ThreadPool(6);
 }
 
 CollisionEngine::~CollisionEngine()
 {
-	delete _threadPool;
 }
 
 void CollisionEngine::RegisterObject(Object* object)
@@ -34,7 +32,7 @@ void CollisionEngine::RemoveObject(Object* object)
 	_mutex.unlock();
 }
 
-void CollisionEngine::Run()
+void CollisionEngine::Run(ThreadPool* threadPool)
 {
 	_mutex.lock();
 	std::vector<Object*> objects(_objects.size());
@@ -81,7 +79,7 @@ void CollisionEngine::Run()
 				continue;
 			}
 
-			_threadPool->Enqueue(
+			threadPool->Enqueue(
 				[this,
 				&objects,
 				objIdx1,
@@ -94,7 +92,7 @@ void CollisionEngine::Run()
 		}
 	}
 
-	_threadPool->Wait();
+	threadPool->Wait();
 
 	_mutex.unlock();
 }
