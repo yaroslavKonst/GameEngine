@@ -6,25 +6,72 @@ float CalculateShadow(vec3 fragPos, vec3 viewPos, int lightIndex)
 	vec3 fragToLight = fragPos - lightPos;
 	float currentDepth = length(fragToLight);
 
-	vec3 sampleOffsetDirections[20] = vec3[]
+	vec3 sampleOffsetDirections[52] = vec3[]
 	(
-		vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1),
-		vec3(-1,  1,  1),
-		vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1),
-		vec3(-1,  1, -1),
-		vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0),
-		vec3(-1,  1,  0),
-		vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1),
-		vec3(-1,  0, -1),
-		vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1),
-		vec3( 0,  1, -1)
+		vec3(-1, -1, -1),
+		vec3(-1, -1, 0),
+		vec3(-1, -1, 1),
+		vec3(-1, 0, -1),
+		vec3(-1, 0, 0),
+		vec3(-1, 0, 1),
+		vec3(-1, 1, -1),
+		vec3(-1, 1, 0),
+		vec3(-1, 1, 1),
+
+		vec3(0, -1, -1),
+		vec3(0, -1, 0),
+		vec3(0, -1, 1),
+		vec3(0, 0, -1),
+		vec3(0, 0, 1),
+		vec3(0, 1, -1),
+		vec3(0, 1, 0),
+		vec3(0, 1, 1),
+
+		vec3(1, -1, -1),
+		vec3(1, -1, 0),
+		vec3(1, -1, 1),
+		vec3(1, 0, -1),
+		vec3(1, 0, 0),
+		vec3(1, 0, 1),
+		vec3(1, 1, -1),
+		vec3(1, 1, 0),
+		vec3(1, 1, 1),
+
+		vec3(-1, -1, -1) * 0.5,
+		vec3(-1, -1, 0) * 0.5,
+		vec3(-1, -1, 1) * 0.5,
+		vec3(-1, 0, -1) * 0.5,
+		vec3(-1, 0, 0) * 0.5,
+		vec3(-1, 0, 1) * 0.5,
+		vec3(-1, 1, -1) * 0.5,
+		vec3(-1, 1, 0) * 0.5,
+		vec3(-1, 1, 1) * 0.5,
+
+		vec3(0, -1, -1) * 0.5,
+		vec3(0, -1, 0) * 0.5,
+		vec3(0, -1, 1) * 0.5,
+		vec3(0, 0, -1) * 0.5,
+		vec3(0, 0, 1) * 0.5,
+		vec3(0, 1, -1) * 0.5,
+		vec3(0, 1, 0) * 0.5,
+		vec3(0, 1, 1) * 0.5,
+
+		vec3(1, -1, -1) * 0.5,
+		vec3(1, -1, 0) * 0.5,
+		vec3(1, -1, 1) * 0.5,
+		vec3(1, 0, -1) * 0.5,
+		vec3(1, 0, 0) * 0.5,
+		vec3(1, 0, 1) * 0.5,
+		vec3(1, 1, -1) * 0.5,
+		vec3(1, 1, 0) * 0.5,
+		vec3(1, 1, 1) * 0.5
 	);
 
 	float shadow = 0.0;
 	float bias   = 0.05;
-	int samples  = 20;
+	int samples  = 52;
 	float viewDistance = length(viewPos - fragPos);
-	float diskRadius = (1.0 + (currentDepth / farPlane)) / 100.0;
+	float diskRadius = 0.01 + (currentDepth / farPlane);
 
 	for (int i = 0; i < samples; ++i) {
 		float closestDepth = texture(
