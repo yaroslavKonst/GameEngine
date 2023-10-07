@@ -5,7 +5,7 @@
 Player::Player(
 	Video* video,
 	CollisionEngine* rayEngine,
-	Ship* ship,
+	Shuttle* ship,
 	TextHandler* textHandler)
 {
 	_video = video;
@@ -25,6 +25,7 @@ Player::Player(
 	_buildCamCoeff = 0;
 	_actionERequested = false;
 	_actionRRequested = false;
+	_actionFRequested = false;
 	_activeFlightControl = nullptr;
 
 	auto collision = Loader::LoadModel("Models/Player/Collision.obj");
@@ -134,18 +135,6 @@ void Player::Key(
 				_lightActive = true;
 			}
 		}
-	} else if (key == GLFW_KEY_B) {
-		if (action == GLFW_PRESS) {
-			if (_buildMode) {
-				_buildMode = false;
-				Logger::Verbose() << "Build mode off.";
-			} else {
-				_ship->SetInputEnabled(true);
-				_ship->ActivateBuild();
-				_buildMode = true;
-				Logger::Verbose() << "Build mode on.";
-			}
-		}
 	}
 
 	if (!(_buildMode || _flightMode)) {
@@ -191,6 +180,12 @@ void Player::Key(
 			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_actionRRequested = true;
+			}
+			_mutex.unlock();
+		} else if (key == GLFW_KEY_F) {
+			_mutex.lock();
+			if (action == GLFW_PRESS) {
+				_actionFRequested = true;
 			}
 			_mutex.unlock();
 		}
@@ -280,16 +275,14 @@ void Player::Tick()
 	}
 
 	if (_flightMode) {
-		glm::mat4 matrix =
-			*_activeFlightControl->GetObjectExternalMatrix() *
-			_activeFlightControl->GetObjectMatrix();
+		glm::mat4 matrix = _ship->GetMatrix();
 
 		glm::vec3 offset = matrix * glm::vec4(0, -1, -1, 0);
 
 		offset = glm::normalize(offset) * 0.5f;
 
 		_pos = glm::vec3(matrix * glm::vec4(
-			_activeFlightControl->GetObjectCenter(), 1.0f)) +
+			0, 0, 5, 1.0f)) +
 			offset;
 
 		SetObjectMatrix(
@@ -306,7 +299,7 @@ void Player::Tick()
 		sinf(glm::radians(_angleV)));
 
 	if (_flightMode) {
-		cameraPosition -= glm::normalize(cameraDirection) * 20.0f;
+		cameraPosition -= glm::normalize(cameraDirection) * 40.0f;
 	}
 
 	glm::vec3 buildCamPosTarget = glm::vec3(0.0);
@@ -386,7 +379,7 @@ void Player::Tick()
 
 			_activeFlightControl = block;
 
-			_ship->ActivateFlight(block);
+			_ship->ActivateFlight();
 			_flightMode = true;
 			_ship->SetInputEnabled(true);
 			SetObjectDomain(1);
@@ -394,6 +387,12 @@ void Player::Tick()
 	} else {
 		_centerTextBox->Deactivate();
 		_cross.SetColorMultiplier({1.0, 1.0, 1.0, 1.0});
+	}
+
+	if (_actionFRequested) {
+		_ship->ActivateFlight();
+		_flightMode = true;
+		_ship->SetInputEnabled(true);
 	}
 
 	if (_buildMode) {
@@ -404,6 +403,7 @@ void Player::Tick()
 
 	_actionERequested = false;
 	_actionRRequested = false;
+	_actionFRequested = false;
 
 	_mutex.unlock();
 }

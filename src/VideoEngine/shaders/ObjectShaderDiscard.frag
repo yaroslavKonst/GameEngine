@@ -48,13 +48,6 @@ void main() {
 
 	float viewDist = length(inPos - viewPos.Pos);
 
-	if (viewDist > 60) {
-		objectColorAlpha.a *= clamp(
-			(100.0 - viewDist) / 40.0,
-			0.0,
-			1.0);
-	}
-
 	if (viewPos.IsLight != 0) {
 		outColor = vec4(diffuseColor, objectColorAlpha.a) *
 			viewPos.ColorMultiplier;

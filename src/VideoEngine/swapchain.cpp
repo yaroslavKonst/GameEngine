@@ -1181,7 +1181,7 @@ void Swapchain::RecordCommandBuffer(
 		glm::radians((float)_scene->FOV),
 		(float)_extent.width / (float)_extent.height,
 		0.01f,
-		100.0f) * view;
+		1000.0f) * view;
 
 	// ViewPort and scissor.
 	VkViewport viewport{};

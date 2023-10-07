@@ -9,6 +9,7 @@
 #include "../Utils/loader.h"
 #include "../Assets/animation.h"
 #include "ship.h"
+#include "shuttle.h"
 
 class Player : public Actor, public Object, public InputHandler
 {
@@ -16,7 +17,7 @@ public:
 	Player(
 		Video* video,
 		CollisionEngine* rayEngine,
-		Ship* ship,
+		Shuttle* ship,
 		TextHandler* textHandler);
 	~Player();
 
@@ -53,7 +54,7 @@ private:
 
 	std::mutex _mutex;
 
-	Ship* _ship;
+	Shuttle* _ship;
 	bool _buildMode;
 	bool _flightMode;
 	float _buildCamCoeff;
@@ -61,6 +62,7 @@ private:
 
 	bool _actionERequested;
 	bool _actionRRequested;
+	bool _actionFRequested;
 
 	TextBox* _centerTextBox;
 	TextBox* _cornerTextBox;

@@ -30,7 +30,7 @@ outdir:
 ../../../build/converter: converter/main.cpp
 	$(CC) $(CC_OPTS) $< -o $@
 
-spir-v/%_vert.spv: %.vert
+spir-v/%_vert.spv: %.vert DepthTransform.glsl
 	$(SC) $(SC_OPTS) $< -o $@_raw
 	../../../build/converter $*Vert $@_raw $@
 	rm $@_raw

@@ -18,6 +18,8 @@ vec4 positions[6];
 vec3 positionsWorld[6];
 vec2 texCoords[6];
 
+#include "DepthTransform.glsl"
+
 void main() {
 	vec3 pos[4];
 	vec4 posProj[4];
@@ -63,6 +65,7 @@ void main() {
 	gl_Position = positions[gl_VertexIndex];
 
 	gl_Position.y *= -1;
+	gl_Position.z = DepthTransform(gl_Position.z);
 
 	texCoord = texCoords[gl_VertexIndex];
 	outPos = positionsWorld[gl_VertexIndex];

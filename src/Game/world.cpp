@@ -191,7 +191,7 @@ void World::Run()
 
 	_video->RegisterSprite(&sprite2);
 
-	Ship ship(_video, _collisionEngine);
+	Shuttle ship(_video, _collisionEngine);
 
 	Player player(_video, _collisionEngine, &ship, _textHandler);
 	_universe->RegisterActor(&player);

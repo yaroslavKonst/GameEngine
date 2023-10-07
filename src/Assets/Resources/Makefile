@@ -31,7 +31,17 @@ ENTRIES=\
 	Models/Ship/MainBlocks/DynamicThrusterBase.obj \
 	Models/Ship/MainBlocks/DynamicThrusterBase.png \
 	Models/Ship/MainBlocks/DynamicThruster.obj \
-	Models/Ship/MainBlocks/DynamicThruster.png
+	Models/Ship/MainBlocks/DynamicThruster.png \
+	Models/Shuttle/Base.obj \
+	Models/Shuttle/Base.png \
+	Models/Shuttle/Roof.obj \
+	Models/Shuttle/Roof.png \
+	Models/Shuttle/Thruster.obj \
+	Models/Shuttle/Thruster.png \
+	Models/Shuttle/ThrusterExh.obj \
+	Models/Shuttle/ThrusterExh.png \
+	Models/Shuttle/Wing.obj \
+	Models/Shuttle/Wing.png
 
 .PHONY: all
 
