@@ -32,6 +32,8 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	AllocationProperties properties,
 	uint32_t domain)
 {
+	_mutex.lock();
+
 	Domain* managers = &_managers;
 
 	uint32_t pageSize = PAGE_SIZE;
@@ -68,11 +70,15 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	allocation.Properties = properties;
 	allocation.Mapping = alloc.Mapping;
 
+	_mutex.unlock();
+
 	return allocation;
 }
 
 void MemorySystem::Free(Allocation allocation, uint32_t domain)
 {
+	_mutex.lock();
+
 	Domain* managers = &_managers;
 
 	if (domain > 0) {
@@ -85,4 +91,6 @@ void MemorySystem::Free(Allocation allocation, uint32_t domain)
 	alloc.Offset = allocation.Offset;
 
 	(*managers)[allocation.Properties]->Free(alloc);
+
+	_mutex.unlock();
 }

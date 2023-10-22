@@ -56,6 +56,8 @@ private:
 
 	std::map<uint32_t, Domain> _domains;
 	Domain _managers;
+
+	std::mutex _mutex;
 };
 
 #endif

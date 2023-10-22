@@ -93,11 +93,8 @@ void MemoryManager::AddPage()
 
 MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
 {
-	_mutex.lock();
-
 	if (size > _pageSize)
 	{
-		_mutex.unlock();
 		throw std::runtime_error(
 			std::string("Memory allocation size ") +
 			std::to_string(size) + " is greater than page size " +
@@ -140,7 +137,6 @@ MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
 					allocation.Mapping = nullptr;
 				}
 
-				_mutex.unlock();
 				return allocation;
 			}
 		}
@@ -163,13 +159,11 @@ MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
 		allocation.Mapping = nullptr;
 	}
 
-	_mutex.unlock();
 	return allocation;
 }
 
 void MemoryManager::Free(Allocation allocation)
 {
-	_mutex.lock();
 	uint32_t sectors = (allocation.Size - 1) / _alignment + 1;
 
 	for (auto& page : _pages) {
@@ -181,11 +175,9 @@ void MemoryManager::Free(Allocation allocation)
 				page.data[idx + startSector] = false;
 			}
 
-			_mutex.unlock();
 			return;
 		}
 	}
 
-	_mutex.unlock();
 	throw std::runtime_error("Tried to free invalid memory block.");
 }

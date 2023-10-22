@@ -45,8 +45,6 @@ private:
 
 	bool _mapped;
 
-	std::mutex _mutex;
-
 	void AddPage();
 };
 
