@@ -21,10 +21,10 @@ private:
 	std::vector<std::thread*> _threads;
 	std::list<std::function<void()>> _queue;
 	std::mutex _queueMutex;
-	std::counting_semaphore<0> _queueSemaphore;
+	std::counting_semaphore<> _queueSemaphore;
 
-	std::counting_semaphore<0> _resultSemaphore;
-	std::counting_semaphore<0> _threadReadySemaphore;
+	std::counting_semaphore<> _resultSemaphore;
+	std::counting_semaphore<> _threadReadySemaphore;
 	uint32_t _tasksInProgress;
 
 	bool _work;
