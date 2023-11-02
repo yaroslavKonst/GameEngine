@@ -59,44 +59,44 @@ void InputControl::ToggleRawMouseInputInternal()
 
 void InputControl::PollEvents()
 {
-	_submittedEvents.KeyEvents.resize(_polledEvents.KeyEvents.size());
-	_submittedEvents.CursorPositionEvents.resize(
-		_polledEvents.CursorPositionEvents.size());
-	_submittedEvents.RawCursorPositionEvents.resize(
-		_polledEvents.RawCursorPositionEvents.size());
-	_submittedEvents.MouseButtonEvents.resize(
-		_polledEvents.MouseButtonEvents.size());
-	_submittedEvents.ScrollEvents.resize(_polledEvents.ScrollEvents.size());
-
-	size_t idx = 0;
+	size_t idx = _submittedEvents.KeyEvents.size();
+	_submittedEvents.KeyEvents.resize(idx + _polledEvents.KeyEvents.size());
 
 	for (auto& event : _polledEvents.KeyEvents) {
 		_submittedEvents.KeyEvents[idx] = event;
 		++idx;
 	}
 
-	idx = 0;
+	idx = _submittedEvents.CursorPositionEvents.size();
+	_submittedEvents.CursorPositionEvents.resize(
+		idx + _polledEvents.CursorPositionEvents.size());
 
 	for (auto& event : _polledEvents.CursorPositionEvents) {
 		_submittedEvents.CursorPositionEvents[idx] = event;
 		++idx;
 	}
 
-	idx = 0;
+	idx = _submittedEvents.RawCursorPositionEvents.size();
+	_submittedEvents.RawCursorPositionEvents.resize(
+		idx + _polledEvents.RawCursorPositionEvents.size());
 
 	for (auto& event : _polledEvents.RawCursorPositionEvents) {
 		_submittedEvents.RawCursorPositionEvents[idx] = event;
 		++idx;
 	}
 
-	idx = 0;
+	idx = _submittedEvents.MouseButtonEvents.size();
+	_submittedEvents.MouseButtonEvents.resize(
+		idx + _polledEvents.MouseButtonEvents.size());
 
 	for (auto& event : _polledEvents.MouseButtonEvents) {
 		_submittedEvents.MouseButtonEvents[idx] = event;
 		++idx;
 	}
 
-	idx = 0;
+	idx = _submittedEvents.ScrollEvents.size();
+	_submittedEvents.ScrollEvents.resize(
+		idx + _polledEvents.ScrollEvents.size());
 
 	for (auto& event : _polledEvents.ScrollEvents) {
 		_submittedEvents.ScrollEvents[idx] = event;
