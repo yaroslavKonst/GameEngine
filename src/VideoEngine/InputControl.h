@@ -176,7 +176,12 @@ private:
 
 	bool _rawMouseInput;
 
+	bool _stagedMouseInput;
+	bool _submittedMouseInput;
+
 	std::set<InputHandler*> _handlers;
+
+	void ToggleRawMouseInputInternal();
 
 	static void KeyCallback(
 		GLFWwindow* window,

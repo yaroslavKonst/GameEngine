@@ -112,19 +112,15 @@ void Player::Key(
 
 	if (key == GLFW_KEY_C) {
 		if (action == GLFW_PRESS) {
-			_mutex.lock();
 			_video->GetInputControl()->
 				ToggleRawMouseInput();
-			_mutex.unlock();
 		}
 	} else if (key == GLFW_KEY_SPACE) {
-		_mutex.lock();
 		if (action == GLFW_PRESS) {
 			_jump = true;
 		} else if (action == GLFW_RELEASE) {
 			_jump = false;
 		}
-		_mutex.unlock();
 	} else if (key == GLFW_KEY_Z) {
 		if (action == GLFW_PRESS) {
 			if (_lightActive) {
@@ -139,55 +135,41 @@ void Player::Key(
 
 	if (!(_buildMode || _flightMode)) {
 		if (key == GLFW_KEY_W) {
-			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_go += 1;
 			} else if (action == GLFW_RELEASE) {
 				_go -= 1;
 			}
-			_mutex.unlock();
 		} else if (key == GLFW_KEY_S) {
-			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_go -= 1;
 			} else if (action == GLFW_RELEASE) {
 				_go += 1;
 			}
-			_mutex.unlock();
 		} else if (key == GLFW_KEY_D) {
-			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_strafe += 1;
 			} else if (action == GLFW_RELEASE) {
 				_strafe -= 1;
 			}
-			_mutex.unlock();
 		} else if (key == GLFW_KEY_A) {
-			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_strafe -= 1;
 			} else if (action == GLFW_RELEASE) {
 				_strafe += 1;
 			}
-			_mutex.unlock();
 		} else if (key == GLFW_KEY_E) {
-			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_actionERequested = true;
 			}
-			_mutex.unlock();
 		} else if (key == GLFW_KEY_R) {
-			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_actionRRequested = true;
 			}
-			_mutex.unlock();
 		} else if (key == GLFW_KEY_F) {
-			_mutex.lock();
 			if (action == GLFW_PRESS) {
 				_actionFRequested = true;
 			}
-			_mutex.unlock();
 		}
 	}
 }
@@ -200,7 +182,6 @@ bool Player::MouseMoveRaw(
 		return false;
 	}
 
-	_mutex.lock();
 	_angleH += xoffset * 0.1;
 	_angleV += yoffset * 0.1;
 
@@ -211,7 +192,6 @@ bool Player::MouseMoveRaw(
 	}
 
 	_angleV = std::clamp(_angleV, -85.0f, 85.0f);
-	_mutex.unlock();
 
 	return true;
 }
@@ -244,8 +224,6 @@ void Player::TickEarly()
 
 void Player::Tick()
 {
-	_mutex.lock();
-
 	glm::vec2 hdir(
 		sinf(glm::radians(_angleH)),
 		cosf(glm::radians(_angleH)));
@@ -404,6 +382,4 @@ void Player::Tick()
 	_actionERequested = false;
 	_actionRRequested = false;
 	_actionFRequested = false;
-
-	_mutex.unlock();
 }

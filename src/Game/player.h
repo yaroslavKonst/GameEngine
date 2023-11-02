@@ -52,8 +52,6 @@ private:
 	Light _light;
 	bool _lightActive;
 
-	std::mutex _mutex;
-
 	Shuttle* _ship;
 	bool _buildMode;
 	bool _flightMode;
