@@ -2,6 +2,8 @@
 #define _INPUT_CONTROL_H
 
 #include <set>
+#include <list>
+#include <vector>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -100,11 +102,70 @@ public:
 	void Subscribe(InputHandler* handler);
 	void UnSubscribe(InputHandler* handler);
 
+	void PollEvents();
+	void SubmitEvents();
+	void InvokeEvents();
+
 	void ToggleRawMouseInput();
 
 	void NotifyWindowClose();
 
 private:
+	struct KeyData
+	{
+		int Key;
+		int Scancode;
+		int Action;
+		int Mods;
+	};
+
+	struct CursorPositionData
+	{
+		double XPos;
+		double YPos;
+		float x;
+		float y;
+	};
+
+	struct MouseButtonData
+	{
+		int Button;
+		int Action;
+		int Mods;
+		float x;
+		float y;
+	};
+
+	struct ScrollData
+	{
+		double XOffset;
+		double YOffset;
+		float x;
+		float y;
+	};
+
+	struct PolledEventData
+	{
+		std::list<KeyData> KeyEvents;
+		std::list<CursorPositionData> CursorPositionEvents;
+		std::list<CursorPositionData> RawCursorPositionEvents;
+		std::list<MouseButtonData> MouseButtonEvents;
+		std::list<ScrollData> ScrollEvents;
+	};
+
+	struct EventData
+	{
+		std::vector<KeyData> KeyEvents;
+		std::vector<CursorPositionData> CursorPositionEvents;
+		std::vector<CursorPositionData> RawCursorPositionEvents;
+		std::vector<MouseButtonData> MouseButtonEvents;
+		std::vector<ScrollData> ScrollEvents;
+	};
+
+	PolledEventData _polledEvents;
+	EventData _submittedEvents;
+	EventData _pendingEvents;
+
 	GLFWwindow* _window;
 
 	float _x;
@@ -144,6 +205,12 @@ private:
 		GLFWwindow* window,
 		double xoffset,
 		double yoffset);
+
+	void KeyProcess(KeyData& event);
+	void CursorPositionProcess(CursorPositionData& event);
+	void RawCursorPositionProcess(CursorPositionData& event);
+	void MouseButtonProcess(MouseButtonData& event);
+	void ScrollProcess(ScrollData& event);
 };
 
 #endif

@@ -11,6 +11,7 @@
 #include "light.h"
 #include "TextureHandler.h"
 #include "sprite.h"
+#include "InputControl.h"
 
 struct Scene
 {
@@ -53,6 +54,8 @@ struct SceneDescriptor
 	std::mutex SceneMutex;
 
 	std::list<ModelDescriptor> DeletedModelDescriptors;
+
+	InputControl* inputControl;
 
 	SceneDescriptor()
 	{
@@ -111,13 +114,18 @@ struct SceneDescriptor
 		SubmittedScene.CameraDirection = StagedScene.CameraDirection;
 		SubmittedScene.CameraUp = StagedScene.CameraUp;
 
+		inputControl->SubmitEvents();
+
 		SceneMutex.unlock();
+
+		inputControl->InvokeEvents();
 	}
 
 	void LoadToDrawn()
 	{
 		SceneMutex.lock();
 		DrawnScene = SubmittedScene;
+		inputControl->PollEvents();
 		SceneMutex.unlock();
 	}
 };

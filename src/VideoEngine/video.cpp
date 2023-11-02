@@ -29,7 +29,7 @@ Video::Video(
 	CreateSurface();
 	SelectPhysicalDevice();
 	CreateDevice();
-	_inputControl = new InputControl(_window.GetWindow());
+	_scene.inputControl = new InputControl(_window.GetWindow());
 	CreateCommandPools();
 	CreateDescriptorSetLayout();
 	_scene.Textures = new TextureHandler(
@@ -53,7 +53,7 @@ Video::~Video()
 	delete _scene.Textures;
 	DestroyDescriptorSetLayout();
 	DestroyCommandPools();
-	delete _inputControl;
+	delete _scene.inputControl;
 	DestroyDevice();
 	DestroySurface();
 

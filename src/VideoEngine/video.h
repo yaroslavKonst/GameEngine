@@ -13,7 +13,6 @@
 #include "MemorySystem.h"
 #include "ModelDescriptor.h"
 #include "BufferHelper.h"
-#include "InputControl.h"
 #include "SceneDescriptor.h"
 
 class Video
@@ -87,7 +86,7 @@ public:
 
 	InputControl* GetInputControl()
 	{
-		return _inputControl;
+		return _scene.inputControl;
 	}
 
 	void CreateSkybox(
@@ -150,8 +149,6 @@ private:
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();
 	void DestroyDescriptorSetLayout();
-
-	InputControl* _inputControl;
 };
 
 #endif
