@@ -138,10 +138,8 @@ void Ship::Build(int key, int scancode, int action, int mods)
 		}
 	} else if (key == GLFW_KEY_B) {
 		if (action == GLFW_PRESS) {
-			_video->LockSceneMutex();
 			_baseGrid->StopPreview();
 			_mainGrid->StopPreview();
-			_video->UnlockSceneMutex();
 			SetInputEnabled(false);
 			_buildMode = false;
 			_prevBuildLayer = 100;
@@ -161,13 +159,9 @@ void Ship::Build(int key, int scancode, int action, int mods)
 		switch (_prevBuildLayer) {
 		case 0:
 			_baseGrid->StopPreview();
-			_video->LockSceneMutex();
-			_video->UnlockSceneMutex();
 			break;
 		case 1:
 			_mainGrid->StopPreview();
-			_video->LockSceneMutex();
-			_video->UnlockSceneMutex();
 			break;
 		default:
 			break;
@@ -175,18 +169,14 @@ void Ship::Build(int key, int scancode, int action, int mods)
 
 		switch (_buildLayer) {
 		case 0:
-			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 			break;
 		case 1:
-			_video->LockSceneMutex();
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 			break;
 		default:
 			break;
@@ -212,53 +202,39 @@ void Ship::BaseLayer(int key, int scancode, int action, int mods)
 	if (key == GLFW_KEY_W) {
 		if (action == GLFW_PRESS) {
 			++_buildX;
-			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_S) {
 		if (action == GLFW_PRESS) {
 			--_buildX;
-			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_D) {
 		if (action == GLFW_PRESS) {
 			--_buildY;
-			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_A) {
 		if (action == GLFW_PRESS) {
 			++_buildY;
-			_video->LockSceneMutex();
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_E) {
 		if (action == GLFW_PRESS) {
-			_video->LockSceneMutex();
 			_baseGrid->InsertBlock(_buildX, _buildY, _buildType);
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_Q) {
 		if (action == GLFW_PRESS) {
-			_video->LockSceneMutex();
 			_baseGrid->RemoveBlock(_buildX, _buildY);
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_T) {
 		if (action == GLFW_PRESS) {
-			_video->LockSceneMutex();
 			_buildType = _buildType == BaseBlock::Type::Floor ?
 				BaseBlock::Type::FloorComm :
 				BaseBlock::Type::Floor;
 			_baseGrid->PreviewBlock(_buildX, _buildY, _buildType);
-			_video->UnlockSceneMutex();
 
 			_buildRotation = 0;
 		}
@@ -270,50 +246,41 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 	if (key == GLFW_KEY_W) {
 		if (action == GLFW_PRESS) {
 			++_buildX;
-			_video->LockSceneMutex();
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_S) {
 		if (action == GLFW_PRESS) {
 			--_buildX;
-			_video->LockSceneMutex();
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_D) {
 		if (action == GLFW_PRESS) {
 			--_buildY;
-			_video->LockSceneMutex();
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_A) {
 		if (action == GLFW_PRESS) {
 			++_buildY;
-			_video->LockSceneMutex();
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_E) {
 		if (action == GLFW_PRESS) {
-			_video->LockSceneMutex();
 			_mainGrid->InsertBlock(
 				_buildX,
 				_buildY,
@@ -324,18 +291,15 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_Q) {
 		if (action == GLFW_PRESS) {
-			_video->LockSceneMutex();
 			_mainGrid->RemoveBlock(_buildX, _buildY);
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 		}
 	} else if (key == GLFW_KEY_T) {
 		if (action == GLFW_PRESS) {
@@ -364,13 +328,11 @@ void Ship::MainLayer(int key, int scancode, int action, int mods)
 				break;
 			}
 
-			_video->LockSceneMutex();
 			_mainGrid->PreviewBlock(
 				_buildX,
 				_buildY,
 				_buildRotation,
 				_mainBuildType);
-			_video->UnlockSceneMutex();
 		}
 	}
 }
@@ -411,13 +373,11 @@ bool Ship::Scroll(double xoffset, double yoffset)
 		_buildRotation = 360 - _buildRotationStep;
 	}
 
-	_video->LockSceneMutex();
 	_mainGrid->PreviewBlock(
 		_buildX,
 		_buildY,
 		_buildRotation,
 		_mainBuildType);
-	_video->UnlockSceneMutex();
 
 	return true;
 }

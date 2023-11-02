@@ -7,13 +7,14 @@
 #include <thread>
 
 #include "../Utils/ThreadPool.h"
+#include "../VideoEngine/video.h"
 #include "actor.h"
 #include "../PhysicalEngine/CollisionEngine.h"
 
 class Universe
 {
 public:
-	Universe(uint32_t tickDelayMS);
+	Universe(uint32_t tickDelayMS, Video* video);
 	~Universe();
 
 	void RegisterActor(Actor* actor);
@@ -25,15 +26,10 @@ public:
 	void MainLoop();
 	void Stop();
 
-	void SetSceneMutex(std::mutex* mutex)
-	{
-		_sceneMutex = mutex;
-	}
-
 private:
 	uint32_t _tickDelayMS;
 
-	std::mutex* _sceneMutex;
+	Video* _video;
 
 	std::set<Actor*> _actors;
 	std::mutex _actorMutex;

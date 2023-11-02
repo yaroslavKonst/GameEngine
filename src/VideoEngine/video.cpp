@@ -14,7 +14,6 @@ Video::Video(
 	GraphicsSettings* settings)
 	: _window(width, height, name)
 {
-	_scene.SceneMutex = nullptr;
 	if (settings) {
 		_settings = *settings;
 		_settingsValid = true;
@@ -59,8 +58,6 @@ Video::~Video()
 	DestroySurface();
 
 	VkInstanceHandler::DecRef();
-
-	_scene.SceneMutex = nullptr;
 }
 
 void Video::CreateSurface()
@@ -407,14 +404,14 @@ void Video::UnloadModel(uint32_t model)
 
 void Video::RegisterModel(Model* model)
 {
-	_scene.Models.insert(model);
+	_scene.StagedScene.Models.insert(model);
 	model->_SetDrawReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
 	model->_SetDrawReady(false);
-	_scene.Models.erase(model);
+	_scene.StagedScene.Models.erase(model);
 }
 
 void Video::RemoveAllModels()
@@ -428,7 +425,7 @@ void Video::RemoveAllModels()
 			_memorySystem);
 	}
 
-	_scene.Models.clear();
+	_scene.StagedScene.Models.clear();
 
 	for (auto& desc : _scene.DeletedModelDescriptors) {
 		ModelDescriptor::DestroyModelDescriptor(
@@ -443,14 +440,14 @@ void Video::RemoveAllModels()
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
 	rectangle->SetRectangleScreenRatio(_swapchain->GetScreenRatio());
-	_scene.Rectangles.insert(rectangle);
+	_scene.StagedScene.Rectangles.insert(rectangle);
 	rectangle->_SetDrawReady(true);
 }
 
 void Video::RemoveRectangle(Rectangle* rectangle)
 {
 	rectangle->_SetDrawReady(false);
-	_scene.Rectangles.erase(rectangle);
+	_scene.StagedScene.Rectangles.erase(rectangle);
 }
 
 void Video::CreateSkybox(
@@ -596,22 +593,22 @@ void Video::DestroyDescriptorSetLayout()
 
 void Video::RegisterLight(Light* light)
 {
-	_scene.Lights.insert(light);
+	_scene.StagedScene.Lights.insert(light);
 }
 
 void Video::RemoveLight(Light* light)
 {
-	_scene.Lights.erase(light);
+	_scene.StagedScene.Lights.erase(light);
 }
 
 void Video::RegisterSprite(Sprite* sprite)
 {
-	_scene.Sprites.insert(sprite);
+	_scene.StagedScene.Sprites.insert(sprite);
 	sprite->_SetDrawReady(true);
 }
 
 void Video::RemoveSprite(Sprite* sprite)
 {
 	sprite->_SetDrawReady(false);
-	_scene.Sprites.erase(sprite);
+	_scene.StagedScene.Sprites.erase(sprite);
 }

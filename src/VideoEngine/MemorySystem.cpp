@@ -10,6 +10,9 @@
 MemorySystem::MemorySystem(VkDevice device)
 {
 	_device = device;
+
+	_totalAllocatedMemory = 0;
+	_maxAllocatedMemory = 0;
 }
 
 MemorySystem::~MemorySystem()
@@ -25,6 +28,10 @@ MemorySystem::~MemorySystem()
 			delete manager.second;
 		}
 	}
+
+	Logger::Verbose() <<
+		"Max allocated memory: " <<
+		_maxAllocatedMemory / (1024 * 1024) << " MB";
 }
 
 MemorySystem::Allocation MemorySystem::Allocate(
@@ -70,6 +77,12 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	allocation.Properties = properties;
 	allocation.Mapping = alloc.Mapping;
 
+	_totalAllocatedMemory += alloc.Size;
+
+	if (_totalAllocatedMemory > _maxAllocatedMemory) {
+		_maxAllocatedMemory = _totalAllocatedMemory;
+	}
+
 	_mutex.unlock();
 
 	return allocation;
@@ -91,6 +104,8 @@ void MemorySystem::Free(Allocation allocation, uint32_t domain)
 	alloc.Offset = allocation.Offset;
 
 	(*managers)[allocation.Properties]->Free(alloc);
+
+	_totalAllocatedMemory -= alloc.Size;
 
 	_mutex.unlock();
 }

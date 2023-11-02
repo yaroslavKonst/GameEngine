@@ -18,7 +18,6 @@ private:
 	Universe* _universe;
 	CollisionEngine* _collisionEngine;
 
-	std::mutex _sceneMutex;
 	std::thread* _universeThread;
 
 	TextHandler* _textHandler;

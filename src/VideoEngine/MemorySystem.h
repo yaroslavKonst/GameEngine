@@ -58,6 +58,9 @@ private:
 	Domain _managers;
 
 	std::mutex _mutex;
+
+	size_t _maxAllocatedMemory;
+	size_t _totalAllocatedMemory;
 };
 
 #endif

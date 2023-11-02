@@ -239,11 +239,12 @@ void Swapchain::Create()
 
 	CreateSyncObjects();
 
-	float ratio = GetScreenRatio();
+	// TODO: Add rectangle screen ratio callback to input system.
+	/*float ratio = GetScreenRatio();
 
 	for (auto& rectangle : _scene->Rectangles) {
 		rectangle->SetRectangleScreenRatio(ratio);
-	}
+	}*/
 
 	_currentFrame = 0;
 	_initialized = true;
@@ -1171,14 +1172,17 @@ void Swapchain::RecordCommandBuffer(
 			"Failed to begin recording command buffer.");
 	}
 
+	_scene->LoadToDrawn();
+
 	// MVP.
 	MVP mvp;
 	glm::mat4 view = glm::lookAt(
-		_scene->CameraPosition,
-		_scene->CameraPosition + _scene->CameraDirection,
-		_scene->CameraUp);
+		_scene->DrawnScene.CameraPosition,
+		_scene->DrawnScene.CameraPosition +
+		_scene->DrawnScene.CameraDirection,
+		_scene->DrawnScene.CameraUp);
 	mvp.ProjView = glm::perspective(
-		glm::radians((float)_scene->FOV),
+		glm::radians((float)_scene->DrawnScene.FOV),
 		(float)_extent.width / (float)_extent.height,
 		0.01f,
 		1000.0f) * view;
@@ -1204,9 +1208,9 @@ void Swapchain::RecordCommandBuffer(
 
 	if (_scene->skybox._IsDrawEnabled()) {
 		Skybox::ShaderData shaderData;
-		shaderData.Direction = _scene->CameraDirection;
-		shaderData.Up = _scene->CameraUp;
-		shaderData.FOV = glm::radians((float)_scene->FOV);
+		shaderData.Direction = _scene->DrawnScene.CameraDirection;
+		shaderData.Up = _scene->DrawnScene.CameraUp;
+		shaderData.FOV = glm::radians((float)_scene->DrawnScene.FOV);
 		shaderData.Ratio = (float)_extent.width / (float)_extent.height;
 		shaderData.ColorModifier = _scene->skybox.GetColorMultiplier();
 
@@ -1296,10 +1300,11 @@ void Swapchain::RecordCommandBuffer(
 	// Light transforms.
 	std::multimap<float, Light*> orderedLights;
 
-	for (auto light : _scene->Lights) {
+	for (auto& light : _scene->DrawnScene.Lights) {
 		orderedLights.insert({glm::length(
-			light->GetLightPosition() - _scene->CameraPosition),
-			light
+			light.GetLightPosition() -
+				_scene->DrawnScene.CameraPosition),
+			&light
 		});
 	}
 
@@ -1426,36 +1431,29 @@ void Swapchain::RecordCommandBuffer(
 
 		std::set<Model*> holedModels;
 
-		for (auto& model : _scene->Models) {
-			if (!model->_IsDrawEnabled()) {
+		for (auto& model : _scene->DrawnScene.Models) {
+			if (!model._IsDrawEnabled()) {
 				continue;
 			}
 
-			if (model->DrawLight()) {
+			if (model.DrawLight()) {
 				continue;
 			}
 
-			if (model->GetColorMultiplier().a < 1.0f) {
+			if (model.GetColorMultiplier().a < 1.0f) {
 				continue;
 			}
 
-			if (model->IsModelHoled()) {
-				holedModels.insert(model);
+			if (model.IsModelHoled()) {
+				holedModels.insert(&model);
 				continue;
 			}
 
-			mvp.Model = model->GetModelMatrix();
-
-			const glm::mat4* extMat =
-				model->GetModelExternalMatrix();
-			if (extMat) {
-				mvp.Model = *extMat * mvp.Model;
-			}
-
-			mvp.InnerModel = model->GetModelInnerMatrix();
+			mvp.Model = model.GetModelMatrix();
+			mvp.InnerModel = model.GetModelInnerMatrix();
 
 			auto& desc =
-				_scene->ModelDescriptors[model->GetModels()[0]];
+				_scene->ModelDescriptors[model.GetModels()[0]];
 
 			if (desc.InstanceCount == 0) {
 				continue;
@@ -1546,13 +1544,6 @@ void Swapchain::RecordCommandBuffer(
 
 		for (auto& model : holedModels) {
 			mvp.Model = model->GetModelMatrix();
-
-			const glm::mat4* extMat =
-				model->GetModelExternalMatrix();
-			if (extMat) {
-				mvp.Model = *extMat * mvp.Model;
-			}
-
 			mvp.InnerModel = model->GetModelInnerMatrix();
 
 			auto& desc =
@@ -1637,23 +1628,23 @@ void Swapchain::RecordCommandBuffer(
 	std::multimap<float, Model*> transparentModels;
 	std::set<Model*> holedModels;
 
-	for (auto& model : _scene->Models) {
-		if (!model->_IsDrawEnabled()) {
+	for (auto& model : _scene->DrawnScene.Models) {
+		if (!model._IsDrawEnabled()) {
 			continue;
 		}
 
-		if (model->GetColorMultiplier().a < 1.0f) {
+		if (model.GetColorMultiplier().a < 1.0f) {
 			float distance = glm::length(
-				_scene->CameraPosition -
-				model->GetModelCenter());
+				_scene->DrawnScene.CameraPosition -
+				model.GetModelCenter());
 
-			transparentModels.insert({distance, model});
+			transparentModels.insert({distance, &model});
 
 			continue;
 		}
 
-		if (model->IsModelHoled()) {
-			holedModels.insert(model);
+		if (model.IsModelHoled()) {
+			holedModels.insert(&model);
 			continue;
 		}
 
@@ -1661,7 +1652,7 @@ void Swapchain::RecordCommandBuffer(
 			commandBuffer,
 			imageIndex,
 			currentFrame,
-			model,
+			&model,
 			mvp,
 			_objectPipeline);
 	}
@@ -1714,15 +1705,15 @@ void Swapchain::RecordCommandBuffer(
 
 	std::multimap<float, Sprite*> orderedSprites;
 
-	for (auto sprite : _scene->Sprites) {
-		if (!sprite->_IsDrawEnabled()) {
+	for (auto& sprite : _scene->DrawnScene.Sprites) {
+		if (!sprite._IsDrawEnabled()) {
 			continue;
 		}
 
 		orderedSprites.insert({
-			glm::length(sprite->GetSpritePosition() -
-				_scene->CameraPosition),
-			sprite
+			glm::length(sprite.GetSpritePosition() -
+				_scene->DrawnScene.CameraPosition),
+			&sprite
 		});
 	}
 
@@ -1738,7 +1729,7 @@ void Swapchain::RecordCommandBuffer(
 		spriteDesc.ProjView = mvp.ProjView;
 		spriteDesc.TexCoords = sprite.second->GetSpriteTexCoords();
 		spriteDesc.SpritePos = sprite.second->GetSpritePosition();
-		spriteDesc.CameraPos = _scene->CameraPosition;
+		spriteDesc.CameraPos = _scene->DrawnScene.CameraPosition;
 		spriteDesc.SpriteUp = sprite.second->GetSpriteUp();
 		spriteDesc.Size = sprite.second->GetSpriteSize();
 
@@ -1756,7 +1747,7 @@ void Swapchain::RecordCommandBuffer(
 			VK_SHADER_STAGE_FRAGMENT_BIT,
 			192,
 			sizeof(glm::vec3),
-			&_scene->CameraPosition);
+			&_scene->DrawnScene.CameraPosition);
 
 		uint32_t isLight = sprite.second->DrawLight() ? 1 : 0;
 
@@ -1817,14 +1808,14 @@ void Swapchain::RecordCommandBuffer(
 
 	std::multimap<float, Rectangle*> orderedRectangles;
 
-	for (auto rectangle : _scene->Rectangles) {
-		if (!rectangle->_IsDrawEnabled()) {
+	for (auto& rectangle : _scene->DrawnScene.Rectangles) {
+		if (!rectangle._IsDrawEnabled()) {
 			continue;
 		}
 
 		orderedRectangles.insert({
-			rectangle->GetRectangleDepth(),
-			rectangle
+			rectangle.GetRectangleDepth(),
+			&rectangle
 		});
 	}
 
@@ -1932,17 +1923,9 @@ void Swapchain::RecordObjectCommandBuffer(
 	Pipeline* pipeline)
 {
 	mvp.Model = model->GetModelMatrix();
-
-	const glm::mat4* extMat =
-		model->GetModelExternalMatrix();
-	if (extMat) {
-		mvp.Model = *extMat * mvp.Model;
-	}
-
 	mvp.InnerModel = model->GetModelInnerMatrix();
 
-	auto& desc =
-		_scene->ModelDescriptors[model->GetModels()[0]];
+	auto& desc = _scene->ModelDescriptors[model->GetModels()[0]];
 
 	if (desc.InstanceCount == 0) {
 		return;
@@ -1981,7 +1964,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		192,
 		sizeof(glm::vec3),
-		&_scene->CameraPosition);
+		&_scene->DrawnScene.CameraPosition);
 
 	uint32_t isLight = model->DrawLight() ? 1 : 0;
 
@@ -2104,10 +2087,6 @@ void Swapchain::DrawFrame()
 	vkResetFences(_device, 1, &_inFlightFences[_currentFrame]);
 	vkResetCommandBuffer(_commandBuffers[_currentFrame], 0);
 
-	if (_scene->SceneMutex) {
-		_scene->SceneMutex->lock();
-	}
-
 	auto it = _scene->DeletedModelDescriptors.begin();
 
 	while (it != _scene->DeletedModelDescriptors.end()) {
@@ -2129,18 +2108,10 @@ void Swapchain::DrawFrame()
 		}
 	}
 
-	try {
-		RecordCommandBuffer(
-			_commandBuffers[_currentFrame],
-			imageIndex,
-			_currentFrame);
-	}
-	catch(...)
-	{
-		if (_scene->SceneMutex) {
-			_scene->SceneMutex->unlock();
-		}
-	}
+	RecordCommandBuffer(
+		_commandBuffers[_currentFrame],
+		imageIndex,
+		_currentFrame);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -2172,10 +2143,6 @@ void Swapchain::DrawFrame()
 		1,
 		&submitInfo,
 		_inFlightFences[_currentFrame]);
-
-	if (_scene->SceneMutex) {
-		_scene->SceneMutex->unlock();
-	}
 
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error(

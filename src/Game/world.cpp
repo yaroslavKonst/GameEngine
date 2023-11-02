@@ -93,10 +93,7 @@ World::World()
 	videoSettings.MsaaLimit = 2;
 
 	_video = new Video(1400, 1000, "Game", "Game", &videoSettings);
-	_universe = new Universe(10);
-
-	_video->SetSceneMutex(&_sceneMutex);
-	_universe->SetSceneMutex(&_sceneMutex);
+	_universe = new Universe(10, _video);
 
 	_collisionEngine = new CollisionEngine();
 	_universe->RegisterCollisionEngine(_collisionEngine);

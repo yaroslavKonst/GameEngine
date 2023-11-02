@@ -2,9 +2,9 @@
 
 #include "../Logger/logger.h"
 
-Universe::Universe(uint32_t tickDelayMS)
+Universe::Universe(uint32_t tickDelayMS, Video* video)
 {
-	_sceneMutex = nullptr;
+	_video = video;
 	_tickDelayMS = tickDelayMS;
 	_threadPool = new ThreadPool();
 
@@ -14,7 +14,7 @@ Universe::Universe(uint32_t tickDelayMS)
 Universe::~Universe()
 {
 	delete _threadPool;
-	_sceneMutex = nullptr;
+	_video = nullptr;
 	Logger::Verbose() << "Universe destroyed.";
 }
 
@@ -54,10 +54,6 @@ void Universe::MainLoop()
 	{
 		auto start = std::chrono::high_resolution_clock::now();
 
-		if (_sceneMutex) {
-			_sceneMutex->lock();
-		}
-
 		_actorMutex.lock();
 		std::set<Actor*> actors = _actors;
 		_actorMutex.unlock();
@@ -83,8 +79,8 @@ void Universe::MainLoop()
 
 		_threadPool->Wait();
 
-		if (_sceneMutex) {
-			_sceneMutex->unlock();
+		if (_video) {
+			_video->SubmitScene();
 		}
 
 		auto stop = std::chrono::high_resolution_clock::now();

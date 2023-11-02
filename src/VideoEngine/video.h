@@ -54,29 +54,35 @@ public:
 	void RegisterSprite(Sprite* sprite);
 	void RemoveSprite(Sprite* sprite);
 
+	void SubmitScene()
+	{
+		_scene.Submit();
+	}
+
 	void SetFOV(double fov)
 	{
-		_scene.FOV = fov;
+		_scene.StagedScene.FOV = fov;
 	}
 
 	void SetCameraPosition(const glm::vec3& value)
 	{
-		_scene.CameraPosition = value;
+		_scene.StagedScene.CameraPosition = value;
 	}
 
 	void SetCameraDirection(const glm::vec3& value)
 	{
-		_scene.CameraDirection = value;
+		_scene.StagedScene.CameraDirection = value;
 	}
 
 	void SetCameraUp(const glm::vec3& value)
 	{
-		_scene.CameraUp = value;
+		_scene.StagedScene.CameraUp = value;
 	}
 
 	void SetCameraTarget(const glm::vec3& value)
 	{
-		_scene.CameraDirection = value - _scene.CameraPosition;
+		_scene.StagedScene.CameraDirection =
+			value - _scene.StagedScene.CameraPosition;
 	}
 
 	InputControl* GetInputControl()
@@ -92,25 +98,6 @@ public:
 	void SetSkyboxColor(glm::vec3 color)
 	{
 		_scene.skybox.SetColorMultiplier(glm::vec4(color, 1.0));
-	}
-
-	void SetSceneMutex(std::mutex* mutex)
-	{
-		_scene.SceneMutex = mutex;
-	}
-
-	void LockSceneMutex()
-	{
-		if (_scene.SceneMutex) {
-			_scene.SceneMutex->lock();
-		}
-	}
-
-	void UnlockSceneMutex()
-	{
-		if (_scene.SceneMutex) {
-			_scene.SceneMutex->unlock();
-		}
 	}
 
 	float GetScreenRatio()
