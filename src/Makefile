@@ -2,7 +2,7 @@ CC=g++
 CC_OPTS=-Wall -g -std=c++20 -O3
 CC_OBJ=-c
 OUTPUT=game
-LIBS=-lglfw -lvulkan -ldl -lpthread -lX11 -lXrandr -lfreetype
+LIBS=-lglfw -lvulkan -ldl -lpthread -lX11 -lXrandr -lfreetype -lportaudio
 
 .PHONY: all clean
 
@@ -10,6 +10,7 @@ all:
 	mkdir -p ../build
 	cd Main ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 	cd VideoEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
+	cd AudioEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 	cd UniverseEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 	cd PhysicalEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
 	cd Utils ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)

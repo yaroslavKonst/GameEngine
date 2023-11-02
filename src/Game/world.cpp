@@ -93,6 +93,7 @@ World::World()
 	videoSettings.MsaaLimit = 2;
 
 	_video = new Video(1400, 1000, "Game", "Game", &videoSettings);
+	_audio = new Audio;
 	_universe = new Universe(10, _video);
 
 	_collisionEngine = new CollisionEngine();
@@ -136,6 +137,7 @@ World::~World()
 
 	delete _collisionEngine;
 	delete _universe;
+	delete _audio;
 	delete _video;
 }
 
@@ -198,6 +200,29 @@ void World::Run()
 	Field field(_video);
 	_video->RegisterModel(&field);
 	_collisionEngine->RegisterObject(&field);
+
+	// sound test
+	Audio::Buffer buffer;
+	buffer.Data.resize(44100 * 10);
+	buffer.Multiplier = 0.1;
+	float soundValue = 0;
+
+	for (size_t idx = 0; idx < buffer.Data.size(); idx += 2) {
+		buffer.Data[idx] = soundValue;
+		buffer.Data[idx + 1] = soundValue;
+
+		if (idx < 44100 * 5) {
+			soundValue += 0.01;
+		} else {
+			soundValue += 0.02;
+		}
+
+		if (soundValue > 1) {
+			soundValue = -1;
+		}
+	}
+
+	_audio->Submit(&buffer);
 
 	_video->MainLoop();
 

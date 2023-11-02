@@ -2,6 +2,7 @@
 #define _WORLD_H
 
 #include "../UniverseEngine/universe.h"
+#include "../AudioEngine/audio.h"
 #include "../VideoEngine/TextHandler.h"
 #include "ship.h"
 
@@ -15,6 +16,7 @@ public:
 
 private:
 	Video* _video;
+	Audio* _audio;
 	Universe* _universe;
 	CollisionEngine* _collisionEngine;
 
