@@ -4,8 +4,7 @@
 
 ThreadPool::ThreadPool() :
 	_queueSemaphore(0),
-	_resultSemaphore(0),
-	_threadReadySemaphore(0)
+	_resultSemaphore(0)
 {
 	uint32_t threadCount = std::thread::hardware_concurrency();
 
@@ -24,8 +23,7 @@ ThreadPool::ThreadPool() :
 
 ThreadPool::ThreadPool(uint32_t threadCount) :
 	_queueSemaphore(0),
-	_resultSemaphore(0),
-	_threadReadySemaphore(0)
+	_resultSemaphore(0)
 {
 	StartThreads(threadCount);
 }
@@ -61,12 +59,19 @@ void ThreadPool::StartThreads(uint32_t threadCount)
 	Logger::Verbose() << "ThreadPool created. Threads: " << threadCount;
 }
 
-void ThreadPool::Enqueue(std::function<void()> action)
+void ThreadPool::Enqueue(std::function<void()> action, bool wait)
 {
-	_threadReadySemaphore.acquire();
+	Task task;
+	task.Action = action;
+	task.Wait = wait;
+
 	_queueMutex.lock();
-	_queue.push_front(action);
-	++_tasksInProgress;
+	_queue.push_front(task);
+
+	if (wait) {
+		++_tasksInProgress;
+	}
+
 	_queueMutex.unlock();
 	_queueSemaphore.release();
 }
@@ -84,7 +89,6 @@ void ThreadPool::Wait()
 void ThreadPool::ThreadFunction()
 {
 	while (true) {
-		_threadReadySemaphore.release();
 		_queueSemaphore.acquire();
 
 		if (!_work) {
@@ -92,11 +96,15 @@ void ThreadPool::ThreadFunction()
 		}
 
 		_queueMutex.lock();
-		auto action = _queue.back();
+		auto task = _queue.back();
 		_queue.pop_back();
 		_queueMutex.unlock();
 
-		action();
-		_resultSemaphore.release();
+		task.Action();
+
+		if (task.Wait)
+		{
+			_resultSemaphore.release();
+		}
 	}
 }
