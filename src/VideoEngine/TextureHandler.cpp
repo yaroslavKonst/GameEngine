@@ -9,7 +9,7 @@ TextureHandler::TextureHandler(
 	MemorySystem* memorySystem,
 	VkDescriptorSetLayout descriptorSetLayout,
 	CommandPool* commandPool,
-	VkQueue graphicsQueue)
+	VkQueueObject* graphicsQueue)
 {
 	_device = device;
 	_memorySystem = memorySystem;

@@ -6,6 +6,7 @@
 #include "MemorySystem.h"
 #include "PhysicalDeviceSupport.h"
 #include "CommandPool.h"
+#include "VkQueueObject.h"
 
 namespace BufferHelper
 {
@@ -46,7 +47,7 @@ namespace BufferHelper
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		Buffer* stagingBufferPtr = nullptr,
 		VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 }

@@ -4,6 +4,7 @@
 #include "ImageHelper.h"
 #include "PhysicalDeviceSupport.h"
 #include "CommandPool.h"
+#include "VkQueueObject.h"
 
 class TextureHandler
 {
@@ -30,7 +31,7 @@ public:
 		MemorySystem* memorySystem,
 		VkDescriptorSetLayout descriptorSetLayout,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue);
+		VkQueueObject* graphicsQueue);
 	~TextureHandler();
 
 	uint32_t AddTexture(
@@ -57,7 +58,7 @@ private:
 	PhysicalDeviceSupport* _deviceSupport;
 	MemorySystem* _memorySystem;
 	CommandPool* _commandPool;
-	VkQueue _graphicsQueue;
+	VkQueueObject* _graphicsQueue;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 

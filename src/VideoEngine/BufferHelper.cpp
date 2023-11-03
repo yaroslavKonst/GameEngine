@@ -73,7 +73,7 @@ namespace BufferHelper
 		Buffer src,
 		Buffer dst,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		VkCommandBuffer commandBufferExt)
 	{
 		VkCommandBuffer commandBuffer;
@@ -111,7 +111,7 @@ namespace BufferHelper
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		Buffer* stagingBufferPtr,
 		VkCommandBuffer commandBuffer)
 	{

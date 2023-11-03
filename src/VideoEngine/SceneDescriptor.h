@@ -12,6 +12,9 @@
 #include "TextureHandler.h"
 #include "sprite.h"
 #include "InputControl.h"
+#include "../Utils/RingBuffer.h"
+
+#define RING_BUFFER_SIZE 1024 * 1024
 
 struct Scene
 {
@@ -39,10 +42,26 @@ struct SceneContainer
 	glm::vec3 CameraUp;
 };
 
+struct LoadModelMessage
+{
+	uint32_t Index;
+	ModelDescriptor Descriptor;
+};
+
+struct RemoveModelMessage
+{
+	uint32_t Index;
+};
+
 struct SceneDescriptor
 {
 	std::map<uint32_t, ModelDescriptor> ModelDescriptors;
+	std::set<uint32_t> UsedModelDescriptors;
 	uint32_t LastModelIndex;
+
+	RingBuffer<LoadModelMessage> LoadModelMessages;
+	RingBuffer<RemoveModelMessage> RemoveModelMessages;
+
 	Skybox skybox;
 
 	Scene StagedScene;
@@ -57,7 +76,9 @@ struct SceneDescriptor
 
 	InputControl* inputControl;
 
-	SceneDescriptor()
+	SceneDescriptor() :
+		LoadModelMessages(RING_BUFFER_SIZE),
+		RemoveModelMessages(RING_BUFFER_SIZE)
 	{
 		LastModelIndex = 0;
 	}
@@ -127,6 +148,20 @@ struct SceneDescriptor
 		DrawnScene = SubmittedScene;
 		inputControl->PollEvents();
 		SceneMutex.unlock();
+
+		while (!LoadModelMessages.IsEmpty()) {
+			auto msg = LoadModelMessages.Get();
+
+			ModelDescriptors[msg.Index] = msg.Descriptor;
+		}
+
+		while (!RemoveModelMessages.IsEmpty()) {
+			auto msg = RemoveModelMessages.Get();
+
+			DeletedModelDescriptors.push_back(
+				ModelDescriptors[msg.Index]);
+			ModelDescriptors.erase(msg.Index);
+		}
 	}
 };
 

@@ -5,6 +5,7 @@
 #include "PhysicalDeviceSupport.h"
 #include "CommandPool.h"
 #include "BufferHelper.h"
+#include "VkQueueObject.h"
 
 namespace ImageHelper
 {
@@ -54,7 +55,7 @@ namespace ImageHelper
 		VkImageLayout newLayout,
 		uint32_t mipLevels,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		uint32_t layerCount = 1);
 
 	void CopyBufferToImage(
@@ -63,7 +64,7 @@ namespace ImageHelper
 		uint32_t width,
 		uint32_t height,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		uint32_t layerCount = 1);
 
 	void RotateClockWise(

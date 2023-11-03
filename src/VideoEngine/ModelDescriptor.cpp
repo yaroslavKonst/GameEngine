@@ -68,11 +68,11 @@ ModelDescriptor::GetAttributeDescriptions()
 }
 
 ModelDescriptor ModelDescriptor::CreateModelDescriptor(
-	Loader::VertexData* model,
+	const Loader::VertexData* model,
 	VkDevice device,
 	MemorySystem* memorySystem,
 	PhysicalDeviceSupport* deviceSupport,
-	VkQueue graphicsQueue,
+	VkQueueObject* graphicsQueue,
 	CommandPool* commandPool)
 {
 	ModelDescriptor descriptor;

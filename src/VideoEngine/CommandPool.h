@@ -4,6 +4,8 @@
 #include <vulkan/vulkan.h>
 #include <stdexcept>
 
+#include "VkQueueObject.h"
+
 class CommandPool
 {
 public:
@@ -19,7 +21,7 @@ public:
 	VkCommandBuffer StartOneTimeBuffer();
 	void EndOneTimeBuffer(
 		VkCommandBuffer commandBuffer,
-		VkQueue graphicsQueue);
+		VkQueueObject* graphicsQueue);
 
 private:
 	VkDevice _device;

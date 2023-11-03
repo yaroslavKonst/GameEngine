@@ -37,7 +37,7 @@ Swapchain::Swapchain(
 	PhysicalDeviceSupport* deviceSupport,
 	MemorySystem* memorySystem,
 	VkSampleCountFlagBits msaaSamples,
-	VkQueue graphicsQueue,
+	VkQueueObject* graphicsQueue,
 	VkQueue presentQueue,
 	SceneDescriptor* scene,
 	VkDescriptorSetLayout descriptorSetLayout,
@@ -1452,6 +1452,13 @@ void Swapchain::RecordCommandBuffer(
 			mvp.Model = model.GetModelMatrix();
 			mvp.InnerModel = model.GetModelInnerMatrix();
 
+			if (_scene->ModelDescriptors.find(
+				model.GetModels()[0]) ==
+				_scene->ModelDescriptors.end())
+			{
+				continue;
+			}
+
 			auto& desc =
 				_scene->ModelDescriptors[model.GetModels()[0]];
 
@@ -1545,6 +1552,13 @@ void Swapchain::RecordCommandBuffer(
 		for (auto& model : holedModels) {
 			mvp.Model = model->GetModelMatrix();
 			mvp.InnerModel = model->GetModelInnerMatrix();
+
+			if (_scene->ModelDescriptors.find(
+				model->GetModels()[0]) ==
+				_scene->ModelDescriptors.end())
+			{
+				continue;
+			}
 
 			auto& desc =
 				_scene->ModelDescriptors[model->GetModels()[0]];
@@ -1925,6 +1939,13 @@ void Swapchain::RecordObjectCommandBuffer(
 	mvp.Model = model->GetModelMatrix();
 	mvp.InnerModel = model->GetModelInnerMatrix();
 
+	if (_scene->ModelDescriptors.find(
+		model->GetModels()[0]) ==
+		_scene->ModelDescriptors.end())
+	{
+		return;
+	}
+
 	auto& desc = _scene->ModelDescriptors[model->GetModels()[0]];
 
 	if (desc.InstanceCount == 0) {
@@ -2138,11 +2159,13 @@ void Swapchain::DrawFrame()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
+	_graphicsQueue->Mutex.lock();
 	res = vkQueueSubmit(
-		_graphicsQueue,
+		_graphicsQueue->Queue,
 		1,
 		&submitInfo,
 		_inFlightFences[_currentFrame]);
+	_graphicsQueue->Mutex.unlock();
 
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error(

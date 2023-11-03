@@ -70,7 +70,7 @@ VkCommandBuffer CommandPool::StartOneTimeBuffer()
 
 void CommandPool::EndOneTimeBuffer(
 	VkCommandBuffer commandBuffer,
-	VkQueue graphicsQueue)
+	VkQueueObject* graphicsQueue)
 {
 	vkEndCommandBuffer(commandBuffer);
 
@@ -79,8 +79,11 @@ void CommandPool::EndOneTimeBuffer(
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(graphicsQueue);
+	graphicsQueue->Mutex.lock();
+	vkQueueSubmit(graphicsQueue->Queue, 1, &submitInfo, VK_NULL_HANDLE);
+	graphicsQueue->Mutex.unlock();
+
+	vkQueueWaitIdle(graphicsQueue->Queue);
 
 	DestroyCommandBuffer(commandBuffer);
 }

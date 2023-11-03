@@ -7,6 +7,7 @@
 
 #include "window.h"
 #include "VkInstanceHandler.h"
+#include "VkQueueObject.h"
 #include "CommandPool.h"
 #include "swapchain.h"
 #include "PhysicalDeviceSupport.h"
@@ -14,6 +15,7 @@
 #include "ModelDescriptor.h"
 #include "BufferHelper.h"
 #include "SceneDescriptor.h"
+#include "../Utils/ThreadPool.h"
 
 class Video
 {
@@ -38,11 +40,12 @@ public:
 	void MainLoop();
 	void Stop();
 
-	void RegisterModel(Model* model);
-	void RemoveModel(Model* model);
-
 	uint32_t LoadModel(Loader::VertexData& model);
 	void UnloadModel(uint32_t model);
+	uint32_t LoadModelAsync(Loader::VertexData& model);
+
+	void RegisterModel(Model* model);
+	void RemoveModel(Model* model);
 
 	void RegisterRectangle(Rectangle* rectangle);
 	void RemoveRectangle(Rectangle* rectangle);
@@ -115,6 +118,8 @@ private:
 	bool _settingsValid;
 	GraphicsSettings _settings;
 
+	ThreadPool* _loaderThreadPool;
+
 	VkSurfaceKHR _surface;
 	void CreateSurface();
 	void DestroySurface();
@@ -129,7 +134,7 @@ private:
 	PhysicalDeviceSupport _deviceSupport;
 
 	VkDevice _device;
-	VkQueue _graphicsQueue;
+	VkQueueObject _graphicsQueue;
 	VkQueue _presentQueue;
 	MemorySystem* _memorySystem;
 	void CreateDevice();

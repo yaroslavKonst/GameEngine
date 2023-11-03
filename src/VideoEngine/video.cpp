@@ -21,6 +21,8 @@ Video::Video(
 		_settingsValid = false;
 	}
 
+	_loaderThreadPool = new ThreadPool(1);
+
 	VkInstanceHandler::SetApplicationName(applicationName);
 	VkInstanceHandler::IncRef();
 
@@ -38,7 +40,7 @@ Video::Video(
 		_memorySystem,
 		_descriptorSetLayout,
 		_transferCommandPool,
-		_graphicsQueue);
+		&_graphicsQueue);
 
 	CreateSwapchain();
 }
@@ -58,6 +60,8 @@ Video::~Video()
 	DestroySurface();
 
 	VkInstanceHandler::DecRef();
+
+	delete _loaderThreadPool;
 }
 
 void Video::CreateSurface()
@@ -303,7 +307,7 @@ void Video::CreateDevice()
 		_device,
 		indices.graphicsFamily.value(),
 		0,
-		&_graphicsQueue);
+		&_graphicsQueue.Queue);
 
 	vkGetDeviceQueue(
 		_device,
@@ -345,7 +349,7 @@ void Video::CreateSwapchain()
 		&_deviceSupport,
 		_memorySystem,
 		_msaaSamples,
-		_graphicsQueue,
+		&_graphicsQueue,
 		_presentQueue,
 		&_scene,
 		_descriptorSetLayout,
@@ -378,28 +382,62 @@ uint32_t Video::LoadModel(Loader::VertexData& model)
 		_device,
 		_memorySystem,
 		&_deviceSupport,
-		_graphicsQueue,
+		&_graphicsQueue,
 		_transferCommandPool);
 
 	uint32_t index = _scene.LastModelIndex + 1;
 
-	while (_scene.ModelDescriptors.find(index) !=
-		_scene.ModelDescriptors.end())
+	while (_scene.UsedModelDescriptors.find(index) !=
+		_scene.UsedModelDescriptors.end())
 	{
 		++index;
 	}
 
 	_scene.LastModelIndex = index;
+	_scene.UsedModelDescriptors.insert(index);
 
-	_scene.ModelDescriptors[index] = descriptor;
+	_scene.LoadModelMessages.Insert({index, descriptor});
+
 	return index;
 }
 
 void Video::UnloadModel(uint32_t model)
 {
-	_scene.DeletedModelDescriptors.push_back(
-		_scene.ModelDescriptors[model]);
-	_scene.ModelDescriptors.erase(model);
+	_scene.RemoveModelMessages.Insert({model});
+	_scene.UsedModelDescriptors.erase(model);
+}
+
+uint32_t Video::LoadModelAsync(Loader::VertexData& model)
+{
+	Loader::VertexData modelData = model;
+
+	uint32_t index = _scene.LastModelIndex + 1;
+
+	while (_scene.UsedModelDescriptors.find(index) !=
+		_scene.UsedModelDescriptors.end())
+	{
+		++index;
+	}
+
+	_scene.LastModelIndex = index;
+	_scene.UsedModelDescriptors.insert(index);
+
+	_loaderThreadPool->Enqueue(
+		[this, modelData, index]() -> void
+		{
+			auto descriptor =
+				ModelDescriptor::CreateModelDescriptor(
+					&modelData,
+					_device,
+					_memorySystem,
+					&_deviceSupport,
+					&_graphicsQueue,
+					_transferCommandPool);
+			_scene.LoadModelMessages.Insert({index, descriptor});
+		},
+		false);
+
+	return index;
 }
 
 void Video::RegisterModel(Model* model)
@@ -416,7 +454,7 @@ void Video::RemoveModel(Model* model)
 
 void Video::RemoveAllModels()
 {
-	vkQueueWaitIdle(_graphicsQueue);
+	vkQueueWaitIdle(_graphicsQueue.Queue);
 
 	for (auto& model : _scene.ModelDescriptors) {
 		ModelDescriptor::DestroyModelDescriptor(
@@ -551,7 +589,7 @@ void Video::DestroySkybox()
 	}
 
 	_scene.skybox._SetDrawReady(false);
-	vkQueueWaitIdle(_graphicsQueue);
+	vkQueueWaitIdle(_graphicsQueue.Queue);
 	_scene.Textures->RemoveTexture(_scene.skybox.Texture);
 }
 

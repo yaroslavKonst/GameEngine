@@ -134,7 +134,7 @@ namespace ImageHelper
 		VkImageLayout newLayout,
 		uint32_t mipLevels,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		uint32_t layerCount)
 	{
 		VkCommandBuffer commandBuffer =
@@ -230,7 +230,7 @@ namespace ImageHelper
 		uint32_t width,
 		uint32_t height,
 		CommandPool* commandPool,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		uint32_t layerCount)
 	{
 		VkCommandBuffer commandBuffer =

@@ -16,6 +16,7 @@
 #include "SceneDescriptor.h"
 #include "LightDescriptor.h"
 #include "mvp.h"
+#include "VkQueueObject.h"
 
 class Swapchain
 {
@@ -27,7 +28,7 @@ public:
 		PhysicalDeviceSupport* deviceSupport,
 		MemorySystem* memorySystem,
 		VkSampleCountFlagBits msaaSamples,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		VkQueue presentQueue,
 		SceneDescriptor* scene,
 		VkDescriptorSetLayout descriptorSetLayout,
@@ -63,7 +64,7 @@ private:
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 
-	VkQueue _graphicsQueue;
+	VkQueueObject* _graphicsQueue;
 	VkQueue _presentQueue;
 
 	bool _initialized;

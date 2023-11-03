@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
+#include "VkQueueObject.h"
 #include "MemorySystem.h"
 #include "BufferHelper.h"
 #include "ImageHelper.h"
@@ -42,11 +43,11 @@ struct ModelDescriptor
 		GetAttributeDescriptions();
 
 	static ModelDescriptor CreateModelDescriptor(
-		Loader::VertexData* model,
+		const Loader::VertexData* model,
 		VkDevice device,
 		MemorySystem* memorySystem,
 		PhysicalDeviceSupport* deviceSupport,
-		VkQueue graphicsQueue,
+		VkQueueObject* graphicsQueue,
 		CommandPool* commandPool);
 	static void DestroyModelDescriptor(
 		ModelDescriptor descriptor,
