@@ -1206,7 +1206,11 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	if (_scene->skybox._IsDrawEnabled()) {
+	bool validSkybox =
+		_scene->skybox._IsDrawEnabled() &&
+		_scene->Textures->CheckTexture(_scene->skybox.Texture);
+
+	if (validSkybox) {
 		Skybox::ShaderData shaderData;
 		shaderData.Direction = _scene->DrawnScene.CameraDirection;
 		shaderData.Up = _scene->DrawnScene.CameraUp;
@@ -1567,6 +1571,12 @@ void Swapchain::RecordCommandBuffer(
 				continue;
 			}
 
+			if (!_scene->Textures->CheckTexture(
+				model->GetTextures()[0]))
+			{
+				continue;
+			}
+
 			VkBuffer vertexBuffers[] = {
 				desc.VertexBuffer.Buffer,
 				desc.InstanceBuffer.Buffer
@@ -1738,6 +1748,18 @@ void Swapchain::RecordCommandBuffer(
 	{
 		auto& sprite = *it;
 
+		bool validDiffTexture =
+			_scene->Textures->CheckTexture(
+				sprite.second->GetTexture(0));
+
+		bool validSpecTexture = sprite.second->GetTexCount() > 1 ?
+			_scene->Textures->CheckTexture(
+				sprite.second->GetTexture(1)) : true;
+
+		if (!(validDiffTexture && validSpecTexture)) {
+			continue;
+		}
+
 		SpriteDescriptor spriteDesc;
 
 		spriteDesc.ProjView = mvp.ProjView;
@@ -1835,6 +1857,12 @@ void Swapchain::RecordCommandBuffer(
 
 	for (auto& rect : orderedRectangles) {
 		auto rectangle = rect.second;
+
+		if (!_scene->Textures->CheckTexture(
+			rectangle->GetTexture(0)))
+		{
+			continue;
+		}
 
 		rectData[0] = rectangle->GetRectanglePosition();
 		rectData[1] = rectangle->GetRectangleTexCoords();
@@ -1952,6 +1980,18 @@ void Swapchain::RecordObjectCommandBuffer(
 		return;
 	}
 
+	auto& textures = model->GetTextures();
+
+	bool validDiffTexture = _scene->Textures->CheckTexture(textures[0]);
+
+	bool validSpecTexture = textures.size() > 1 ?
+		_scene->Textures->CheckTexture(textures[1]) :
+		true;
+
+	if (!(validDiffTexture && validSpecTexture)) {
+		return;
+	}
+
 	VkBuffer vertexBuffers[] = {
 		desc.VertexBuffer.Buffer,
 		desc.InstanceBuffer.Buffer
@@ -2007,8 +2047,6 @@ void Swapchain::RecordObjectCommandBuffer(
 		208,
 		sizeof(glm::vec4),
 		&colorMultiplier);
-
-	auto& textures = model->GetTextures();
 
 	auto& texDiff = _scene->Textures->GetTexture(textures[0]);
 

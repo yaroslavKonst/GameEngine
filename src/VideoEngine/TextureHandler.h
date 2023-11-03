@@ -1,10 +1,14 @@
 #ifndef _TEXTURE_HANDLER_H
 #define _TEXTURE_HANDLER_H
 
+#include <set>
+
 #include "ImageHelper.h"
 #include "PhysicalDeviceSupport.h"
 #include "CommandPool.h"
 #include "VkQueueObject.h"
+#include "../Utils/RingBuffer.h"
+#include "../Utils/ThreadPool.h"
 
 class TextureHandler
 {
@@ -31,7 +35,8 @@ public:
 		MemorySystem* memorySystem,
 		VkDescriptorSetLayout descriptorSetLayout,
 		CommandPool* commandPool,
-		VkQueueObject* graphicsQueue);
+		VkQueueObject* graphicsQueue,
+		ThreadPool* threadPool);
 	~TextureHandler();
 
 	uint32_t AddTexture(
@@ -43,15 +48,46 @@ public:
 		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
 		uint32_t layerCount = 1);
 
+	uint32_t AddTextureAsync(
+		uint32_t width,
+		uint32_t height,
+		std::vector<uint8_t> texture,
+		bool repeat = true,
+		TextureType type = TextureType::T2D,
+		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
+		uint32_t layerCount = 1);
+
 	void RemoveTexture(uint32_t index);
+
+	bool CheckTexture(uint32_t index)
+	{
+		return _textures.find(index) != _textures.end();
+	}
 
 	TextureDescriptor& GetTexture(uint32_t index)
 	{
 		return _textures[index];
 	}
 
+	void PollTextureMessages();
+
 private:
+	struct LoadTextureMessage
+	{
+		uint32_t Index;
+		TextureDescriptor Descriptor;
+	};
+
+	struct RemoveTextureMessage
+	{
+		uint32_t Index;
+	};
+
+	RingBuffer<LoadTextureMessage> _loadMessages;
+	RingBuffer<RemoveTextureMessage> _removeMessages;
+
 	std::map<uint32_t, TextureDescriptor> _textures;
+	std::set<uint32_t> _usedDescriptors;
 	uint32_t _lastIndex;
 
 	VkDevice _device;
@@ -59,6 +95,8 @@ private:
 	MemorySystem* _memorySystem;
 	CommandPool* _commandPool;
 	VkQueueObject* _graphicsQueue;
+
+	ThreadPool* _threadPool;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 

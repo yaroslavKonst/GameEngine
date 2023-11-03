@@ -3,13 +3,18 @@
 #include <cmath>
 #include <cstring>
 
+#define RING_BUFFER_SIZE 1024 * 1024
+
 TextureHandler::TextureHandler(
 	VkDevice device,
 	PhysicalDeviceSupport* deviceSupport,
 	MemorySystem* memorySystem,
 	VkDescriptorSetLayout descriptorSetLayout,
 	CommandPool* commandPool,
-	VkQueueObject* graphicsQueue)
+	VkQueueObject* graphicsQueue,
+	ThreadPool* threadPool) :
+	_loadMessages(RING_BUFFER_SIZE),
+	_removeMessages(RING_BUFFER_SIZE)
 {
 	_device = device;
 	_memorySystem = memorySystem;
@@ -17,6 +22,7 @@ TextureHandler::TextureHandler(
 	_deviceSupport = deviceSupport;
 	_commandPool = commandPool;
 	_graphicsQueue = graphicsQueue;
+	_threadPool = threadPool;
 
 	_lastIndex = 0;
 }
@@ -25,6 +31,22 @@ TextureHandler::~TextureHandler()
 {
 	for (auto& texture : _textures) {
 		DestroyTextureDescriptor(texture.second);
+	}
+}
+
+void TextureHandler::PollTextureMessages()
+{
+	while (!_loadMessages.IsEmpty()) {
+		auto msg = _loadMessages.Get();
+
+		_textures[msg.Index] = msg.Descriptor;
+	}
+
+	while (!_removeMessages.IsEmpty()) {
+		auto msg = _removeMessages.Get();
+
+		DestroyTextureDescriptor(_textures[msg.Index]);
+		_textures.erase(msg.Index);
 	}
 }
 
@@ -39,28 +61,75 @@ uint32_t TextureHandler::AddTexture(
 {
 	uint32_t index = _lastIndex + 1;
 
-	while (_textures.find(index) != _textures.end()) {
+	while (_usedDescriptors.find(index) != _usedDescriptors.end()) {
 		++index;
 	}
 
 	_lastIndex = index;
+	_usedDescriptors.insert(index);
 
-	_textures[index] = CreateTextureDescriptor(
+	_loadMessages.Insert({
+		index,
+		CreateTextureDescriptor(
+			type,
+			width,
+			height,
+			texture,
+			repeat,
+			flags,
+			layerCount)});
+
+	return index;
+}
+
+uint32_t TextureHandler::AddTextureAsync(
+	uint32_t width,
+	uint32_t height,
+	std::vector<uint8_t> texture,
+	bool repeat,
+	TextureType type,
+	VkImageCreateFlagBits flags,
+	uint32_t layerCount)
+{
+	uint32_t index = _lastIndex + 1;
+
+	while (_usedDescriptors.find(index) != _usedDescriptors.end()) {
+		++index;
+	}
+
+	_lastIndex = index;
+	_usedDescriptors.insert(index);
+
+	_threadPool->Enqueue(
+		[this,
+		index,
 		type,
 		width,
 		height,
 		texture,
 		repeat,
 		flags,
-		layerCount);
+		layerCount]() -> void
+		{
+			_loadMessages.Insert({
+				index,
+				CreateTextureDescriptor(
+					type,
+					width,
+					height,
+					texture,
+					repeat,
+					flags,
+					layerCount)});
+		});
 
 	return index;
 }
 
 void TextureHandler::RemoveTexture(uint32_t index)
 {
-	DestroyTextureDescriptor(_textures[index]);
-	_textures.erase(index);
+	_removeMessages.Insert({index});
+	_usedDescriptors.erase(index);
 }
 
 TextureHandler::TextureDescriptor TextureHandler::CreateTextureDescriptor(

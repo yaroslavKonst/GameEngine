@@ -42,7 +42,7 @@ public:
 
 	uint32_t LoadModel(Loader::VertexData& model);
 	void UnloadModel(uint32_t model);
-	uint32_t LoadModelAsync(Loader::VertexData& model);
+	uint32_t LoadModelAsync(Loader::VertexData model);
 
 	void RegisterModel(Model* model);
 	void RemoveModel(Model* model);

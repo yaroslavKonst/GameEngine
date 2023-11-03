@@ -40,7 +40,8 @@ Video::Video(
 		_memorySystem,
 		_descriptorSetLayout,
 		_transferCommandPool,
-		&_graphicsQueue);
+		&_graphicsQueue,
+		_loaderThreadPool);
 
 	CreateSwapchain();
 }
@@ -407,10 +408,8 @@ void Video::UnloadModel(uint32_t model)
 	_scene.UsedModelDescriptors.erase(model);
 }
 
-uint32_t Video::LoadModelAsync(Loader::VertexData& model)
+uint32_t Video::LoadModelAsync(Loader::VertexData model)
 {
-	Loader::VertexData modelData = model;
-
 	uint32_t index = _scene.LastModelIndex + 1;
 
 	while (_scene.UsedModelDescriptors.find(index) !=
@@ -423,11 +422,11 @@ uint32_t Video::LoadModelAsync(Loader::VertexData& model)
 	_scene.UsedModelDescriptors.insert(index);
 
 	_loaderThreadPool->Enqueue(
-		[this, modelData, index]() -> void
+		[this, model, index]() -> void
 		{
 			auto descriptor =
 				ModelDescriptor::CreateModelDescriptor(
-					&modelData,
+					&model,
 					_device,
 					_memorySystem,
 					&_deviceSupport,

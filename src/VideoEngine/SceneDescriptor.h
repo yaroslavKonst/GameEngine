@@ -162,6 +162,8 @@ struct SceneDescriptor
 				ModelDescriptors[msg.Index]);
 			ModelDescriptors.erase(msg.Index);
 		}
+
+		Textures->PollTextureMessages();
 	}
 };
 
