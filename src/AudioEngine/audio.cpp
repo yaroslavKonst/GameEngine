@@ -99,7 +99,7 @@ int Audio::AudioCallback(
 	Audio* audio = static_cast<Audio*>(userData);
 	float* out = static_cast<float*>(outputBuffer);
 
-	memset(out, 0, sizeof(float) * framesPerBuffer);
+	memset(out, 0, sizeof(float) * framesPerBuffer * 2);
 
 	size_t bufIdx = audio->_bufferStart;
 
@@ -129,7 +129,11 @@ int Audio::AudioCallback(
 		size_t inIdx = buffer.position;
 		size_t inLen = buffer.buffer->Data.size();
 
-		for (size_t outIdx = 0; outIdx < framesPerBuffer; ++outIdx)
+		if (inIdx >= inLen) {
+			continue;
+		}
+
+		for (size_t outIdx = 0; outIdx < framesPerBuffer * 2; ++outIdx)
 		{
 			out[outIdx] +=
 				buffer.buffer->Data[inIdx] *
@@ -144,7 +148,7 @@ int Audio::AudioCallback(
 			}
 		}
 
-		buffer.position += framesPerBuffer;
+		buffer.position += framesPerBuffer * 2;
 	}
 
 	while (!audio->_ringBuffer[audio->_bufferStart].valid) {
