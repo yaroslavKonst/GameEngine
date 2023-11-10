@@ -63,8 +63,24 @@ Package::~Package()
 std::vector<uint8_t> Package::GetData(std::string name)
 {
 	if (_mappings.find(name) == _mappings.end()) {
-		throw std::runtime_error(
-			std::string("Package does not contain entry ") + name);
+		std::fstream file;
+		file.open(
+			name,
+			std::ios::in | std::ios::ate | std::ios::binary);
+
+		if (!file.is_open()) {
+			throw std::runtime_error(
+				std::string("Package does not contain entry ") +
+				name);
+		}
+
+		std::vector<uint8_t> data(file.tellg());
+
+		file.seekg(0);
+		file.read((char*)data.data(), data.size());
+		file.close();
+
+		return data;
 	}
 
 	Mapping mapping = _mappings[name];

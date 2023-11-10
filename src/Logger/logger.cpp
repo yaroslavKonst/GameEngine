@@ -6,8 +6,8 @@
 namespace Logger
 {
 	static Level _logLevel = Level::Silent;
-	static bool _timeWritten = false;
-	static std::chrono::high_resolution_clock::time_point _programStart;
+	static std::chrono::high_resolution_clock::time_point _programStart =
+		std::chrono::high_resolution_clock::now();
 
 	const char* StrLevel(Level level)
 	{
@@ -28,11 +28,6 @@ namespace Logger
 	std::string GetTimeString()
 	{
 		using namespace std::chrono;
-
-		if (!_timeWritten) {
-			_programStart = high_resolution_clock::now();
-			_timeWritten = true;
-		}
 
 		high_resolution_clock::time_point curr =
 			high_resolution_clock::now();
