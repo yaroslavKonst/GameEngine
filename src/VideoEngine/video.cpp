@@ -31,10 +31,10 @@ Video::Video(
 	CreateSurface();
 	SelectPhysicalDevice();
 	CreateDevice();
-	_scene.inputControl = new InputControl(_window.GetWindow());
+	_dataBridge.inputControl = new InputControl(_window.GetWindow());
 	CreateCommandPools();
 	CreateDescriptorSetLayout();
-	_scene.Textures = new TextureHandler(
+	_dataBridge.Textures = new TextureHandler(
 		_device,
 		&_deviceSupport,
 		_memorySystem,
@@ -53,10 +53,10 @@ Video::~Video()
 	RemoveAllModels();
 	DestroySkybox();
 
-	delete _scene.Textures;
+	delete _dataBridge.Textures;
 	DestroyDescriptorSetLayout();
 	DestroyCommandPools();
-	delete _scene.inputControl;
+	delete _dataBridge.inputControl;
 	DestroyDevice();
 	DestroySurface();
 
@@ -352,7 +352,7 @@ void Video::CreateSwapchain()
 		_msaaSamples,
 		&_graphicsQueue,
 		_presentQueue,
-		&_scene,
+		&_dataBridge,
 		_descriptorSetLayout,
 		10,
 		1024);
@@ -386,40 +386,40 @@ uint32_t Video::LoadModel(Loader::VertexData& model)
 		&_graphicsQueue,
 		_transferCommandPool);
 
-	uint32_t index = _scene.LastModelIndex + 1;
+	uint32_t index = _dataBridge.LastModelIndex + 1;
 
-	while (_scene.UsedModelDescriptors.find(index) !=
-		_scene.UsedModelDescriptors.end())
+	while (_dataBridge.UsedModelDescriptors.find(index) !=
+		_dataBridge.UsedModelDescriptors.end())
 	{
 		++index;
 	}
 
-	_scene.LastModelIndex = index;
-	_scene.UsedModelDescriptors.insert(index);
+	_dataBridge.LastModelIndex = index;
+	_dataBridge.UsedModelDescriptors.insert(index);
 
-	_scene.LoadModelMessages.Insert({index, descriptor});
+	_dataBridge.LoadModelMessages.Insert({index, descriptor});
 
 	return index;
 }
 
 void Video::UnloadModel(uint32_t model)
 {
-	_scene.RemoveModelMessages.Insert({model});
-	_scene.UsedModelDescriptors.erase(model);
+	_dataBridge.RemoveModelMessages.Insert({model});
+	_dataBridge.UsedModelDescriptors.erase(model);
 }
 
 uint32_t Video::LoadModelAsync(Loader::VertexData model)
 {
-	uint32_t index = _scene.LastModelIndex + 1;
+	uint32_t index = _dataBridge.LastModelIndex + 1;
 
-	while (_scene.UsedModelDescriptors.find(index) !=
-		_scene.UsedModelDescriptors.end())
+	while (_dataBridge.UsedModelDescriptors.find(index) !=
+		_dataBridge.UsedModelDescriptors.end())
 	{
 		++index;
 	}
 
-	_scene.LastModelIndex = index;
-	_scene.UsedModelDescriptors.insert(index);
+	_dataBridge.LastModelIndex = index;
+	_dataBridge.UsedModelDescriptors.insert(index);
 
 	_loaderThreadPool->Enqueue(
 		[this, model, index]() -> void
@@ -432,7 +432,8 @@ uint32_t Video::LoadModelAsync(Loader::VertexData model)
 					&_deviceSupport,
 					&_graphicsQueue,
 					_transferCommandPool);
-			_scene.LoadModelMessages.Insert({index, descriptor});
+			_dataBridge.LoadModelMessages.Insert(
+				{index, descriptor});
 		},
 		false);
 
@@ -441,50 +442,50 @@ uint32_t Video::LoadModelAsync(Loader::VertexData model)
 
 void Video::RegisterModel(Model* model)
 {
-	_scene.StagedScene.Models.insert(model);
+	_dataBridge.StagedScene.Models.insert(model);
 	model->_SetDrawReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
 	model->_SetDrawReady(false);
-	_scene.StagedScene.Models.erase(model);
+	_dataBridge.StagedScene.Models.erase(model);
 }
 
 void Video::RemoveAllModels()
 {
 	vkQueueWaitIdle(_graphicsQueue.Queue);
 
-	for (auto& model : _scene.ModelDescriptors) {
+	for (auto& model : _dataBridge.ModelDescriptors) {
 		ModelDescriptor::DestroyModelDescriptor(
 			model.second,
 			_device,
 			_memorySystem);
 	}
 
-	_scene.StagedScene.Models.clear();
+	_dataBridge.StagedScene.Models.clear();
 
-	for (auto& desc : _scene.DeletedModelDescriptors) {
+	for (auto& desc : _dataBridge.DeletedModelDescriptors) {
 		ModelDescriptor::DestroyModelDescriptor(
 			desc,
 			_device,
 			_memorySystem);
 	}
 
-	_scene.DeletedModelDescriptors.clear();
+	_dataBridge.DeletedModelDescriptors.clear();
 }
 
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
 	rectangle->SetRectangleScreenRatio(_swapchain->GetScreenRatio());
-	_scene.StagedScene.Rectangles.insert(rectangle);
+	_dataBridge.StagedScene.Rectangles.insert(rectangle);
 	rectangle->_SetDrawReady(true);
 }
 
 void Video::RemoveRectangle(Rectangle* rectangle)
 {
 	rectangle->_SetDrawReady(false);
-	_scene.StagedScene.Rectangles.erase(rectangle);
+	_dataBridge.StagedScene.Rectangles.erase(rectangle);
 }
 
 void Video::CreateSkybox(
@@ -566,7 +567,7 @@ void Video::CreateSkybox(
 		texWidth,
 		texHeight);
 
-	uint32_t skyboxTexture = _scene.Textures->AddTexture(
+	uint32_t skyboxTexture = _dataBridge.Textures->AddTexture(
 		texWidth,
 		texHeight,
 		texDataTransformed,
@@ -574,22 +575,22 @@ void Video::CreateSkybox(
 		TextureHandler::TextureType::TCube,
 		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 		layerCount);
-	_scene.skybox.Texture = skyboxTexture;
+	_dataBridge.skybox.Texture = skyboxTexture;
 
-	_scene.skybox._SetDrawReady(true);
-	_scene.skybox.SetDrawEnabled(true);
+	_dataBridge.skybox._SetDrawReady(true);
+	_dataBridge.skybox.SetDrawEnabled(true);
 }
 
 void Video::DestroySkybox()
 {
-	if (!_scene.skybox._IsDrawEnabled())
+	if (!_dataBridge.skybox._IsDrawEnabled())
 	{
 		return;
 	}
 
-	_scene.skybox._SetDrawReady(false);
+	_dataBridge.skybox._SetDrawReady(false);
 	vkQueueWaitIdle(_graphicsQueue.Queue);
-	_scene.Textures->RemoveTexture(_scene.skybox.Texture);
+	_dataBridge.Textures->RemoveTexture(_dataBridge.skybox.Texture);
 }
 
 void Video::CreateDescriptorSetLayout()
@@ -630,22 +631,22 @@ void Video::DestroyDescriptorSetLayout()
 
 void Video::RegisterLight(Light* light)
 {
-	_scene.StagedScene.Lights.insert(light);
+	_dataBridge.StagedScene.Lights.insert(light);
 }
 
 void Video::RemoveLight(Light* light)
 {
-	_scene.StagedScene.Lights.erase(light);
+	_dataBridge.StagedScene.Lights.erase(light);
 }
 
 void Video::RegisterSprite(Sprite* sprite)
 {
-	_scene.StagedScene.Sprites.insert(sprite);
+	_dataBridge.StagedScene.Sprites.insert(sprite);
 	sprite->_SetDrawReady(true);
 }
 
 void Video::RemoveSprite(Sprite* sprite)
 {
 	sprite->_SetDrawReady(false);
-	_scene.StagedScene.Sprites.erase(sprite);
+	_dataBridge.StagedScene.Sprites.erase(sprite);
 }

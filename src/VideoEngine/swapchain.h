@@ -13,7 +13,7 @@
 #include "ImageHelper.h"
 #include "pipeline.h"
 #include "ModelDescriptor.h"
-#include "SceneDescriptor.h"
+#include "DataBridge.h"
 #include "LightDescriptor.h"
 #include "mvp.h"
 #include "VkQueueObject.h"
@@ -30,7 +30,7 @@ public:
 		VkSampleCountFlagBits msaaSamples,
 		VkQueueObject* graphicsQueue,
 		VkQueue presentQueue,
-		SceneDescriptor* scene,
+		DataBridge* dataBridge,
 		VkDescriptorSetLayout descriptorSetLayout,
 		uint32_t maxLightCount,
 		uint32_t shadowSize);
@@ -60,7 +60,7 @@ private:
 	PhysicalDeviceSupport* _deviceSupport;
 	MemorySystem* _memorySystem;
 
-	SceneDescriptor* _scene;
+	DataBridge* _dataBridge;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 

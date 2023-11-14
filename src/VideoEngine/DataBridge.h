@@ -1,5 +1,5 @@
-#ifndef _SCENE_DESCRIPTOR_H
-#define _SCENE_DESCRIPTOR_H
+#ifndef _DATA_BRIDGE_H
+#define _DATA_BRIDGE_H
 
 #include <set>
 #include <mutex>
@@ -53,7 +53,7 @@ struct RemoveModelMessage
 	uint32_t Index;
 };
 
-struct SceneDescriptor
+struct DataBridge
 {
 	std::map<uint32_t, ModelDescriptor> ModelDescriptors;
 	std::set<uint32_t> UsedModelDescriptors;
@@ -76,7 +76,7 @@ struct SceneDescriptor
 
 	InputControl* inputControl;
 
-	SceneDescriptor() :
+	DataBridge() :
 		LoadModelMessages(RING_BUFFER_SIZE),
 		RemoveModelMessages(RING_BUFFER_SIZE)
 	{

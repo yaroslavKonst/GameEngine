@@ -39,7 +39,7 @@ Swapchain::Swapchain(
 	VkSampleCountFlagBits msaaSamples,
 	VkQueueObject* graphicsQueue,
 	VkQueue presentQueue,
-	SceneDescriptor* scene,
+	DataBridge* dataBridge,
 	VkDescriptorSetLayout descriptorSetLayout,
 	uint32_t maxLightCount,
 	uint32_t shadowSize)
@@ -52,7 +52,7 @@ Swapchain::Swapchain(
 	_msaaSamples = msaaSamples;
 	_graphicsQueue = graphicsQueue;
 	_presentQueue = presentQueue;
-	_scene = scene;
+	_dataBridge = dataBridge;
 	_descriptorSetLayout = descriptorSetLayout;
 	_maxLightCount = maxLightCount;
 	_shadowSize = shadowSize;
@@ -242,7 +242,7 @@ void Swapchain::Create()
 	// TODO: Add rectangle screen ratio callback to input system.
 	/*float ratio = GetScreenRatio();
 
-	for (auto& rectangle : _scene->Rectangles) {
+	for (auto& rectangle : _dataBridge->Rectangles) {
 		rectangle->SetRectangleScreenRatio(ratio);
 	}*/
 
@@ -1172,17 +1172,17 @@ void Swapchain::RecordCommandBuffer(
 			"Failed to begin recording command buffer.");
 	}
 
-	_scene->LoadToDrawn();
+	_dataBridge->LoadToDrawn();
 
 	// MVP.
 	MVP mvp;
 	glm::mat4 view = glm::lookAt(
-		_scene->DrawnScene.CameraPosition,
-		_scene->DrawnScene.CameraPosition +
-		_scene->DrawnScene.CameraDirection,
-		_scene->DrawnScene.CameraUp);
+		_dataBridge->DrawnScene.CameraPosition,
+		_dataBridge->DrawnScene.CameraPosition +
+		_dataBridge->DrawnScene.CameraDirection,
+		_dataBridge->DrawnScene.CameraUp);
 	mvp.ProjView = glm::perspective(
-		glm::radians((float)_scene->DrawnScene.FOV),
+		glm::radians((float)_dataBridge->DrawnScene.FOV),
 		(float)_extent.width / (float)_extent.height,
 		0.01f,
 		1000.0f) * view;
@@ -1207,16 +1207,19 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	bool validSkybox =
-		_scene->skybox._IsDrawEnabled() &&
-		_scene->Textures->CheckTexture(_scene->skybox.Texture);
+		_dataBridge->skybox._IsDrawEnabled() &&
+		_dataBridge->Textures->CheckTexture(
+			_dataBridge->skybox.Texture);
 
 	if (validSkybox) {
 		Skybox::ShaderData shaderData;
-		shaderData.Direction = _scene->DrawnScene.CameraDirection;
-		shaderData.Up = _scene->DrawnScene.CameraUp;
-		shaderData.FOV = glm::radians((float)_scene->DrawnScene.FOV);
+		shaderData.Direction = _dataBridge->DrawnScene.CameraDirection;
+		shaderData.Up = _dataBridge->DrawnScene.CameraUp;
+		shaderData.FOV =
+			glm::radians((float)_dataBridge->DrawnScene.FOV);
 		shaderData.Ratio = (float)_extent.width / (float)_extent.height;
-		shaderData.ColorModifier = _scene->skybox.GetColorMultiplier();
+		shaderData.ColorModifier =
+			_dataBridge->skybox.GetColorMultiplier();
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1227,8 +1230,8 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(Skybox::ShaderData),
 			&shaderData);
 
-		auto& tex = _scene->Textures->GetTexture(
-			_scene->skybox.Texture);
+		auto& tex = _dataBridge->Textures->GetTexture(
+			_dataBridge->skybox.Texture);
 
 		vkCmdBindDescriptorSets(
 			commandBuffer,
@@ -1256,7 +1259,7 @@ void Swapchain::RecordCommandBuffer(
 
 	_stagingBuffers.clear();
 
-	/*for (auto& model : _scene->Models) {
+	/*for (auto& model : _dataBridge->Models) {
 		if (!model->_IsDrawEnabled()) {
 			continue;
 		}
@@ -1304,10 +1307,10 @@ void Swapchain::RecordCommandBuffer(
 	// Light transforms.
 	std::multimap<float, Light*> orderedLights;
 
-	for (auto& light : _scene->DrawnScene.Lights) {
+	for (auto& light : _dataBridge->DrawnScene.Lights) {
 		orderedLights.insert({glm::length(
 			light.GetLightPosition() -
-				_scene->DrawnScene.CameraPosition),
+				_dataBridge->DrawnScene.CameraPosition),
 			&light
 		});
 	}
@@ -1435,7 +1438,7 @@ void Swapchain::RecordCommandBuffer(
 
 		std::set<Model*> holedModels;
 
-		for (auto& model : _scene->DrawnScene.Models) {
+		for (auto& model : _dataBridge->DrawnScene.Models) {
 			if (!model._IsDrawEnabled()) {
 				continue;
 			}
@@ -1456,15 +1459,16 @@ void Swapchain::RecordCommandBuffer(
 			mvp.Model = model.GetModelMatrix();
 			mvp.InnerModel = model.GetModelInnerMatrix();
 
-			if (_scene->ModelDescriptors.find(
+			if (_dataBridge->ModelDescriptors.find(
 				model.GetModels()[0]) ==
-				_scene->ModelDescriptors.end())
+				_dataBridge->ModelDescriptors.end())
 			{
 				continue;
 			}
 
 			auto& desc =
-				_scene->ModelDescriptors[model.GetModels()[0]];
+				_dataBridge->ModelDescriptors[
+					model.GetModels()[0]];
 
 			if (desc.InstanceCount == 0) {
 				continue;
@@ -1557,21 +1561,22 @@ void Swapchain::RecordCommandBuffer(
 			mvp.Model = model->GetModelMatrix();
 			mvp.InnerModel = model->GetModelInnerMatrix();
 
-			if (_scene->ModelDescriptors.find(
+			if (_dataBridge->ModelDescriptors.find(
 				model->GetModels()[0]) ==
-				_scene->ModelDescriptors.end())
+				_dataBridge->ModelDescriptors.end())
 			{
 				continue;
 			}
 
 			auto& desc =
-				_scene->ModelDescriptors[model->GetModels()[0]];
+				_dataBridge->ModelDescriptors[
+					model->GetModels()[0]];
 
 			if (desc.InstanceCount == 0) {
 				continue;
 			}
 
-			if (!_scene->Textures->CheckTexture(
+			if (!_dataBridge->Textures->CheckTexture(
 				model->GetTextures()[0]))
 			{
 				continue;
@@ -1613,7 +1618,7 @@ void Swapchain::RecordCommandBuffer(
 				sizeof(uint32_t),
 				&lightIndex);
 
-			auto& texDiff = _scene->Textures->GetTexture(
+			auto& texDiff = _dataBridge->Textures->GetTexture(
 				model->GetTextures()[0]);
 
 			std::vector<VkDescriptorSet> descriptorSets = {
@@ -1652,14 +1657,14 @@ void Swapchain::RecordCommandBuffer(
 	std::multimap<float, Model*> transparentModels;
 	std::set<Model*> holedModels;
 
-	for (auto& model : _scene->DrawnScene.Models) {
+	for (auto& model : _dataBridge->DrawnScene.Models) {
 		if (!model._IsDrawEnabled()) {
 			continue;
 		}
 
 		if (model.GetColorMultiplier().a < 1.0f) {
 			float distance = glm::length(
-				_scene->DrawnScene.CameraPosition -
+				_dataBridge->DrawnScene.CameraPosition -
 				model.GetModelCenter());
 
 			transparentModels.insert({distance, &model});
@@ -1729,14 +1734,14 @@ void Swapchain::RecordCommandBuffer(
 
 	std::multimap<float, Sprite*> orderedSprites;
 
-	for (auto& sprite : _scene->DrawnScene.Sprites) {
+	for (auto& sprite : _dataBridge->DrawnScene.Sprites) {
 		if (!sprite._IsDrawEnabled()) {
 			continue;
 		}
 
 		orderedSprites.insert({
 			glm::length(sprite.GetSpritePosition() -
-				_scene->DrawnScene.CameraPosition),
+				_dataBridge->DrawnScene.CameraPosition),
 			&sprite
 		});
 	}
@@ -1749,11 +1754,11 @@ void Swapchain::RecordCommandBuffer(
 		auto& sprite = *it;
 
 		bool validDiffTexture =
-			_scene->Textures->CheckTexture(
+			_dataBridge->Textures->CheckTexture(
 				sprite.second->GetTexture(0));
 
 		bool validSpecTexture = sprite.second->GetTexCount() > 1 ?
-			_scene->Textures->CheckTexture(
+			_dataBridge->Textures->CheckTexture(
 				sprite.second->GetTexture(1)) : true;
 
 		if (!(validDiffTexture && validSpecTexture)) {
@@ -1765,7 +1770,7 @@ void Swapchain::RecordCommandBuffer(
 		spriteDesc.ProjView = mvp.ProjView;
 		spriteDesc.TexCoords = sprite.second->GetSpriteTexCoords();
 		spriteDesc.SpritePos = sprite.second->GetSpritePosition();
-		spriteDesc.CameraPos = _scene->DrawnScene.CameraPosition;
+		spriteDesc.CameraPos = _dataBridge->DrawnScene.CameraPosition;
 		spriteDesc.SpriteUp = sprite.second->GetSpriteUp();
 		spriteDesc.Size = sprite.second->GetSpriteSize();
 
@@ -1783,7 +1788,7 @@ void Swapchain::RecordCommandBuffer(
 			VK_SHADER_STAGE_FRAGMENT_BIT,
 			192,
 			sizeof(glm::vec3),
-			&_scene->DrawnScene.CameraPosition);
+			&_dataBridge->DrawnScene.CameraPosition);
 
 		uint32_t isLight = sprite.second->DrawLight() ? 1 : 0;
 
@@ -1806,11 +1811,11 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(glm::vec4),
 			&colorMultiplier);
 
-		auto& texDiff = _scene->Textures->GetTexture(
+		auto& texDiff = _dataBridge->Textures->GetTexture(
 			sprite.second->GetTexture(0));
 
 		auto& texSpec = sprite.second->GetTexCount() > 1 ?
-			_scene->Textures->GetTexture(
+			_dataBridge->Textures->GetTexture(
 				sprite.second->GetTexture(1)) : texDiff;
 
 		std::vector<VkDescriptorSet> descriptorSets = {
@@ -1844,7 +1849,7 @@ void Swapchain::RecordCommandBuffer(
 
 	std::multimap<float, Rectangle*> orderedRectangles;
 
-	for (auto& rectangle : _scene->DrawnScene.Rectangles) {
+	for (auto& rectangle : _dataBridge->DrawnScene.Rectangles) {
 		if (!rectangle._IsDrawEnabled()) {
 			continue;
 		}
@@ -1858,7 +1863,7 @@ void Swapchain::RecordCommandBuffer(
 	for (auto& rect : orderedRectangles) {
 		auto rectangle = rect.second;
 
-		if (!_scene->Textures->CheckTexture(
+		if (!_dataBridge->Textures->CheckTexture(
 			rectangle->GetTexture(0)))
 		{
 			continue;
@@ -1886,7 +1891,7 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(glm::vec4),
 			&colorMultiplier);
 
-		auto& tex = _scene->Textures->GetTexture(
+		auto& tex = _dataBridge->Textures->GetTexture(
 			rectangle->GetTexture(0));
 
 		vkCmdBindDescriptorSets(
@@ -1967,14 +1972,14 @@ void Swapchain::RecordObjectCommandBuffer(
 	mvp.Model = model->GetModelMatrix();
 	mvp.InnerModel = model->GetModelInnerMatrix();
 
-	if (_scene->ModelDescriptors.find(
+	if (_dataBridge->ModelDescriptors.find(
 		model->GetModels()[0]) ==
-		_scene->ModelDescriptors.end())
+		_dataBridge->ModelDescriptors.end())
 	{
 		return;
 	}
 
-	auto& desc = _scene->ModelDescriptors[model->GetModels()[0]];
+	auto& desc = _dataBridge->ModelDescriptors[model->GetModels()[0]];
 
 	if (desc.InstanceCount == 0) {
 		return;
@@ -1982,10 +1987,11 @@ void Swapchain::RecordObjectCommandBuffer(
 
 	auto& textures = model->GetTextures();
 
-	bool validDiffTexture = _scene->Textures->CheckTexture(textures[0]);
+	bool validDiffTexture =
+		_dataBridge->Textures->CheckTexture(textures[0]);
 
 	bool validSpecTexture = textures.size() > 1 ?
-		_scene->Textures->CheckTexture(textures[1]) :
+		_dataBridge->Textures->CheckTexture(textures[1]) :
 		true;
 
 	if (!(validDiffTexture && validSpecTexture)) {
@@ -2025,7 +2031,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		192,
 		sizeof(glm::vec3),
-		&_scene->DrawnScene.CameraPosition);
+		&_dataBridge->DrawnScene.CameraPosition);
 
 	uint32_t isLight = model->DrawLight() ? 1 : 0;
 
@@ -2048,10 +2054,10 @@ void Swapchain::RecordObjectCommandBuffer(
 		sizeof(glm::vec4),
 		&colorMultiplier);
 
-	auto& texDiff = _scene->Textures->GetTexture(textures[0]);
+	auto& texDiff = _dataBridge->Textures->GetTexture(textures[0]);
 
 	auto& texSpec = textures.size() > 1 ?
-		_scene->Textures->GetTexture(textures[1]) :
+		_dataBridge->Textures->GetTexture(textures[1]) :
 		texDiff;
 
 	std::vector<VkDescriptorSet> descriptorSets = {
@@ -2146,9 +2152,9 @@ void Swapchain::DrawFrame()
 	vkResetFences(_device, 1, &_inFlightFences[_currentFrame]);
 	vkResetCommandBuffer(_commandBuffers[_currentFrame], 0);
 
-	auto it = _scene->DeletedModelDescriptors.begin();
+	auto it = _dataBridge->DeletedModelDescriptors.begin();
 
-	while (it != _scene->DeletedModelDescriptors.end()) {
+	while (it != _dataBridge->DeletedModelDescriptors.end()) {
 		if (it->MarkedFrameIndex == _currentFrame) {
 			ModelDescriptor::DestroyModelDescriptor(
 				*it,
@@ -2157,7 +2163,7 @@ void Swapchain::DrawFrame()
 
 			auto remIt = it;
 			++it;
-			_scene->DeletedModelDescriptors.erase(remIt);
+			_dataBridge->DeletedModelDescriptors.erase(remIt);
 		} else {
 			if (it->MarkedFrameIndex == -1) {
 				it->MarkedFrameIndex = _currentFrame;

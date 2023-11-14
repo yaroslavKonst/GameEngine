@@ -14,7 +14,7 @@
 #include "MemorySystem.h"
 #include "ModelDescriptor.h"
 #include "BufferHelper.h"
-#include "SceneDescriptor.h"
+#include "DataBridge.h"
 #include "../Utils/ThreadPool.h"
 
 class Video
@@ -58,38 +58,38 @@ public:
 
 	void SubmitScene()
 	{
-		_scene.Submit();
+		_dataBridge.Submit();
 	}
 
 	void SetFOV(double fov)
 	{
-		_scene.StagedScene.FOV = fov;
+		_dataBridge.StagedScene.FOV = fov;
 	}
 
 	void SetCameraPosition(const glm::vec3& value)
 	{
-		_scene.StagedScene.CameraPosition = value;
+		_dataBridge.StagedScene.CameraPosition = value;
 	}
 
 	void SetCameraDirection(const glm::vec3& value)
 	{
-		_scene.StagedScene.CameraDirection = value;
+		_dataBridge.StagedScene.CameraDirection = value;
 	}
 
 	void SetCameraUp(const glm::vec3& value)
 	{
-		_scene.StagedScene.CameraUp = value;
+		_dataBridge.StagedScene.CameraUp = value;
 	}
 
 	void SetCameraTarget(const glm::vec3& value)
 	{
-		_scene.StagedScene.CameraDirection =
-			value - _scene.StagedScene.CameraPosition;
+		_dataBridge.StagedScene.CameraDirection =
+			value - _dataBridge.StagedScene.CameraPosition;
 	}
 
 	InputControl* GetInputControl()
 	{
-		return _scene.inputControl;
+		return _dataBridge.inputControl;
 	}
 
 	void CreateSkybox(
@@ -99,7 +99,7 @@ public:
 	void DestroySkybox();
 	void SetSkyboxColor(glm::vec3 color)
 	{
-		_scene.skybox.SetColorMultiplier(glm::vec4(color, 1.0));
+		_dataBridge.skybox.SetColorMultiplier(glm::vec4(color, 1.0));
 	}
 
 	float GetScreenRatio()
@@ -109,7 +109,7 @@ public:
 
 	TextureHandler* GetTextures()
 	{
-		return _scene.Textures;
+		return _dataBridge.Textures;
 	}
 
 private:
@@ -148,7 +148,7 @@ private:
 	void CreateSwapchain();
 	void DestroySwapchain();
 
-	SceneDescriptor _scene;
+	DataBridge _dataBridge;
 	void RemoveAllModels();
 
 	VkDescriptorSetLayout _descriptorSetLayout;
