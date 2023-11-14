@@ -185,7 +185,7 @@ void World::Run()
 	sprite2.SetDrawEnabled(true);
 	sprite2.SetTexCount(1);
 	sprite2.SetTexture(0, testTexture);
-	sprite2.SetColorMultiplier({100, 100, 100, 1});
+	sprite2.SetColorMultiplier({40, 40, 40, 1});
 	sprite2.SetDrawLight(true);
 
 	_video->RegisterSprite(&sprite2);

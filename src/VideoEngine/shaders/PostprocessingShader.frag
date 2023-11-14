@@ -16,18 +16,17 @@ layout(push_constant) uniform HDR {
 	int Index;
 } hdr;
 
-vec3 LightThr(vec3 color, float threshold)
+vec3 LightThr(vec3 color, float thresMin, float thresMax)
 {
 	float sum = color.r + color.g + color.b;
 
-	if (sum >= threshold) {
-		return color;
-	}
+	float coeff = (sum - thresMin) / (thresMax - thresMin);
+	coeff = clamp(coeff, 0.0, 1.0);
 
-	return vec3(0.0f);
+	return color * coeff;
 }
 
-vec3 GetBlur(vec2 texCoords, float threshold)
+vec3 GetBlur(vec2 texCoords, float thresMin, float thresMax)
 {
 	float weights[64] = float[] (
 		1.0,   1.0,   0.25,  0.111, 0.062, 0.04,  0.027, 0.02,
@@ -46,7 +45,8 @@ vec3 GetBlur(vec2 texCoords, float threshold)
 
 	vec3 result = LightThr(
 		texture(texSampler[0], texCoords).rgb,
-		threshold) * weights[0] * weight;
+		thresMin,
+		thresMax) * weights[0] * weight;
 
 	for(int i = 1; i < 8; ++i) {
 		for (int j = 1; j < 8; ++j) {
@@ -56,7 +56,8 @@ vec3 GetBlur(vec2 texCoords, float threshold)
 					texCoords +
 					vec2(texOffset.x * i, 0.0) +
 					vec2(0.0, texOffset.y * j)).rgb,
-				threshold) * (weights[i * 8 + j] * weight);
+				thresMin,
+				thresMax) * (weights[i * 8 + j] * weight);
 
 			result += LightThr(
 				texture(
@@ -64,7 +65,8 @@ vec3 GetBlur(vec2 texCoords, float threshold)
 					texCoords +
 					vec2(texOffset.x * i, 0.0) -
 					vec2(0.0, texOffset.y * j)).rgb,
-				threshold) * (weights[i * 8 + j] * weight);
+				thresMin,
+				thresMax) * (weights[i * 8 + j] * weight);
 
 			result += LightThr(
 				texture(
@@ -72,7 +74,8 @@ vec3 GetBlur(vec2 texCoords, float threshold)
 					texCoords -
 					vec2(texOffset.x * i, 0.0) +
 					vec2(0.0, texOffset.y * j)).rgb,
-				threshold) * (weights[i * 8 + j] * weight);
+				thresMin,
+				thresMax) * (weights[i * 8 + j] * weight);
 
 			result += LightThr(
 				texture(
@@ -80,7 +83,8 @@ vec3 GetBlur(vec2 texCoords, float threshold)
 					texCoords -
 					vec2(texOffset.x * i, 0.0) -
 					vec2(0.0, texOffset.y * j)).rgb,
-				threshold) * (weights[i * 8 + j] * weight);
+				thresMin,
+				thresMax) * (weights[i * 8 + j] * weight);
 		}
 	}
 
@@ -186,7 +190,7 @@ void main()
 	vec3 hdrColor = texture(texSampler[0], texCoord).rgb;
 	vec4 hdrInterface = texture(texSampler[1], texCoord);
 
-	hdrColor += GetBlur(texCoord, 5.0f);
+	hdrColor += GetBlur(texCoord, 3.0f, 5.0f);
 
 	float exposure = clamp(
 		exposureBuffer.Values[hdr.Index],
