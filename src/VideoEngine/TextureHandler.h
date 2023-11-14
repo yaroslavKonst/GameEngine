@@ -42,17 +42,9 @@ public:
 	uint32_t AddTexture(
 		uint32_t width,
 		uint32_t height,
-		const std::vector<uint8_t>& texture,
+		const std::vector<uint8_t> texture,
 		bool repeat = true,
-		TextureType type = TextureType::T2D,
-		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
-		uint32_t layerCount = 1);
-
-	uint32_t AddTextureAsync(
-		uint32_t width,
-		uint32_t height,
-		std::vector<uint8_t> texture,
-		bool repeat = true,
+		bool async = false,
 		TextureType type = TextureType::T2D,
 		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
 		uint32_t layerCount = 1);

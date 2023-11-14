@@ -48,7 +48,8 @@ void ThreadPool::StartThreads(uint32_t threadCount)
 {
 	_threads.resize(threadCount);
 	_work = true;
-	_tasksInProgress = 0;
+	_taskCount = 0;
+	_lastId = 0;
 
 	for (size_t i = 0; i < _threads.size(); ++i) {
 		_threads[i] = new std::thread(
@@ -59,30 +60,58 @@ void ThreadPool::StartThreads(uint32_t threadCount)
 	Logger::Verbose() << "ThreadPool created. Threads: " << threadCount;
 }
 
-void ThreadPool::Enqueue(std::function<void()> action, bool wait)
+uint32_t ThreadPool::Enqueue(std::function<void()> action, bool waitable)
 {
 	Task task;
 	task.Action = action;
-	task.Wait = wait;
+	task.Wait = waitable;
 
 	_queueMutex.lock();
-	_queue.push_front(task);
 
-	if (wait) {
-		++_tasksInProgress;
+	uint32_t id = 0;
+
+	if (waitable) {
+		++_lastId;
+
+		while (_tasksInProgress.find(_lastId) !=
+			_tasksInProgress.end())
+		{
+			++_lastId;
+		}
+
+		_tasksInProgress.insert(_lastId);
+		++_taskCount;
+		id = _lastId;
 	}
 
+	task.Id = id;
+	_queue.push_front(task);
 	_queueMutex.unlock();
 	_queueSemaphore.release();
+
+	return id;
 }
 
-void ThreadPool::Wait()
+void ThreadPool::Wait(uint32_t id)
 {
-	while (_tasksInProgress > 0) {
+	bool taskUnfinished = true;
+
+	while (taskUnfinished) {
 		_resultSemaphore.acquire();
 		_queueMutex.lock();
-		--_tasksInProgress;
+
+		if (_tasksInProgress.find(id) == _tasksInProgress.end()) {
+			taskUnfinished = false;
+		}
+
 		_queueMutex.unlock();
+	}
+}
+
+void ThreadPool::WaitAll()
+{
+	while (_taskCount > 0) {
+		_resultSemaphore.acquire();
 	}
 }
 
@@ -104,6 +133,11 @@ void ThreadPool::ThreadFunction()
 
 		if (task.Wait)
 		{
+			_queueMutex.lock();
+			_tasksInProgress.erase(task.Id);
+			--_taskCount;
+			_queueMutex.unlock();
+
 			_resultSemaphore.release();
 		}
 	}

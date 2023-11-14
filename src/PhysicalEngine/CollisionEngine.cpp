@@ -92,7 +92,7 @@ void CollisionEngine::Run(ThreadPool* threadPool)
 		}
 	}
 
-	threadPool->Wait();
+	threadPool->WaitAll();
 
 	_mutex.unlock();
 }

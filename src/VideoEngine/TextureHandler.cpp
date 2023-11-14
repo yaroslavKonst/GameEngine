@@ -53,40 +53,9 @@ void TextureHandler::PollTextureMessages()
 uint32_t TextureHandler::AddTexture(
 	uint32_t width,
 	uint32_t height,
-	const std::vector<uint8_t>& texture,
-	bool repeat,
-	TextureType type,
-	VkImageCreateFlagBits flags,
-	uint32_t layerCount)
-{
-	uint32_t index = _lastIndex + 1;
-
-	while (_usedDescriptors.find(index) != _usedDescriptors.end()) {
-		++index;
-	}
-
-	_lastIndex = index;
-	_usedDescriptors.insert(index);
-
-	_loadMessages.Insert({
-		index,
-		CreateTextureDescriptor(
-			type,
-			width,
-			height,
-			texture,
-			repeat,
-			flags,
-			layerCount)});
-
-	return index;
-}
-
-uint32_t TextureHandler::AddTextureAsync(
-	uint32_t width,
-	uint32_t height,
 	std::vector<uint8_t> texture,
 	bool repeat,
+	bool async,
 	TextureType type,
 	VkImageCreateFlagBits flags,
 	uint32_t layerCount)
@@ -100,7 +69,7 @@ uint32_t TextureHandler::AddTextureAsync(
 	_lastIndex = index;
 	_usedDescriptors.insert(index);
 
-	_threadPool->Enqueue(
+	uint32_t id = _threadPool->Enqueue(
 		[this,
 		index,
 		type,
@@ -121,7 +90,12 @@ uint32_t TextureHandler::AddTextureAsync(
 					repeat,
 					flags,
 					layerCount)});
-		});
+		},
+		!async);
+
+	if (!async) {
+		_threadPool->Wait(id);
+	}
 
 	return index;
 }

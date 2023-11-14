@@ -40,9 +40,8 @@ public:
 	void MainLoop();
 	void Stop();
 
-	uint32_t LoadModel(Loader::VertexData& model);
+	uint32_t LoadModel(Loader::VertexData model, bool async = false);
 	void UnloadModel(uint32_t model);
-	uint32_t LoadModelAsync(Loader::VertexData model);
 
 	void RegisterModel(Model* model);
 	void RemoveModel(Model* model);

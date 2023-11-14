@@ -376,39 +376,13 @@ void Video::Stop()
 	_swapchain->Stop();
 }
 
-uint32_t Video::LoadModel(Loader::VertexData& model)
-{
-	auto descriptor = ModelDescriptor::CreateModelDescriptor(
-		&model,
-		_device,
-		_memorySystem,
-		&_deviceSupport,
-		&_graphicsQueue,
-		_transferCommandPool);
-
-	uint32_t index = _dataBridge.LastModelIndex + 1;
-
-	while (_dataBridge.UsedModelDescriptors.find(index) !=
-		_dataBridge.UsedModelDescriptors.end())
-	{
-		++index;
-	}
-
-	_dataBridge.LastModelIndex = index;
-	_dataBridge.UsedModelDescriptors.insert(index);
-
-	_dataBridge.LoadModelMessages.Insert({index, descriptor});
-
-	return index;
-}
-
 void Video::UnloadModel(uint32_t model)
 {
 	_dataBridge.RemoveModelMessages.Insert({model});
 	_dataBridge.UsedModelDescriptors.erase(model);
 }
 
-uint32_t Video::LoadModelAsync(Loader::VertexData model)
+uint32_t Video::LoadModel(Loader::VertexData model, bool async)
 {
 	uint32_t index = _dataBridge.LastModelIndex + 1;
 
@@ -421,7 +395,7 @@ uint32_t Video::LoadModelAsync(Loader::VertexData model)
 	_dataBridge.LastModelIndex = index;
 	_dataBridge.UsedModelDescriptors.insert(index);
 
-	_loaderThreadPool->Enqueue(
+	uint32_t id = _loaderThreadPool->Enqueue(
 		[this, model, index]() -> void
 		{
 			auto descriptor =
@@ -435,7 +409,11 @@ uint32_t Video::LoadModelAsync(Loader::VertexData model)
 			_dataBridge.LoadModelMessages.Insert(
 				{index, descriptor});
 		},
-		false);
+		!async);
+
+	if (!async) {
+		_loaderThreadPool->Wait(id);
+	}
 
 	return index;
 }
@@ -572,6 +550,7 @@ void Video::CreateSkybox(
 		texHeight,
 		texDataTransformed,
 		true,
+		false,
 		TextureHandler::TextureType::TCube,
 		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 		layerCount);

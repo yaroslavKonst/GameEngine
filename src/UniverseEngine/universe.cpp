@@ -63,7 +63,7 @@ void Universe::MainLoop()
 				[actor]() -> void {actor->TickEarly();});
 		}
 
-		_threadPool->Wait();
+		_threadPool->WaitAll();
 
 		_collisionMutex.lock();
 		for (CollisionEngine* engine : _collisionEngines) {
@@ -77,7 +77,7 @@ void Universe::MainLoop()
 				[actor]() -> void {actor->Tick();});
 		}
 
-		_threadPool->Wait();
+		_threadPool->WaitAll();
 
 		if (_video) {
 			_video->SubmitScene();
