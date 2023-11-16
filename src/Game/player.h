@@ -64,6 +64,8 @@ private:
 
 	TextBox* _centerTextBox;
 	TextBox* _cornerTextBox;
+	TextBox* _rightTextBox;
+	TextBox::Alignment _rtbBase;
 
 	Rectangle _cross;
 	uint32_t _crossTexture;

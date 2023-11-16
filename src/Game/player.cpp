@@ -67,6 +67,15 @@ Player::Player(
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
 
+	_rtbBase = TextBox::Alignment::Left;
+	_rightTextBox = new TextBox(_video, _textHandler);
+	_rightTextBox->SetPosition(0.5, 0.5, _rtbBase);
+	_rightTextBox->SetTextSize(0.1);
+	_rightTextBox->SetText("Test text (alignment)");
+	_rightTextBox->SetTextColor({1, 1, 1, 1});
+	_rightTextBox->SetDepth(0);
+	_rightTextBox->Activate();
+
 	int tw;
 	int th;
 	auto td = Loader::LoadImage("Images/Cross.png", tw, th);
@@ -88,6 +97,7 @@ Player::~Player()
 	_centerTextBox->Deactivate();
 	delete _centerTextBox;
 	delete _cornerTextBox;
+	delete _rightTextBox;
 
 	_video->GetInputControl()->UnSubscribe(this);
 	_video->RemoveLight(&_light);
@@ -377,6 +387,23 @@ void Player::Tick()
 		_cornerTextBox->Activate();
 	} else {
 		_cornerTextBox->Deactivate();
+	}
+
+	if (_actionERequested) {
+		switch (_rtbBase) {
+		case TextBox::Alignment::Left:
+			_rtbBase = TextBox::Alignment::Center;
+			break;
+		case TextBox::Alignment::Center:
+			_rtbBase = TextBox::Alignment::Right;
+			break;
+		case TextBox::Alignment::Right:
+			_rtbBase = TextBox::Alignment::Left;
+			break;
+		}
+
+		_rightTextBox->SetPosition(0.5, 0.5, _rtbBase);
+		_rightTextBox->Activate();
 	}
 
 	_actionERequested = false;

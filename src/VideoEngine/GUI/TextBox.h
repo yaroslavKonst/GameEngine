@@ -7,11 +7,21 @@
 class TextBox
 {
 public:
+	enum class Alignment
+	{
+		Left,
+		Center,
+		Right
+	};
+
 	TextBox(Video* video, TextHandler* textHandler);
 	~TextBox();
 
 	void SetText(std::string text);
-	void SetPosition(float x, float y);
+	void SetPosition(
+		float x,
+		float y,
+		Alignment alignment = Alignment::Left);
 	void SetTextSize(float size);
 	void SetTextColor(const glm::vec4& value)
 	{
@@ -39,6 +49,7 @@ private:
 	std::string _text;
 	std::vector<Rectangle*> _line;
 	glm::vec2 _position;
+	Alignment _alignment;
 	glm::vec4 _color;
 
 	bool _textUpdated;

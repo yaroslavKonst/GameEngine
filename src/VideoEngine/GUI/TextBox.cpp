@@ -27,9 +27,10 @@ void TextBox::SetText(std::string text)
 	_textUpdated = false;
 }
 
-void TextBox::SetPosition(float x, float y)
+void TextBox::SetPosition(float x, float y, Alignment alignment)
 {
 	_position = {x, y};
+	_alignment = alignment;
 	_positionUpdated = false;
 }
 
@@ -100,6 +101,30 @@ void TextBox::Place()
 	_textUpdated = true;
 	_positionUpdated = true;
 	_width = xoffset - _position.x;
+
+	if (_alignment != Alignment::Left) {
+		float shift;
+
+		if (_alignment == Alignment::Center) {
+			shift = -_width / 2.0;
+		} else if (_alignment == Alignment::Right) {
+			shift = -_width;
+		} else {
+			return;
+		}
+
+		for (auto rectangle : _line) {
+			if (rectangle) {
+				glm::vec4 pos =
+					rectangle->GetRectanglePosition();
+
+				pos[0] += shift;
+				pos[2] += shift;
+
+				rectangle->SetRectanglePosition(pos);
+			}
+		}
+	}
 }
 
 void TextBox::Activate()
