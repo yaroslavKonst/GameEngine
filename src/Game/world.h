@@ -6,13 +6,15 @@
 #include "../VideoEngine/TextHandler.h"
 #include "ship.h"
 
-class World
+class World : public Actor
 {
 public:
 	World();
 	~World();
 
 	void Run();
+
+	void Tick() override;
 
 private:
 	Video* _video;

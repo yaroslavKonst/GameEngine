@@ -4,6 +4,7 @@
 #include "../Utils/Text.h"
 #include "player.h"
 #include "ship.h"
+#include "planet.h"
 #include "../Logger/logger.h"
 #include "../Assets/board.h"
 
@@ -96,6 +97,8 @@ World::World()
 	_audio = new Audio;
 	_universe = new Universe(10, _video);
 
+	_universe->RegisterActor(this);
+
 	_collisionEngine = new CollisionEngine();
 	_universe->RegisterCollisionEngine(_collisionEngine);
 
@@ -136,6 +139,9 @@ World::~World()
 	delete _textHandler;
 
 	delete _collisionEngine;
+
+	_universe->RemoveActor(this);
+
 	delete _universe;
 	delete _audio;
 	delete _video;
@@ -151,6 +157,8 @@ void World::Run()
 		th);
 
 	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
+
+	Planet planet(1, _video);
 
 	Board board(_video);
 	board.SetTexture({testTexture});
@@ -201,29 +209,6 @@ void World::Run()
 	_video->RegisterModel(&field);
 	_collisionEngine->RegisterObject(&field);
 
-	// sound test
-	Audio::Buffer buffer;
-	buffer.Data.resize(44100 * 10);
-	buffer.Multiplier = 0.1;
-	float soundValue = 0;
-
-	for (size_t idx = 0; idx < buffer.Data.size(); idx += 2) {
-		buffer.Data[idx] = soundValue;
-		buffer.Data[idx + 1] = soundValue;
-
-		if (idx < 44100 * 5) {
-			soundValue += 0.01;
-		} else {
-			soundValue += 0.02;
-		}
-
-		if (soundValue > 1) {
-			soundValue = -1;
-		}
-	}
-
-	_audio->Submit(&buffer);
-
 	_video->MainLoop();
 
 	_video->RemoveModel(&field);
@@ -239,4 +224,8 @@ void World::Run()
 	_video->RemoveLight(&sun);
 
 	_video->RemoveModel(&board);
+}
+
+void World::Tick()
+{
 }
