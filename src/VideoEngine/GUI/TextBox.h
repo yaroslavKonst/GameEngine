@@ -33,8 +33,6 @@ public:
 		_depth = value;
 	}
 
-	void Place();
-
 	void Activate();
 	void Deactivate();
 
@@ -57,6 +55,8 @@ private:
 	float _textSize;
 	float _width;
 	float _depth;
+
+	void Place();
 };
 
 #endif

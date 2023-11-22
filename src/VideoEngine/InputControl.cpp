@@ -306,26 +306,32 @@ void InputControl::CursorPositionProcess(CursorPositionData& event)
 			continue;
 		}
 
-		if (!handler->InInputArea(event.x, event.y)) {
-			handler->MouseMove(0, 0, false);
-			continue;
-		}
-
 		orderedHandlers[handler->GetInputLayer()] = handler;
 	}
 
+	bool processed = false;
+
 	for (auto handler : orderedHandlers) {
-		float locX = (event.x - handler.second->InputArea.x0) /
-			(handler.second->InputArea.x1 -
-			handler.second->InputArea.x0);
-		float locY = (event.y - handler.second->InputArea.y0) /
-			(handler.second->InputArea.y1 -
-			handler.second->InputArea.y0);
+		if (!handler.second->InInputArea(event.x, event.y)) {
+			handler.second->MouseMove(0, 0, false);
+			continue;
+		}
 
-		bool processed = handler.second->MouseMove(locX, locY, true);
+		if (!processed) {
+			float locX = (event.x - handler.second->InputArea.x0) /
+				(handler.second->InputArea.x1 -
+				handler.second->InputArea.x0);
+			float locY = (event.y - handler.second->InputArea.y0) /
+				(handler.second->InputArea.y1 -
+				handler.second->InputArea.y0);
 
-		if (processed) {
-			break;
+			bool proc = handler.second->MouseMove(locX, locY, true);
+
+			if (proc) {
+				processed = true;
+			}
+		} else {
+			handler.second->MouseMove(0, 0, false);
 		}
 	}
 }
