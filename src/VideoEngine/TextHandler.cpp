@@ -1,5 +1,7 @@
 #include "TextHandler.h"
 
+#include <set>
+
 #include "../Logger/logger.h"
 
 TextHandler::TextHandler(TextureHandler* textureHandler)
@@ -18,6 +20,8 @@ TextHandler::~TextHandler()
 
 void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 {
+	std::multiset<uint32_t> heights;
+
 	for (auto& data : collection) {
 		Glyph glyph{};
 		glyph.Data = data.second;
@@ -32,6 +36,8 @@ void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 		}
 
 		glyph.HasTexture = false;
+
+		heights.insert(glyph.Data.Height);
 
 		if (glyph.Data.Width > 0 && glyph.Data.Height > 0) {
 			uint32_t texId = _textureHandler->AddTexture(
@@ -48,4 +54,12 @@ void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 
 		_glyphs[data.first] = glyph;
 	}
+
+	auto it = heights.begin();
+
+	for (size_t i = 0; i < heights.size() / 2; ++i) {
+		++it;
+	}
+
+	_medianHeight = *it;
 }

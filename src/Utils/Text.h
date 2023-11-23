@@ -23,6 +23,8 @@ namespace Text
 	GlyphCollection LoadFont(
 		std::string name,
 		const std::vector<uint32_t> codes);
+
+	std::vector<uint32_t> DecodeUTF8(const std::string& text);
 }
 
 #endif

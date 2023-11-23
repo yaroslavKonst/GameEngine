@@ -44,7 +44,7 @@ public:
 private:
 	Video* _video;
 	TextHandler* _textHandler;
-	std::string _text;
+	std::vector<uint32_t> _text;
 	std::vector<Rectangle*> _line;
 	glm::vec2 _position;
 	Alignment _alignment;

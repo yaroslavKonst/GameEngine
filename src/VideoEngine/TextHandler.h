@@ -26,9 +26,16 @@ public:
 		return _glyphs[code];
 	}
 
+	uint32_t GetMedianGlyphHeight()
+	{
+		return _medianHeight;
+	}
+
 private:
 	std::map<uint32_t, Glyph> _glyphs;
 	TextureHandler* _textureHandler;
+
+	uint32_t _medianHeight;
 };
 
 #endif

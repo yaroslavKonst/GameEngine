@@ -69,4 +69,70 @@ namespace Text
 
 		return collection;
 	}
+
+	std::vector<uint32_t> DecodeUTF8(const std::string& text)
+	{
+		std::vector<uint32_t> res;
+
+		size_t pos = 0;
+		uint32_t charBytesRemaining = 0;
+		uint32_t currChar;
+
+		while (pos < text.size()) {
+			uint8_t byte = text[pos];
+			++pos;
+
+			if (charBytesRemaining == 0) {
+				currChar = 0;
+
+				if (!(byte >> 7)) {
+					currChar = byte;
+				} else if ((byte & 0b11100000) == 0b11000000) {
+					charBytesRemaining = 1;
+
+					currChar |=
+						(uint32_t)(byte & 0b00011111) <<
+						(6 * charBytesRemaining);
+				} else if ((byte & 0b11110000) == 0b11100000) {
+					charBytesRemaining = 2;
+
+					currChar |=
+						(uint32_t)(byte & 0b00001111) <<
+						(6 * charBytesRemaining);
+				} else if ((byte & 0b11111000) == 0b11110000) {
+					charBytesRemaining = 3;
+
+					currChar |=
+						(uint32_t)(byte & 0b00000111) <<
+						(6 * charBytesRemaining);
+				} else {
+					throw std::runtime_error(
+						"Invalid initial byte " +
+						std::to_string(byte));
+				}
+			} else {
+				--charBytesRemaining;
+
+				if ((byte & 0b11000000) == 0b10000000) {
+					currChar |=
+						(uint32_t)(byte & 0b00111111) <<
+						(6 * charBytesRemaining);
+				} else {
+					throw std::runtime_error(
+						"Invalid additional byte " +
+						std::to_string(byte));
+				}
+			}
+
+			if (!charBytesRemaining) {
+				res.push_back(currChar);
+			}
+		}
+
+		if (charBytesRemaining > 0) {
+			throw std::runtime_error("More bytes expected.");
+		}
+
+		return res;
+	}
 }

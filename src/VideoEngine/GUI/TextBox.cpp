@@ -23,7 +23,7 @@ TextBox::~TextBox()
 
 void TextBox::SetText(std::string text)
 {
-	_text = text;
+	_text = Text::DecodeUTF8(text);
 	_textUpdated = false;
 }
 
@@ -56,12 +56,14 @@ void TextBox::Place()
 	float xoffset = _position.x;
 	float yoffset = _position.y;
 
-	float coeff = _textSize / 200.0;
+	uint32_t medianHeight = _textHandler->GetMedianGlyphHeight();
+
+	float coeff = _textSize / medianHeight;
 
 	for (size_t i = 0; i < _text.size(); ++i) {
 		if (_text[i] == '\n') {
 			xoffset = _position.x;
-			yoffset += _textSize / 1.9;
+			yoffset += _textSize * 1.5;
 			continue;
 		}
 
