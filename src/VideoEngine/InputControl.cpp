@@ -200,7 +200,7 @@ void InputControl::CursorPositionCallback(
 	int height;
 	glfwGetWindowSize(window, &width, &height);
 
-	float x = (xpos / width) * 2 - 1;
+	float x = ((xpos / width) * 2 - 1) * width / height;
 	float y = (ypos / height) * 2 - 1;
 
 	control->_rawX = xpos;

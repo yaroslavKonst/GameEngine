@@ -5,7 +5,7 @@
 
 #include "../VideoEngine/video.h"
 #include "../VideoEngine/GUI/TextBox.h"
-#include "../VideoEngine/GUI/label.h"
+#include "../VideoEngine/GUI/button.h"
 #include "../UniverseEngine/universe.h"
 #include "../Utils/loader.h"
 #include "../Assets/animation.h"
@@ -65,7 +65,7 @@ private:
 
 	TextBox* _centerTextBox;
 	TextBox* _cornerTextBox;
-	Label* _rightTextBox;
+	Button* _rightTextBox;
 	TextBox::Alignment _rtbBase;
 	uint32_t _rtbTexture;
 

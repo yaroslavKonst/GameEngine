@@ -9,21 +9,52 @@ public:
 	Label(Video* video, TextHandler* textHandler);
 	~Label();
 
-	void SetText(std::string text);
+	void SetText(std::string text)
+	{
+		_textBox.SetText(text);
+	}
+
 	void SetPosition(
 		float x,
 		float y,
-		TextBox::Alignment alignment = TextBox::Alignment::Center);
+		TextBox::Alignment alignment = TextBox::Alignment::Center)
+	{
+		_position = {x, y};
+		_alignment = alignment;
+	}
 
-	void SetSize(float width, float height);
+	void SetSize(float width, float height)
+	{
+		_width = width;
+		_height = height;
+	}
 
-	void SetTextSize(float size);
-	void SetTextColor(const glm::vec4& value);
+	void SetTextSize(float size)
+	{
+		_textBox.SetTextSize(size);
+		_textSize = size;
+	}
 
-	void SetImage(uint32_t texture);
-	void SetImageColor(const glm::vec4& value);
+	void SetTextColor(const glm::vec4& value)
+	{
+		_textBox.SetTextColor(value);
+	}
 
-	void SetDepth(float value);
+	void SetImage(uint32_t texture)
+	{
+		_image.SetTexture({texture});
+	}
+
+	void SetImageColor(const glm::vec4& value)
+	{
+		_image.SetColorMultiplier(value);
+	}
+
+	void SetDepth(float value)
+	{
+		_image.SetRectangleDepth(value);
+		_textBox.SetDepth(value + 0.01);
+	}
 
 	void Activate();
 	void Deactivate();

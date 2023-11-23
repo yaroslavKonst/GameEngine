@@ -82,7 +82,7 @@ Player::Player(
 	_video->RegisterRectangle(&_cross);
 
 	_rtbBase = TextBox::Alignment::Left;
-	_rightTextBox = new Label(_video, _textHandler);
+	_rightTextBox = new Button(_video, _textHandler);
 	_rightTextBox->SetTextSize(0.05);
 	_rightTextBox->SetSize(1, 0.1);
 	_rightTextBox->SetPosition(0.5, 0.5, _rtbBase);
@@ -90,8 +90,14 @@ Player::Player(
 	_rightTextBox->SetTextColor({1, 0, 1, 1});
 	_rightTextBox->SetImage(_rtbTexture);
 	_rightTextBox->SetImageColor({1, 1, 1, 0.5});
+	_rightTextBox->SetActiveImage(_rtbTexture);
+	_rightTextBox->SetActiveImageColor({1, 1, 1, 1});
 	_rightTextBox->SetDepth(10);
+
+	_rightTextBox->SetAction([this]() -> void { _vspeed = 6; });
+
 	_rightTextBox->Activate();
+	_rightTextBox->Enable();
 }
 
 Player::~Player()

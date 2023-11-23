@@ -15,50 +15,6 @@ Label::~Label()
 	_video->RemoveRectangle(&_image);
 }
 
-void Label::SetText(std::string text)
-{
-	_textBox.SetText(text);
-}
-
-void Label::SetPosition(float x, float y, TextBox::Alignment alignment)
-{
-	_position = {x, y};
-	_alignment = alignment;
-}
-
-void Label::SetSize(float width, float height)
-{
-	_width = width;
-	_height = height;
-}
-
-void Label::SetTextSize(float size)
-{
-	_textBox.SetTextSize(size);
-	_textSize = size;
-}
-
-void Label::SetTextColor(const glm::vec4& value)
-{
-	_textBox.SetTextColor(value);
-}
-
-void Label::SetImage(uint32_t texture)
-{
-	_image.SetTexture({texture});
-}
-
-void Label::SetImageColor(const glm::vec4& value)
-{
-	_image.SetColorMultiplier(value);
-}
-
-void Label::SetDepth(float value)
-{
-	_image.SetRectangleDepth(value);
-	_textBox.SetDepth(value + 0.01);
-}
-
 void Label::Activate()
 {
 	float x = _position.x;
