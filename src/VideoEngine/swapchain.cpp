@@ -239,13 +239,6 @@ void Swapchain::Create()
 
 	CreateSyncObjects();
 
-	// TODO: Add rectangle screen ratio callback to input system.
-	/*float ratio = GetScreenRatio();
-
-	for (auto& rectangle : _dataBridge->Rectangles) {
-		rectangle->SetRectangleScreenRatio(ratio);
-	}*/
-
 	_currentFrame = 0;
 	_initialized = true;
 }
@@ -1174,6 +1167,8 @@ void Swapchain::RecordCommandBuffer(
 
 	_dataBridge->LoadToDrawn();
 
+	float screenRatio = (float)_extent.width / (float)_extent.height;
+
 	// MVP.
 	MVP mvp;
 	glm::mat4 view = glm::lookAt(
@@ -1183,7 +1178,7 @@ void Swapchain::RecordCommandBuffer(
 		_dataBridge->DrawnScene.CameraUp);
 	mvp.ProjView = glm::perspective(
 		glm::radians((float)_dataBridge->DrawnScene.FOV),
-		(float)_extent.width / (float)_extent.height,
+		screenRatio,
 		0.01f,
 		1000.0f) * view;
 
@@ -1871,6 +1866,9 @@ void Swapchain::RecordCommandBuffer(
 
 		rectData[0] = rectangle->GetRectanglePosition();
 		rectData[1] = rectangle->GetRectangleTexCoords();
+
+		rectData[0][0] /= screenRatio;
+		rectData[0][2] /= screenRatio;
 
 		vkCmdPushConstants(
 			commandBuffer,

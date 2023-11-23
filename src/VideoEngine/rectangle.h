@@ -49,21 +49,10 @@ public:
 		_depth = depth;
 	}
 
-	virtual void SetRectangleScreenRatio(float value)
-	{
-		_screenRatio = value;
-	}
-
-	virtual float GetRectangleScreenRatio()
-	{
-		return _screenRatio;
-	}
-
 private:
 	glm::vec4 _position;
 	glm::vec4 _texCoords;
 	float _depth;
-	float _screenRatio;
 };
 
 #endif

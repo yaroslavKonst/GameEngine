@@ -69,10 +69,22 @@ public:
 		SetTexture({_woodenTiles});
 
 		SetDrawEnabled(true);
+
+		_rectangle = new Rectangle();
+		_rectangle->SetRectangleTexCoords({0, 0, 1, 1});
+		_rectangle->SetRectangleDepth(0);
+		_rectangle->SetTexture({_woodenTiles});
+		_rectangle->SetRectanglePosition({-0.5, -0.5, -0.4, -0.4});
+		_rectangle->SetDrawEnabled(true);
+
+		_video->RegisterRectangle(_rectangle);
 	}
 
 	~Field()
 	{
+		_video->RemoveRectangle(_rectangle);
+		delete _rectangle;
+
 		_video->UnloadModel(_model);
 		_video->GetTextures()->RemoveTexture(_woodenTiles);
 	}
@@ -81,6 +93,8 @@ private:
 	Video* _video;
 	uint32_t _model;
 	uint32_t _woodenTiles;
+
+	Rectangle* _rectangle;
 };
 
 static void UniverseThread(Universe* universe)

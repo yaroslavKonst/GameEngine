@@ -455,7 +455,6 @@ void Video::RemoveAllModels()
 
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
-	rectangle->SetRectangleScreenRatio(_swapchain->GetScreenRatio());
 	_dataBridge.StagedScene.Rectangles.insert(rectangle);
 	rectangle->_SetDrawReady(true);
 }
