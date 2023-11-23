@@ -37,6 +37,7 @@ void TextBox::SetPosition(float x, float y, Alignment alignment)
 void TextBox::SetTextSize(float size)
 {
 	_textSize = size;
+	_positionUpdated = false;
 }
 
 void TextBox::Place()
@@ -86,14 +87,17 @@ void TextBox::Place()
 				ypos + coeff * glyph.Data.Height
 			});
 
+			_line[i]->SetRectangleDepth(_depth);
+			_line[i]->SetColorMultiplier(_color);
+
 			if (!_textUpdated) {
 				_line[i]->SetRectangleTexCoords({0, 0, 1, 1});
-				_line[i]->SetRectangleDepth(_depth);
 				_line[i]->SetTexture({glyph.Texture});
-				_line[i]->SetColorMultiplier(_color);
 
 				_video->RegisterRectangle(_line[i]);
 			}
+		} else {
+			_line[i] = nullptr;
 		}
 
 		xoffset += coeff * glyph.Data.Advance / 64.0;

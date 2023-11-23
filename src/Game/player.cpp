@@ -65,19 +65,13 @@ Player::Player(
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
 
-	_rtbBase = TextBox::Alignment::Left;
-	_rightTextBox = new TextBox(_video, _textHandler);
-	_rightTextBox->SetPosition(0.5, 0.5, _rtbBase);
-	_rightTextBox->SetTextSize(0.05);
-	_rightTextBox->SetText("Test text (alignment)");
-	_rightTextBox->SetTextColor({1, 1, 1, 1});
-	_rightTextBox->SetDepth(0);
-	_rightTextBox->Activate();
-
 	int tw;
 	int th;
 	auto td = Loader::LoadImage("Images/Cross.png", tw, th);
 	_crossTexture = _video->GetTextures()->AddTexture(tw, th, td);
+
+	td = Loader::LoadImage("Skybox/skybox.png", tw, th);
+	_rtbTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
 	_cross.SetRectanglePosition({-0.02, -0.02, 0.02, 0.02});
 	_cross.SetRectangleTexCoords({0, 0, 1, 1});
@@ -86,6 +80,18 @@ Player::Player(
 	_cross.SetDrawEnabled(true);
 
 	_video->RegisterRectangle(&_cross);
+
+	_rtbBase = TextBox::Alignment::Left;
+	_rightTextBox = new Label(_video, _textHandler);
+	_rightTextBox->SetTextSize(0.05);
+	_rightTextBox->SetSize(1, 0.1);
+	_rightTextBox->SetPosition(0.5, 0.5, _rtbBase);
+	_rightTextBox->SetText("Test text (alignment)");
+	_rightTextBox->SetTextColor({1, 0, 1, 1});
+	_rightTextBox->SetImage(_rtbTexture);
+	_rightTextBox->SetImageColor({1, 1, 1, 0.5});
+	_rightTextBox->SetDepth(10);
+	_rightTextBox->Activate();
 }
 
 Player::~Player()
@@ -99,6 +105,8 @@ Player::~Player()
 
 	_video->GetInputControl()->UnSubscribe(this);
 	_video->RemoveLight(&_light);
+	_video->GetTextures()->RemoveTexture(_crossTexture);
+	_video->GetTextures()->RemoveTexture(_rtbTexture);
 }
 
 void Player::Key(

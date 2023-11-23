@@ -26,11 +26,13 @@ public:
 	void SetTextColor(const glm::vec4& value)
 	{
 		_color = value;
+		_positionUpdated = false;
 	}
 
 	void SetDepth(float value)
 	{
 		_depth = value;
+		_positionUpdated = false;
 	}
 
 	void Activate();
