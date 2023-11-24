@@ -2,6 +2,7 @@
 #define _AUDIO_H
 
 #include <vector>
+#include <mutex>
 #include <portaudio.h>
 
 class Audio
@@ -45,6 +46,8 @@ private:
 	};
 
 	PaStream* _stream;
+
+	std::mutex _submitMutex;
 
 	std::vector<BufferData> _ringBuffer;
 	size_t _bufferStart;

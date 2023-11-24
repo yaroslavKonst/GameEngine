@@ -379,11 +379,15 @@ void Video::Stop()
 void Video::UnloadModel(uint32_t model)
 {
 	_dataBridge.RemoveModelMessages.Insert({model});
+
+	_modelLoadMutex.lock();
 	_dataBridge.UsedModelDescriptors.erase(model);
+	_modelLoadMutex.unlock();
 }
 
 uint32_t Video::LoadModel(Loader::VertexData model, bool async)
 {
+	_modelLoadMutex.lock();
 	uint32_t index = _dataBridge.LastModelIndex + 1;
 
 	while (_dataBridge.UsedModelDescriptors.find(index) !=
@@ -394,6 +398,7 @@ uint32_t Video::LoadModel(Loader::VertexData model, bool async)
 
 	_dataBridge.LastModelIndex = index;
 	_dataBridge.UsedModelDescriptors.insert(index);
+	_modelLoadMutex.unlock();
 
 	uint32_t id = _loaderThreadPool->Enqueue(
 		[this, model, index]() -> void
@@ -420,14 +425,18 @@ uint32_t Video::LoadModel(Loader::VertexData model, bool async)
 
 void Video::RegisterModel(Model* model)
 {
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Models.insert(model);
+	_dataBridge.ExtModMutex.unlock();
 	model->_SetDrawReady(true);
 }
 
 void Video::RemoveModel(Model* model)
 {
 	model->_SetDrawReady(false);
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Models.erase(model);
+	_dataBridge.ExtModMutex.unlock();
 }
 
 void Video::RemoveAllModels()
@@ -455,14 +464,18 @@ void Video::RemoveAllModels()
 
 void Video::RegisterRectangle(Rectangle* rectangle)
 {
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Rectangles.insert(rectangle);
+	_dataBridge.ExtModMutex.unlock();
 	rectangle->_SetDrawReady(true);
 }
 
 void Video::RemoveRectangle(Rectangle* rectangle)
 {
 	rectangle->_SetDrawReady(false);
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Rectangles.erase(rectangle);
+	_dataBridge.ExtModMutex.unlock();
 }
 
 void Video::CreateSkybox(
@@ -609,22 +622,30 @@ void Video::DestroyDescriptorSetLayout()
 
 void Video::RegisterLight(Light* light)
 {
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Lights.insert(light);
+	_dataBridge.ExtModMutex.unlock();
 }
 
 void Video::RemoveLight(Light* light)
 {
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Lights.erase(light);
+	_dataBridge.ExtModMutex.unlock();
 }
 
 void Video::RegisterSprite(Sprite* sprite)
 {
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Sprites.insert(sprite);
+	_dataBridge.ExtModMutex.unlock();
 	sprite->_SetDrawReady(true);
 }
 
 void Video::RemoveSprite(Sprite* sprite)
 {
 	sprite->_SetDrawReady(false);
+	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Sprites.erase(sprite);
+	_dataBridge.ExtModMutex.unlock();
 }

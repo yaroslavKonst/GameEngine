@@ -71,6 +71,7 @@ struct DataBridge
 	TextureHandler* Textures;
 
 	std::mutex SceneMutex;
+	std::mutex ExtModMutex;
 
 	std::list<ModelDescriptor> DeletedModelDescriptors;
 
@@ -85,6 +86,7 @@ struct DataBridge
 
 	void Submit()
 	{
+		ExtModMutex.lock();
 		SceneMutex.lock();
 
 		SubmittedScene.Models.resize(StagedScene.Models.size());
@@ -138,6 +140,7 @@ struct DataBridge
 		inputControl->SubmitEvents();
 
 		SceneMutex.unlock();
+		ExtModMutex.unlock();
 
 		inputControl->InvokeEvents();
 	}

@@ -2,6 +2,7 @@
 #define _RING_BUFFER_H
 
 #include <vector>
+#include <mutex>
 
 template<typename T>
 class RingBuffer
@@ -22,6 +23,8 @@ public:
 
 	void Insert(const T& item)
 	{
+		_insertMutex.lock();
+
 		_buffer[_end] = item;
 
 		if (_end == _size - 1) {
@@ -29,6 +32,8 @@ public:
 		} else {
 			++_end;
 		}
+
+		_insertMutex.unlock();
 	}
 
 	T Get()
@@ -49,6 +54,8 @@ private:
 	size_t _size;
 	size_t _begin;
 	size_t _end;
+
+	std::mutex _insertMutex;
 };
 
 #endif

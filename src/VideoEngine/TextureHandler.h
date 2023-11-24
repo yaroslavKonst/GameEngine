@@ -2,6 +2,7 @@
 #define _TEXTURE_HANDLER_H
 
 #include <set>
+#include <mutex>
 
 #include "ImageHelper.h"
 #include "PhysicalDeviceSupport.h"
@@ -91,6 +92,8 @@ private:
 	ThreadPool* _threadPool;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
+
+	std::mutex _texAddMutex;
 
 	TextureDescriptor CreateTextureDescriptor(
 		TextureType type,

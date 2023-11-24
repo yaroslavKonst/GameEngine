@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "../Logger/logger.h"
+
 std::vector<VkVertexInputBindingDescription>
 ModelDescriptor::GetVertexBindingDescription()
 {
@@ -81,6 +83,14 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 	auto& vertices = model->Vertices;
 	auto& texCoords = model->TexCoords;
 	auto& normals = model->Normals;
+
+	if (
+		vertices.size() != texCoords.size() ||
+		vertices.size() != normals.size())
+	{
+		throw std::runtime_error(
+			"Invalid vertex buffer submitted for loading.");
+	}
 
 	std::vector<ModelDescriptor::Vertex> vertexData(vertices.size());
 

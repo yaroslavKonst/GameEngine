@@ -75,6 +75,8 @@ Audio::~Audio()
 
 void Audio::Submit(Buffer* buffer)
 {
+	_submitMutex.lock();
+
 	_ringBuffer[_bufferEnd].buffer = buffer;
 	_ringBuffer[_bufferEnd].position = 0;
 	_ringBuffer[_bufferEnd].valid = true;
@@ -86,6 +88,8 @@ void Audio::Submit(Buffer* buffer)
 	} else {
 		++_bufferEnd;
 	}
+
+	_submitMutex.unlock();
 }
 
 int Audio::AudioCallback(
