@@ -5,10 +5,27 @@ Package* Package::_instance = nullptr;
 Package* Package::Instance()
 {
 	if (!_instance) {
-		_instance = new Package("resources.bin");
+		throw std::runtime_error("Package file is not loaded.");
 	}
 
 	return _instance;
+}
+
+void Package::LoadPackage(std::string name)
+{
+	if (_instance) {
+		UnloadPackage();
+	}
+
+	_instance = new Package(name);
+}
+
+void Package::UnloadPackage()
+{
+	if (_instance) {
+		delete _instance;
+		_instance = nullptr;
+	}
 }
 
 Package::Package(std::string filename)
@@ -16,7 +33,8 @@ Package::Package(std::string filename)
 	_packageFile.open(filename, std::ios::in | std::ios::binary);
 
 	if (!_packageFile.is_open()) {
-		throw std::runtime_error("Failed to open package file.");
+		throw std::runtime_error("Failed to open package file " +
+			filename);
 	}
 
 	uint64_t entryNumber;

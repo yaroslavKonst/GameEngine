@@ -7,7 +7,7 @@ clean:
 	cd src ; make clean
 
 run: all
-	cd build ; ./game
+	cd build ; ./game verbose
 
 memcheck: all
 	cd build ; valgrind ./game

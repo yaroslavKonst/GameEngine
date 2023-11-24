@@ -35,6 +35,9 @@ public:
 
 	static Package* Instance();
 
+	static void LoadPackage(std::string name);
+	static void UnloadPackage();
+
 private:
 	std::map<std::string, Mapping> _mappings;
 	std::fstream _packageFile;
