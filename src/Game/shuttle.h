@@ -128,7 +128,6 @@ private:
 	glm::mat4 _shipMatrix;
 
 	glm::vec3 _targetSpeed;
-	glm::vec3 _targetAngle;
 	bool _grounded;
 
 	glm::vec3 _centerOfGravity;
@@ -136,6 +135,9 @@ private:
 	float _controlF;
 	float _controlR;
 	float _controlU;
+
+	float _controlYaw;
+	float _controlPitch;
 
 	bool _wingsClosed;
 	bool _fastMode;

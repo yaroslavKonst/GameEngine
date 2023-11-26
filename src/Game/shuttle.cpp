@@ -26,11 +26,12 @@ Shuttle::Shuttle(Video* video, CollisionEngine* collisionEngine)
 	_angularSpeed = {0, 0, 0};
 
 	_targetSpeed = {0, 0, 0};
-	_targetAngle = {0, 0, 0};
 
 	_controlF = 0;
 	_controlR = 0;
 	_controlU = 0;
+	_controlYaw = 0;
+	_controlPitch = 0;
 
 	_wingsClosed = false;
 	_fastMode = false;
@@ -221,14 +222,14 @@ void Shuttle::UnloadAssets()
 
 void Shuttle::TickEarly()
 {
-	if (_flightMode) {
-		glm::vec3 dirF = _shipMatrix *
-			glm::vec4(0, -1, 0, 0);
-		glm::vec3 dirR = _shipMatrix *
-			glm::vec4(-1, 0, 0, 0);
-		glm::vec3 dirU = _shipMatrix *
-			glm::vec4(0, 0, 1, 0);
+	glm::vec3 dirF = _shipMatrix *
+		glm::vec4(0, -1, 0, 0);
+	glm::vec3 dirR = _shipMatrix *
+		glm::vec4(-1, 0, 0, 0);
+	glm::vec3 dirU = _shipMatrix *
+		glm::vec4(0, 0, 1, 0);
 
+	if (_flightMode) {
 		_targetSpeed =
 			dirF * _controlF +
 			dirR * _controlR +
@@ -237,7 +238,7 @@ void Shuttle::TickEarly()
 		_targetSpeed = {0, 0, 0};
 
 		if (glm::length(_linearSpeed) > 0.15) {
-			_targetSpeed = {0, -100, 0};
+			_targetSpeed = dirF * 100.0f;
 
 			if (_position.z < 5) {
 				_targetSpeed.z += 100;
@@ -264,31 +265,14 @@ void Shuttle::TickEarly()
 
 	glm::vec3 force = mg + thrusterForce - _linearSpeed + wingForce;
 
-	glm::vec3 targetAngularSpeed = (_targetAngle - _rotation) / 10.0f;
+	glm::vec3 targetAngularSpeed =
+		(dirU * _controlYaw + dirR * _controlPitch) / 10.0f;
 	glm::vec3 forceMoment = targetAngularSpeed - _angularSpeed;
 
 	_linearSpeed += force / 100.0f;
 	_angularSpeed += forceMoment / 100.0f;
 	_position += _linearSpeed;
 	_rotation += _angularSpeed;
-
-/*	if (_position.x > 300) {
-		_position.x -= 600;
-	} else if (_position.x < -300) {
-		_position.x += 600;
-	}
-
-	if (_position.y > 300) {
-		_position.y -= 600;
-	} else if (_position.y < -300) {
-		_position.y += 600;
-	}
-
-	if (_position.z > 150) {
-		_position.z -= 140;
-	} else if (_position.z < -20) {
-		_position.z += 100;
-	}*/
 
 	_shipMatrix = glm::translate(
 		glm::mat4(1.0f),
@@ -337,7 +321,15 @@ bool Shuttle::MouseMoveRaw(double xoffset, double yoffset)
 		return false;
 	}
 
-	glm::vec3 dirU = _shipMatrix *
+	_controlYaw += xoffset / 100;
+	_controlPitch += yoffset / 100;
+
+	Logger::Verbose() << "Yaw: " << _controlYaw << ", pitch: " <<
+		_controlPitch;
+
+	return true;
+
+	/*glm::vec3 dirU = _shipMatrix *
 		glm::vec4(0, 0, 1, 0);
 
 	glm::vec3 dirR = _shipMatrix *
@@ -346,51 +338,64 @@ bool Shuttle::MouseMoveRaw(double xoffset, double yoffset)
 	glm::vec3 rotation =
 		dirU * (float)xoffset / 10.0f;// + dirR * (float)yoffset / 10.0f;
 
-	glm::mat4 transform(1.0);
+	glm::mat4 R(1.0);
 
 	if (glm::length(_targetAngle) > 0) {
-		transform = glm::rotate(
+		R = glm::rotate(
 			glm::mat4(1.0),
 			glm::radians(glm::length(_targetAngle)),
 			glm::normalize(_targetAngle));
 	}
 
 	if (glm::length(rotation) > 0) {
-		transform = glm::rotate(
-			transform,
+		R = glm::rotate(
+			R,
 			glm::radians(glm::length(rotation)),
 			glm::normalize(rotation));
 	}
 
 	rotation = {
-		transform[2][1] - transform[1][2],
-		transform[0][2] - transform[2][0],
-		transform[1][0] - transform[0][1]
+		R[2][1] - R[1][2],
+		R[0][2] - R[2][0],
+		R[1][0] - R[0][1]
 	};
 
-	float trace = transform[0][0] + transform[1][1] + transform[2][2];
+	if (glm::length(rotation) == 0) {
+		_targetAngle = {0, 0, 0};
+		return true;
+	}
 
-	float angle = acos((trace - 1.0) / 2.0);
+	rotation = glm::normalize(rotation);
 
-	rotation = glm::normalize(rotation) * angle * 180.0f / (float)M_PI;
+	glm::mat4 Kn(0.0f);
 
-	glm::mat4 transformCheck = glm::rotate(
-		glm::mat4(1.0),
-		glm::radians(glm::length(rotation)),
-		glm::normalize(rotation));
+	Kn[1][0] = rotation.z;
+	Kn[2][0] = -rotation.y;
+	Kn[2][1] = rotation.x;
 
-	float diff = 0;
+	Kn[0][1] = -Kn[1][0];
+	Kn[0][2] = -Kn[2][0];
+	Kn[1][2] = -Kn[2][1];
 
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			diff += abs(transform[i][j] - transformCheck[i][j]);
+	Kn = Kn * R;
+
+	float traceR = R[0][0] + R[1][1] + R[2][2];
+	float traceKn = Kn[0][0] + Kn[1][1] + Kn[2][2];
+
+	float cosTheta = (traceR - 1.0) / 2.0;
+	float sinTheta = -traceKn / 2.0;
+
+	float angle = asin(sinTheta);
+
+	if (cosTheta < 0) {
+		if (angle < 0) {
+			angle -= M_PI / 2.0;
+		} else {
+			angle += M_PI / 2.0;
 		}
 	}
 
-	if (diff > 0) {
-		rotation = -rotation;
-		Logger::Verbose() << "Axis inverted.";
-	}
+	rotation = rotation * angle * 180.0f / (float)M_PI;
 
 	Logger::Verbose() << "Rotation: " << rotation.x << " " <<
 		rotation.y << " " << rotation.z;
@@ -398,7 +403,7 @@ bool Shuttle::MouseMoveRaw(double xoffset, double yoffset)
 
 	_targetAngle = rotation;
 
-	return true;
+	return true;*/
 }
 
 bool Shuttle::Scroll(double xoffset, double yoffset)

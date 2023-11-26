@@ -155,7 +155,11 @@ void Swapchain::Create()
 		indices.graphicsFamily.value(),
 		VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
-	uint32_t imageCount = supportDetails.capabilities.minImageCount + 7;
+	uint32_t imageCount = supportDetails.capabilities.minImageCount;
+
+	if (imageCount < 3) {
+		imageCount = 3;
+	}
 
 	if (supportDetails.capabilities.maxImageCount > 0) {
 		imageCount = std::clamp(
@@ -163,6 +167,8 @@ void Swapchain::Create()
 			supportDetails.capabilities.minImageCount,
 			supportDetails.capabilities.maxImageCount);
 	}
+
+	Logger::Verbose() << "Swapchain image count: " << imageCount;
 
 	VkSwapchainCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

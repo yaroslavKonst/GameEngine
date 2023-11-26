@@ -7,95 +7,7 @@
 #include "planet.h"
 #include "../Logger/logger.h"
 #include "../Assets/board.h"
-
-class Field : public Model, public Object
-{
-public:
-	Field(Video* video)
-	{
-		std::vector<glm::vec3> objectVertices = {
-			{-200, -200, 0.0},
-			{-200, 200, 0.0},
-			{200, 200, 0.0},
-			{200, -200, 0.0},
-		};
-
-		std::vector<glm::vec3> objectNormals = {
-			{0, 0, 1.0},
-			{0, 0, 1.0},
-			{0, 0, 1.0},
-			{0, 0, 1.0},
-		};
-
-
-		std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
-
-		SetObjectVertices(objectVertices);
-		SetObjectNormals(objectNormals);
-		SetObjectIndices(indices);
-		SetObjectCenter({0.0f, 0.0f, -300.0f});
-		SetObjectMatrix(glm::mat4(1.0));
-		SetModelMatrix(
-			glm::translate(
-			glm::scale(
-				glm::mat4(1.0),
-				glm::vec3(10, 10, 1)),
-				glm::vec3(0, 0, -0.251981)));
-		SetModelInnerMatrix(glm::mat4(1.0));
-
-		auto model = Loader::LoadModel(
-			"Models/Archive/field.obj");
-
-		for (auto& coord : model.TexCoords) {
-			coord *= 100;
-		}
-
-		_video = video;
-		_model = _video->LoadModel(model);
-		SetModels({_model});
-
-		int texWidth;
-		int texHeight;
-		auto texData = Loader::LoadImage(
-			"Models/Archive/floor.jpg",
-			texWidth,
-			texHeight);
-
-		_woodenTiles = video->GetTextures()->AddTexture(
-			texWidth,
-			texHeight,
-			texData);
-
-		SetTexture({_woodenTiles});
-
-		SetDrawEnabled(true);
-
-		_rectangle = new Rectangle();
-		_rectangle->SetRectangleTexCoords({0, 0, 1, 1});
-		_rectangle->SetRectangleDepth(0);
-		_rectangle->SetTexture({_woodenTiles});
-		_rectangle->SetRectanglePosition({-0.5, -0.5, -0.4, -0.4});
-		_rectangle->SetDrawEnabled(true);
-
-		_video->RegisterRectangle(_rectangle);
-	}
-
-	~Field()
-	{
-		_video->RemoveRectangle(_rectangle);
-		delete _rectangle;
-
-		_video->UnloadModel(_model);
-		_video->GetTextures()->RemoveTexture(_woodenTiles);
-	}
-
-private:
-	Video* _video;
-	uint32_t _model;
-	uint32_t _woodenTiles;
-
-	Rectangle* _rectangle;
-};
+#include "GravityField.h"
 
 static void UniverseThread(Universe* universe)
 {
@@ -129,24 +41,19 @@ World::World()
 	_video->SetFOV(80);
 	_video->SetCameraUp({0, 0, 1});
 
-	_universeThread = new std::thread(UniverseThread, _universe);
-
 	_textHandler = new TextHandler(_video->GetTextures());
 	auto glyphs = Text::LoadFont(
 		"Fonts/DroidSans.ttf",
-		Text::DecodeUTF8(" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]()"));
+		Text::DecodeUTF8(" .ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]()"));
 
 	_textHandler->LoadFont(glyphs);
 }
 
 World::~World()
 {
-	_universe->Stop();
-	_universeThread->join();
-	delete _universeThread;
-
 	delete _textHandler;
 
+	_universe->RemoveCollisionEngine(_collisionEngine);
 	delete _collisionEngine;
 
 	_universe->RemoveActor(this);
@@ -158,6 +65,8 @@ World::~World()
 
 void World::Run()
 {
+	GravityField gf;
+
 	int tw;
 	int th;
 	auto td = Loader::LoadImage(
@@ -167,7 +76,8 @@ void World::Run()
 
 	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
-	Planet planet(1, _video);
+	Planet planet(800, {0, 0, -800}, _video, _collisionEngine);
+	gf.AddObject({1000000.0f, {0, 0, -800}});
 
 	Board board(_video);
 	board.SetTexture({testTexture});
@@ -209,19 +119,18 @@ void World::Run()
 
 	Shuttle ship(_video, _collisionEngine);
 
-	Player player(_video, _collisionEngine, &ship, _textHandler);
+	Player player(_video, _collisionEngine, &ship, _textHandler, &gf);
 	_universe->RegisterActor(&player);
 	_universe->RegisterActor(&ship);
 	_collisionEngine->RegisterObject(&player);
 
-	Field field(_video);
-	_video->RegisterModel(&field);
-	_collisionEngine->RegisterObject(&field);
+	_universeThread = new std::thread(UniverseThread, _universe);
 
 	_video->MainLoop();
 
-	_video->RemoveModel(&field);
-	_collisionEngine->RemoveObject(&field);
+	_universe->Stop();
+	_universeThread->join();
+	delete _universeThread;
 
 	_collisionEngine->RemoveObject(&player);
 	_universe->RemoveActor(&player);

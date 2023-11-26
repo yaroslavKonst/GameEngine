@@ -4,7 +4,7 @@
 #include <list>
 
 #include "../VideoEngine/video.h"
-#include "../PhysicalEngine/object.h"
+#include "../PhysicalEngine/CollisionEngine.h"
 
 class Segment : public Model, public Object
 {
@@ -17,7 +17,11 @@ private:
 class Planet
 {
 public:
-	Planet(float radius, Video* video);
+	Planet(
+		float radius,
+		glm::vec3 position,
+		Video* video,
+		CollisionEngine* collisionEngine);
 	~Planet();
 
 private:
@@ -26,6 +30,7 @@ private:
 	glm::mat4 _matrix;
 
 	Video* _video;
+	CollisionEngine* _collisionEngine;
 
 	std::list<uint32_t> _blockModel;
 	uint32_t _blockTexture;

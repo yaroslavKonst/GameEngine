@@ -1,6 +1,7 @@
 #include "planet.h"
 
 #include <vector>
+#include <cstdlib>
 
 #include "../Logger/logger.h"
 
@@ -134,7 +135,10 @@ struct Triangle
 	}
 };
 
-static glm::vec3 AngleToPoint(float lat, float lon, float rad)
+static glm::vec3 AngleToPoint(
+	float lat,
+	float lon,
+	std::map<float, std::map<float, float>>& radius)
 {
 	float latRad = glm::radians(lat);
 	float lonRad = glm::radians(lon);
@@ -145,7 +149,7 @@ static glm::vec3 AngleToPoint(float lat, float lon, float rad)
 		sinf(latRad)
 	};
 
-	dir *= rad;
+	dir *= radius[lat][lon];
 
 	return dir;
 }
@@ -171,17 +175,23 @@ static bool Neighbours(const Triangle& t1, const Triangle& t2)
 	return match > 1;
 }
 
-Planet::Planet(float radius, Video* video)
+Planet::Planet(
+	float radius,
+	glm::vec3 position,
+	Video* video,
+	CollisionEngine* collisionEngine)
 {
 	_video = video;
+	_collisionEngine = collisionEngine;
 
-	_matrix = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, 2));
+	_matrix = glm::translate(glm::mat4(1.0), position);
 
 	std::map<float, std::vector<float>> angles;
+	std::map<float, std::map<float, float>> radiuses;
 
 	Logger::Verbose() << "Planet: Building surface.";
 
-	float latStep = 2;
+	float latStep = 1;
 
 	for (
 		float angleLat = -90.0 + latStep / 2.0;
@@ -197,12 +207,15 @@ Planet::Planet(float radius, Video* video)
 			", point count: " << lonAngleCount;
 
 		std::vector<float> dirs;
+		std::map<float, float> rad;
 
 		for (float angleLon = 0; angleLon < 360; angleLon += lonStep) {
 			dirs.push_back(angleLon);
+			rad[angleLon] = radius;
 		}
 
 		angles[angleLat] = dirs;
+		radiuses[angleLat] = rad;
 	}
 
 	Logger::Verbose() << "Planet: Vertices built.";
@@ -221,17 +234,17 @@ Planet::Planet(float radius, Video* video)
 		glm::vec3 p1 = AngleToPoint(
 			latBase,
 			lonBase,
-			radius);
+			radiuses);
 
 		glm::vec3 p2 = AngleToPoint(
 			latBase,
 			*lonIt,
-			radius);
+			radiuses);
 
 		glm::vec3 p3 = AngleToPoint(
 			latBase,
 			*(lonIt + 1),
-			radius);
+			radiuses);
 
 		Triangle t;
 		t.P1 = p1;
@@ -255,17 +268,17 @@ Planet::Planet(float radius, Video* video)
 		glm::vec3 p1 = AngleToPoint(
 			latBase,
 			lonBase,
-			radius);
+			radiuses);
 
 		glm::vec3 p2 = AngleToPoint(
 			latBase,
 			*lonIt,
-			radius);
+			radiuses);
 
 		glm::vec3 p3 = AngleToPoint(
 			latBase,
 			*(lonIt + 1),
-			radius);
+			radiuses);
 
 		Triangle t;
 		t.P1 = p2;
@@ -315,17 +328,17 @@ Planet::Planet(float radius, Video* video)
 				glm::vec3 p1 = AngleToPoint(
 					latIt1->first,
 					prevL,
-					radius);
+					radiuses);
 
 				glm::vec3 p2 = AngleToPoint(
 					latIt2->first,
 					lon2,
-					radius);
+					radiuses);
 
 				glm::vec3 p3 = AngleToPoint(
 					latIt1->first,
 					lon1,
-					radius);
+					radiuses);
 
 				lon1 = prevL;
 
@@ -345,17 +358,17 @@ Planet::Planet(float radius, Video* video)
 				glm::vec3 p1 = AngleToPoint(
 					latIt1->first,
 					lon1,
-					radius);
+					radiuses);
 
 				glm::vec3 p2 = AngleToPoint(
 					latIt2->first,
 					prevL,
-					radius);
+					radiuses);
 
 				glm::vec3 p3 = AngleToPoint(
 					latIt2->first,
 					lon2,
-					radius);
+					radiuses);
 
 				lon2 = prevL;
 
@@ -374,17 +387,17 @@ Planet::Planet(float radius, Video* video)
 		glm::vec3 p1 = AngleToPoint(
 			latIt1->first,
 			lon1,
-			radius);
+			radiuses);
 
 		glm::vec3 p2 = AngleToPoint(
 			latIt2->first,
 			lon2,
-			radius);
+			radiuses);
 
 		glm::vec3 p3 = AngleToPoint(
 			latIt1->first,
 			latIt1->second.front(),
-			radius);
+			radiuses);
 
 		Triangle t;
 		t.P1 = p1;
@@ -399,17 +412,17 @@ Planet::Planet(float radius, Video* video)
 		p1 = AngleToPoint(
 			latIt2->first,
 			lon2,
-			radius);
+			radiuses);
 
 		p2 = AngleToPoint(
 			latIt2->first,
 			latIt2->second.front(),
-			radius);
+			radiuses);
 
 		p3 = AngleToPoint(
 			latIt1->first,
 			latIt1->second.front(),
-			radius);
+			radiuses);
 
 		t.P1 = p1;
 		t.P2 = p2;
@@ -450,7 +463,7 @@ Planet::Planet(float radius, Video* video)
 
 	Logger::Verbose() << "Planet: Clusterization.";
 
-	size_t clusterSizeLimit = 100;
+	size_t clusterSizeLimit = 1500;
 
 	std::list<std::list<TrianglePtr>> clusters;
 	std::set<TrianglePtr> freeTriangles;
@@ -527,18 +540,12 @@ Planet::Planet(float radius, Video* video)
 
 	Logger::Verbose() << "Planet: Clusterization end.";
 
-
-
-
 	int tw;
 	int th;
 	auto td = Loader::LoadImage("Models/Ship/MainBlocks/Wall.png", tw, th);
 	_blockTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
-
 	Logger::Verbose() << "Planet: Texture loaded.";
-
-
 
 	glm::vec4 colorMul(0, 0, 0, 1);
 
@@ -579,10 +586,6 @@ Planet::Planet(float radius, Video* video)
 			modelData.Indices.push_back(uniqueVertices[t->P1]);
 			modelData.Indices.push_back(uniqueVertices[t->P2]);
 			modelData.Indices.push_back(uniqueVertices[t->P3]);
-
-			/*modelData.Indices.push_back(uniqueVertices[t->P2]);
-			modelData.Indices.push_back(uniqueVertices[t->P1]);
-			modelData.Indices.push_back(uniqueVertices[t->P3]);*/
 		}
 
 		modelData.Instances = {glm::mat4(1.0)};
@@ -604,6 +607,8 @@ Planet::Planet(float radius, Video* video)
 		segment->SetObjectVertices(modelData.Vertices);
 		segment->SetObjectNormals(modelData.Normals);
 		segment->SetObjectIndices(modelData.Indices);
+		segment->SetObjectExternalMatrix(&_matrix);
+		segment->SetObjectMatrix(glm::mat4(1.0));
 
 		segment->SetModelExternalMatrix(&_matrix);
 		segment->SetModelMatrix(glm::mat4(1.0));
@@ -611,7 +616,7 @@ Planet::Planet(float radius, Video* video)
 		segment->SetTexture({_blockTexture});
 		segment->SetModels({_blockModel.back()});
 		segment->SetDrawEnabled(true);
-		segment->SetDrawLight(true);
+		segment->SetDrawLight(false);
 
 		segment->SetColorMultiplier(colorMul);
 
@@ -631,6 +636,7 @@ Planet::Planet(float radius, Video* video)
 		}
 		
 		_video->RegisterModel(segment);
+		_collisionEngine->RegisterObject(segment);
 
 		_segments.push_back(segment);
 	}
@@ -642,6 +648,7 @@ Planet::~Planet()
 {
 	for (Segment* segment : _segments) {
 		_video->RemoveModel(segment);
+		_collisionEngine->RemoveObject(segment);
 		delete segment;
 	}
 

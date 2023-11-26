@@ -11,6 +11,7 @@
 #include "../Assets/animation.h"
 #include "ship.h"
 #include "shuttle.h"
+#include "GravityField.h"
 
 class Player : public Actor, public Object, public InputHandler
 {
@@ -19,7 +20,8 @@ public:
 		Video* video,
 		CollisionEngine* rayEngine,
 		Shuttle* ship,
-		TextHandler* textHandler);
+		TextHandler* textHandler,
+		GravityField* gf);
 	~Player();
 
 	void Key(
@@ -41,11 +43,16 @@ private:
 	Video* _video;
 	CollisionEngine* _rayEngine;
 	TextHandler* _textHandler;
+	GravityField* _gf;
 
 	glm::vec3 _pos;
+	glm::vec3 _dirUp;
+	glm::vec3 _dirF;
+	glm::vec3 _dirR;
+
 	float _angleH;
 	float _angleV;
-	float _vspeed;
+	glm::vec3 _speed;
 
 	int _go;
 	int _strafe;
@@ -65,9 +72,6 @@ private:
 
 	TextBox* _centerTextBox;
 	TextBox* _cornerTextBox;
-	Button* _rightTextBox;
-	TextBox::Alignment _rtbBase;
-	uint32_t _rtbTexture;
 
 	Rectangle _cross;
 	uint32_t _crossTexture;

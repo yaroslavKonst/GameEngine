@@ -6,18 +6,23 @@ Player::Player(
 	Video* video,
 	CollisionEngine* rayEngine,
 	Shuttle* ship,
-	TextHandler* textHandler)
+	TextHandler* textHandler,
+	GravityField* gf)
 {
 	_video = video;
 	_rayEngine = rayEngine;
 	_textHandler = textHandler;
+	_gf = gf;
 	_pos = glm::vec3(0.0, 0.0, 2.0);
+	_dirUp = {0, 0, 1};
+	_dirF = {0, 1, 0};
+	_dirR = {1, 0, 0};
 	_angleH = 0;
 	_angleV = 0;
 	_go = 0;
 	_strafe = 0;
 	_jump = false;
-	_vspeed = 0;
+	_speed = {0, 0, 0};
 	_lightActive = false;
 	_ship = ship;
 	_buildMode = false;
@@ -41,7 +46,7 @@ Player::Player(
 	SetInputEnabled(true);
 
 	_light.SetLightType(Light::Type::Spot);
-	_light.SetLightColor({0.7, 0.7, 0.7});
+	_light.SetLightColor({1.7, 1.7, 1.7});
 	_light.SetLightAngle(30);
 	_light.SetLightAngleFade(10);
 
@@ -58,20 +63,18 @@ Player::Player(
 
 	_cornerTextBox = new TextBox(_video, _textHandler);
 	_cornerTextBox->SetPosition(-0.9, -0.9);
-	_cornerTextBox->SetTextSize(0.1);
+	_cornerTextBox->SetTextSize(0.05);
 	_cornerTextBox->SetText(
-		"Build mode\n\n[WASD] Move\n[E] Set\n[Q] Remove\n\
+		"Build mode.\n\n[WASD] Move\n[E] Set\n[Q] Remove\n\
 [T] Change type\n[R] Next layer\n[F] Previous layer\n[Scroll] Rotate block");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
+	_cornerTextBox->Activate();
 
 	int tw;
 	int th;
 	auto td = Loader::LoadImage("Images/Cross.png", tw, th);
 	_crossTexture = _video->GetTextures()->AddTexture(tw, th, td);
-
-	td = Loader::LoadImage("Skybox/skybox.png", tw, th);
-	_rtbTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
 	_cross.SetRectanglePosition({-0.02, -0.02, 0.02, 0.02});
 	_cross.SetRectangleTexCoords({0, 0, 1, 1});
@@ -80,24 +83,6 @@ Player::Player(
 	_cross.SetDrawEnabled(true);
 
 	_video->RegisterRectangle(&_cross);
-
-	_rtbBase = TextBox::Alignment::Left;
-	_rightTextBox = new Button(_video, _textHandler);
-	_rightTextBox->SetTextSize(0.05);
-	_rightTextBox->SetSize(1, 0.1);
-	_rightTextBox->SetPosition(0.5, 0.5, _rtbBase);
-	_rightTextBox->SetText("Test text (alignment)");
-	_rightTextBox->SetTextColor({1, 0, 1, 1});
-	_rightTextBox->SetImage(_rtbTexture);
-	_rightTextBox->SetImageColor({1, 1, 1, 0.5});
-	_rightTextBox->SetActiveImage(_rtbTexture);
-	_rightTextBox->SetActiveImageColor({1, 1, 1, 1});
-	_rightTextBox->SetDepth(10);
-
-	_rightTextBox->SetAction([this]() -> void { _vspeed = 6; });
-
-	_rightTextBox->Activate();
-	_rightTextBox->Enable();
 }
 
 Player::~Player()
@@ -106,13 +91,12 @@ Player::~Player()
 
 	_centerTextBox->Deactivate();
 	delete _centerTextBox;
+	_cornerTextBox->Deactivate();
 	delete _cornerTextBox;
-	delete _rightTextBox;
 
 	_video->GetInputControl()->UnSubscribe(this);
 	_video->RemoveLight(&_light);
 	_video->GetTextures()->RemoveTexture(_crossTexture);
-	_video->GetTextures()->RemoveTexture(_rtbTexture);
 }
 
 void Player::Key(
@@ -204,14 +188,8 @@ bool Player::MouseMoveRaw(
 		return false;
 	}
 
-	_angleH += xoffset * 0.1;
-	_angleV += yoffset * 0.1;
-
-	if (_angleH < 0) {
-		_angleH += 360;
-	} else if (_angleH >= 360) {
-		_angleH -= 360;
-	}
+	_angleH -= xoffset * 0.1;
+	_angleV -= yoffset * 0.1;
 
 	_angleV = std::clamp(_angleV, -85.0f, 85.0f);
 
@@ -220,23 +198,59 @@ bool Player::MouseMoveRaw(
 
 void Player::TickEarly()
 {
-	glm::vec2 hdir(
-		sinf(glm::radians(_angleH)),
-		cosf(glm::radians(_angleH)));
+	glm::vec3 gravityF = (*_gf)(_pos);
+	gravityF *= 80.0f;
 
-	glm::vec2 hdirStrafe(
-		sinf(glm::radians(_angleH + 90)),
-		cosf(glm::radians(_angleH + 90)));
+	glm::vec3 tDirUp = -glm::normalize(gravityF);
 
-	glm::vec2 hspeed = hdir * (float)_go +
-		hdirStrafe * (float)_strafe;
+	float angleCos = glm::dot(
+		glm::normalize(tDirUp),
+		glm::normalize(_dirUp));
+
+	if (fabs(angleCos) < 0.999999) {
+		glm::vec3 rotAxis = glm::cross(tDirUp, _dirUp);
+
+		float angle = acos(angleCos);
+		float angleLim = M_PI / 1000.0;
+
+		angleLim = angle / 100.0 + M_PI / 10000.0;
+		angleLim = std::clamp<float>(
+			angleLim,
+			M_PI / 10000.0,
+			M_PI / 1000.0);
+
+		if (angle > angleLim) {
+			angle = angleLim;
+		}
+
+		glm::mat4 rotMat = glm::rotate(
+			glm::mat4(1.0),
+			angle,
+			-glm::normalize(rotAxis));
+
+		_dirUp = rotMat * glm::vec4(_dirUp, 0.0f);
+		_dirF = rotMat * glm::vec4(_dirF, 0.0f);
+		_dirR = rotMat * glm::vec4(_dirR, 0.0f);
+	}
+
+	if (_angleH != 0) {
+		glm::mat4 rotMat = glm::rotate(
+			glm::mat4(1.0),
+			glm::radians(_angleH),
+			glm::normalize(_dirUp));
+
+		_dirUp = rotMat * glm::vec4(_dirUp, 0.0f);
+		_dirF = rotMat * glm::vec4(_dirF, 0.0f);
+		_dirR = rotMat * glm::vec4(_dirR, 0.0f);
+
+		_angleH = 0;
+	}
 
 	if (!_flightMode) {
-		_vspeed -= 9.8 / 100;
 
-		_pos.x += hspeed.x / 10;
-		_pos.y += hspeed.y / 10;
-		_pos.z += _vspeed / 100;
+		_speed += gravityF / 100.0f / 80.0f;
+
+		_pos += _speed / 100.0f;
 
 		SetObjectMatrix(
 			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
@@ -246,32 +260,19 @@ void Player::TickEarly()
 
 void Player::Tick()
 {
-	glm::vec2 hdir(
-		sinf(glm::radians(_angleH)),
-		cosf(glm::radians(_angleH)));
-
-	glm::vec2 hdirStrafe(
-		sinf(glm::radians(_angleH + 90)),
-		cosf(glm::radians(_angleH + 90)));
-
 	glm::vec3 effect = GetObjectEffect();
 
 	_pos += effect;
 
-	if (effect.z > 0 && _vspeed < 0) {
-		if (fabs(_vspeed) > 0.0001) {
-			_vspeed = -_vspeed * 0.4;
-		} else {
-			_vspeed = 0;
+	if (glm::dot(effect, _dirUp) > 0) {
+		glm::vec3 hspeed = _dirF * (float)_go +
+			_dirR * (float)_strafe;
+
+		_speed = hspeed * 6.0f;
+
+		if (_jump) {
+			_speed += _dirUp * 6.0f;
 		}
-	}
-
-	if (effect.z < 0 && _vspeed > 0) {
-		_vspeed = 0;
-	}
-
-	if (effect.z > 0 && _jump) {
-		_vspeed = 6;
 	}
 
 	if (_flightMode) {
@@ -293,10 +294,14 @@ void Player::Tick()
 		_video->SetCameraPosition(cameraPosition);
 	}
 
-	glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
-	glm::vec3 cameraDirection = glm::vec3(
-		hdir * cosf(glm::radians(_angleV)),
-		sinf(glm::radians(_angleV)));
+	glm::mat4 cameraDirectionRotMat = glm::rotate(
+		glm::mat4(1.0),
+		glm::radians(_angleV),
+		_dirR);
+
+	glm::vec3 cameraPosition = _pos + _dirUp * 1.85f;
+	glm::vec3 cameraDirection =
+		cameraDirectionRotMat * glm::vec4(_dirF, 0.0f);
 
 	if (_flightMode) {
 		cameraPosition -= glm::normalize(cameraDirection) * 40.0f;
@@ -332,18 +337,14 @@ void Player::Tick()
 
 	_video->SetCameraPosition(cameraPosition);
 	_video->SetCameraDirection(cameraDirection);
+	_video->SetCameraUp(_dirUp);
 
-	_light.SetLightPosition(_pos + glm::vec3(0, 0, 1.2) +
-			glm::vec3(-hdirStrafe * 0.3f, 0.0f));
-	_light.SetLightDirection(glm::vec3(
-			hdir * cosf(glm::radians(_angleV)),
-			sinf(glm::radians(_angleV))));
+	_light.SetLightPosition(_pos + _dirUp * 1.2f + _dirR * (-0.3f));
+	_light.SetLightDirection(_dirF);
 
 	CollisionEngine::RayCastResult object = _rayEngine->RayCast(
-		_pos + glm::vec3(0, 0, 1.85),
-		glm::vec3(
-			hdir * cosf(glm::radians(_angleV)),
-			sinf(glm::radians(_angleV))),
+		_pos + _dirUp * 1.85f,
+		_dirF,
 		3,
 		nullptr,
 		{this});
@@ -395,28 +396,11 @@ void Player::Tick()
 		_ship->SetInputEnabled(true);
 	}
 
-	if (_buildMode) {
+	/*if (_buildMode) {
 		_cornerTextBox->Activate();
 	} else {
 		_cornerTextBox->Deactivate();
-	}
-
-	if (_actionERequested) {
-		switch (_rtbBase) {
-		case TextBox::Alignment::Left:
-			_rtbBase = TextBox::Alignment::Center;
-			break;
-		case TextBox::Alignment::Center:
-			_rtbBase = TextBox::Alignment::Right;
-			break;
-		case TextBox::Alignment::Right:
-			_rtbBase = TextBox::Alignment::Left;
-			break;
-		}
-
-		_rightTextBox->SetPosition(0.5, 0.5, _rtbBase);
-		_rightTextBox->Activate();
-	}
+	}*/
 
 	_actionERequested = false;
 	_actionRRequested = false;
