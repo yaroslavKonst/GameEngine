@@ -17,6 +17,8 @@ private:
 	Common _common;
 
 	std::thread* _universeThread;
+
+	uint32_t _skyboxTexture;
 };
 
 #endif

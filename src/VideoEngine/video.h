@@ -91,14 +91,22 @@ public:
 		return _dataBridge.inputControl;
 	}
 
-	void CreateSkybox(
+	uint32_t CreateSkyboxTexture(
 		uint32_t texWidth,
 		uint32_t texHeight,
-		const std::vector<uint8_t>& texData);
-	void DestroySkybox();
-	void SetSkyboxColor(glm::vec3 color)
+		const std::vector<uint8_t>& texData,
+		bool async = false);
+	void DestroySkyboxTexture(uint32_t texture);
+
+	void SetSkyboxTexture(uint32_t texture)
 	{
-		_dataBridge.skybox.SetColorMultiplier(glm::vec4(color, 1.0));
+		_dataBridge.StagedScene.skybox.Texture = texture;
+		_dataBridge.StagedScene.skybox.Enabled = true;
+	}
+
+	void SetSkyboxColor(const glm::vec3& color)
+	{
+		_dataBridge.StagedScene.skybox.ColorMultiplier = color;
 	}
 
 	float GetScreenRatio()

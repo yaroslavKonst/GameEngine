@@ -23,6 +23,8 @@ struct Scene
 	std::set<Light*> Lights;
 	std::set<Sprite*> Sprites;
 
+	Skybox skybox;
+
 	double FOV;
 	glm::vec3 CameraPosition;
 	glm::vec3 CameraDirection;
@@ -35,6 +37,8 @@ struct SceneContainer
 	std::vector<Rectangle> Rectangles;
 	std::vector<Light> Lights;
 	std::vector<Sprite> Sprites;
+
+	Skybox skybox;
 
 	double FOV;
 	glm::vec3 CameraPosition;
@@ -61,8 +65,6 @@ struct DataBridge
 
 	RingBuffer<LoadModelMessage> LoadModelMessages;
 	RingBuffer<RemoveModelMessage> RemoveModelMessages;
-
-	Skybox skybox;
 
 	Scene StagedScene;
 	SceneContainer SubmittedScene;
@@ -136,6 +138,8 @@ struct DataBridge
 		SubmittedScene.CameraPosition = StagedScene.CameraPosition;
 		SubmittedScene.CameraDirection = StagedScene.CameraDirection;
 		SubmittedScene.CameraUp = StagedScene.CameraUp;
+
+		SubmittedScene.skybox = StagedScene.skybox;
 
 		inputControl->SubmitEvents();
 

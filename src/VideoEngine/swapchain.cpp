@@ -1208,9 +1208,9 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	bool validSkybox =
-		_dataBridge->skybox._IsDrawEnabled() &&
+		_dataBridge->DrawnScene.skybox.Enabled &&
 		_dataBridge->Textures->CheckTexture(
-			_dataBridge->skybox.Texture);
+			_dataBridge->DrawnScene.skybox.Texture);
 
 	if (validSkybox) {
 		Skybox::ShaderData shaderData;
@@ -1220,7 +1220,7 @@ void Swapchain::RecordCommandBuffer(
 			glm::radians((float)_dataBridge->DrawnScene.FOV);
 		shaderData.Ratio = (float)_extent.width / (float)_extent.height;
 		shaderData.ColorModifier =
-			_dataBridge->skybox.GetColorMultiplier();
+			_dataBridge->DrawnScene.skybox.ColorMultiplier;
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1232,7 +1232,7 @@ void Swapchain::RecordCommandBuffer(
 			&shaderData);
 
 		auto& tex = _dataBridge->Textures->GetTexture(
-			_dataBridge->skybox.Texture);
+			_dataBridge->DrawnScene.skybox.Texture);
 
 		vkCmdBindDescriptorSets(
 			commandBuffer,

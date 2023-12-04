@@ -35,8 +35,11 @@ World::World()
 		skyboxWidth,
 		skyboxHeight);
 
-	_common.video->CreateSkybox(skyboxWidth, skyboxHeight, skyboxData);
-	_common.video->SetSkyboxColor({1, 1, 1});
+	_skyboxTexture = _common.video->CreateSkyboxTexture(
+		skyboxWidth,
+		skyboxHeight,
+		skyboxData);
+	_common.video->SetSkyboxTexture(_skyboxTexture);
 
 	_common.video->SetFOV(80);
 	_common.video->SetCameraUp({0, 0, 1});
@@ -53,6 +56,8 @@ World::World()
 
 World::~World()
 {
+	_common.video->DestroySkyboxTexture(_skyboxTexture);
+
 	delete _common.textHandler;
 	delete _common.localizer;
 

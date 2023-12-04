@@ -9,7 +9,7 @@
 #include "texturable.h"
 #include "ModelDescriptor.h"
 
-struct Skybox : public Drawable
+struct Skybox
 {
 	struct ShaderData
 	{
@@ -21,6 +21,15 @@ struct Skybox : public Drawable
 	};
 	
 	uint32_t Texture;
+	glm::vec3 ColorMultiplier;
+	bool Enabled;
+
+	Skybox()
+	{
+		Enabled = false;
+		ColorMultiplier = {1, 1, 1};
+		Texture = 0;
+	}
 };
 
 #endif

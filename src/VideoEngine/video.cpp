@@ -51,7 +51,6 @@ Video::~Video()
 	DestroySwapchain();
 
 	RemoveAllModels();
-	DestroySkybox();
 
 	delete _dataBridge.Textures;
 	DestroyDescriptorSetLayout();
@@ -478,13 +477,12 @@ void Video::RemoveRectangle(Rectangle* rectangle)
 	_dataBridge.ExtModMutex.unlock();
 }
 
-void Video::CreateSkybox(
+uint32_t Video::CreateSkyboxTexture(
 	uint32_t texWidth,
 	uint32_t texHeight,
-	const std::vector<uint8_t>& texData)
+	const std::vector<uint8_t>& texData,
+	bool async)
 {
-	DestroySkybox();
-
 	uint32_t layerCount = 6;
 
 	// Texture layout transformation.
@@ -557,31 +555,20 @@ void Video::CreateSkybox(
 		texWidth,
 		texHeight);
 
-	uint32_t skyboxTexture = _dataBridge.Textures->AddTexture(
+	return _dataBridge.Textures->AddTexture(
 		texWidth,
 		texHeight,
 		texDataTransformed,
 		true,
-		false,
+		async,
 		TextureHandler::TextureType::TCube,
 		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 		layerCount);
-	_dataBridge.skybox.Texture = skyboxTexture;
-
-	_dataBridge.skybox._SetDrawReady(true);
-	_dataBridge.skybox.SetDrawEnabled(true);
 }
 
-void Video::DestroySkybox()
+void Video::DestroySkyboxTexture(uint32_t texture)
 {
-	if (!_dataBridge.skybox._IsDrawEnabled())
-	{
-		return;
-	}
-
-	_dataBridge.skybox._SetDrawReady(false);
-	vkQueueWaitIdle(_graphicsQueue.Queue);
-	_dataBridge.Textures->RemoveTexture(_dataBridge.skybox.Texture);
+	_dataBridge.Textures->RemoveTexture(texture);
 }
 
 void Video::CreateDescriptorSetLayout()
