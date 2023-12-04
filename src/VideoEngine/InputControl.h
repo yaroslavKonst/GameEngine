@@ -109,8 +109,6 @@ public:
 
 	void ToggleRawMouseInput();
 
-	void NotifyWindowClose();
-
 private:
 	struct KeyData
 	{

@@ -322,12 +322,8 @@ void InputControl::CursorPositionProcess(CursorPositionData& event)
 		}
 
 		if (!processed) {
-			float locX = (event.x - handler.second->InputArea.x0) /
-				(handler.second->InputArea.x1 -
-				handler.second->InputArea.x0);
-			float locY = (event.y - handler.second->InputArea.y0) /
-				(handler.second->InputArea.y1 -
-				handler.second->InputArea.y0);
+			float locX = event.x - handler.second->InputArea.x0;
+			float locY = event.y - handler.second->InputArea.y0;
 
 			bool proc = handler.second->MouseMove(locX, locY, true);
 
