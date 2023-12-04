@@ -1,6 +1,7 @@
 #ifndef _TEXT_H
 #define _TEXT_H
 
+#include <set>
 #include <vector>
 #include <map>
 #include <cstdint>
@@ -22,7 +23,7 @@ namespace Text
 
 	GlyphCollection LoadFont(
 		std::string name,
-		const std::vector<uint32_t> codes);
+		const std::set<uint32_t>& codes);
 
 	std::vector<uint32_t> DecodeUTF8(const std::string& text);
 }

@@ -11,7 +11,7 @@ namespace Text
 {
 	GlyphCollection LoadFont(
 		std::string name,
-		const std::vector<uint32_t> codes)
+		const std::set<uint32_t>& codes)
 	{
 		FT_Library library;
 

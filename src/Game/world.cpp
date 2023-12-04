@@ -6,7 +6,7 @@
 #include "ship.h"
 #include "planet.h"
 #include "../Logger/logger.h"
-#include "../Assets/board.h"
+#include "board.h"
 #include "GravityField.h"
 
 static void UniverseThread(Universe* universe)
@@ -19,14 +19,14 @@ World::World()
 	Video::GraphicsSettings videoSettings{};
 	videoSettings.MsaaLimit = 2;
 
-	_video = new Video(1400, 1000, "Game", "Game", &videoSettings);
-	_audio = new Audio;
-	_universe = new Universe(10, _video);
+	_common.video = new Video(1400, 1000, "Game", "Game", &videoSettings);
+	_common.audio = new Audio;
+	_common.universe = new Universe(10, _common.video);
 
-	_universe->RegisterActor(this);
+	_common.universe->RegisterActor(this);
 
-	_collisionEngine = new CollisionEngine();
-	_universe->RegisterCollisionEngine(_collisionEngine);
+	_common.collisionEngine = new CollisionEngine();
+	_common.universe->RegisterCollisionEngine(_common.collisionEngine);
 
 	int skyboxWidth;
 	int skyboxHeight;
@@ -35,32 +35,35 @@ World::World()
 		skyboxWidth,
 		skyboxHeight);
 
-	_video->CreateSkybox(skyboxWidth, skyboxHeight, skyboxData);
-	_video->SetSkyboxColor({1, 1, 1});
+	_common.video->CreateSkybox(skyboxWidth, skyboxHeight, skyboxData);
+	_common.video->SetSkyboxColor({1, 1, 1});
 
-	_video->SetFOV(80);
-	_video->SetCameraUp({0, 0, 1});
+	_common.video->SetFOV(80);
+	_common.video->SetCameraUp({0, 0, 1});
 
-	_textHandler = new TextHandler(_video->GetTextures());
+	_common.localizer = new Localizer("Locale/en");
+
+	_common.textHandler = new TextHandler(_common.video->GetTextures());
 	auto glyphs = Text::LoadFont(
 		"Fonts/DroidSans.ttf",
-		Text::DecodeUTF8(" -.:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]()"));
+		_common.localizer->GetCharSet());
 
-	_textHandler->LoadFont(glyphs);
+	_common.textHandler->LoadFont(glyphs);
 }
 
 World::~World()
 {
-	delete _textHandler;
+	delete _common.textHandler;
+	delete _common.localizer;
 
-	_universe->RemoveCollisionEngine(_collisionEngine);
-	delete _collisionEngine;
+	_common.universe->RemoveCollisionEngine(_common.collisionEngine);
+	delete _common.collisionEngine;
 
-	_universe->RemoveActor(this);
+	_common.universe->RemoveActor(this);
 
-	delete _universe;
-	delete _audio;
-	delete _video;
+	delete _common.universe;
+	delete _common.audio;
+	delete _common.video;
 }
 
 void World::Run()
@@ -74,16 +77,21 @@ void World::Run()
 		tw,
 		th);
 
-	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	uint32_t testTexture =
+		_common.video->GetTextures()->AddTexture(tw, th, td);
 
-	Planet planet(20000, {0, 0, -20000}, _video, _collisionEngine);
+	Planet planet(
+		20000,
+		{0, 0, -20000},
+		_common.video,
+		_common.collisionEngine);
 	gf.AddObject({1000000000.0f, {0, 0, -20000}});
 
-	Board board(_video);
+	Board board(_common.video);
 	board.SetTexture({testTexture});
 	board.SetModelHoled(true);
 
-	_video->RegisterModel(&board);
+	_common.video->RegisterModel(&board);
 
 	Light sun1;
 	sun1.SetLightType(Light::Type::Point);
@@ -91,7 +99,7 @@ void World::Run()
 	sun1.SetLightPosition({0, 0, 5000});
 	sun1.SetLightActive(true);
 
-	_video->RegisterLight(&sun1);
+	_common.video->RegisterLight(&sun1);
 
 	Light sun2;
 	sun2.SetLightType(Light::Type::Point);
@@ -99,7 +107,7 @@ void World::Run()
 	sun2.SetLightPosition({0, 0, -45000});
 	sun2.SetLightActive(true);
 
-	_video->RegisterLight(&sun2);
+	_common.video->RegisterLight(&sun2);
 
 	Sprite sprite1;
 	sprite1.SetSpritePosition({10, 10, 1.8});
@@ -110,7 +118,7 @@ void World::Run()
 	sprite1.SetTexCount(1);
 	sprite1.SetTexture(0, testTexture);
 
-	_video->RegisterSprite(&sprite1);
+	_common.video->RegisterSprite(&sprite1);
 
 	Sprite sprite2;
 	sprite2.SetSpritePosition({10, 0, 1.8});
@@ -123,34 +131,34 @@ void World::Run()
 	sprite2.SetColorMultiplier({40, 40, 40, 1});
 	sprite2.SetDrawLight(true);
 
-	_video->RegisterSprite(&sprite2);
+	_common.video->RegisterSprite(&sprite2);
 
-	Shuttle ship(_video, _collisionEngine, _textHandler, &gf);
+	Shuttle ship(_common, &gf);
 
-	Player player(_video, _collisionEngine, &ship, _textHandler, &gf);
-	_universe->RegisterActor(&player);
-	_universe->RegisterActor(&ship);
-	_collisionEngine->RegisterObject(&player);
+	Player player(_common, &ship, &gf);
+	_common.universe->RegisterActor(&player);
+	_common.universe->RegisterActor(&ship);
+	_common.collisionEngine->RegisterObject(&player);
 
-	_universeThread = new std::thread(UniverseThread, _universe);
+	_universeThread = new std::thread(UniverseThread, _common.universe);
 
-	_video->MainLoop();
+	_common.video->MainLoop();
 
-	_universe->Stop();
+	_common.universe->Stop();
 	_universeThread->join();
 	delete _universeThread;
 
-	_collisionEngine->RemoveObject(&player);
-	_universe->RemoveActor(&player);
-	_universe->RemoveActor(&ship);
+	_common.collisionEngine->RemoveObject(&player);
+	_common.universe->RemoveActor(&player);
+	_common.universe->RemoveActor(&ship);
 
-	_video->RemoveSprite(&sprite1);
-	_video->RemoveSprite(&sprite2);
+	_common.video->RemoveSprite(&sprite1);
+	_common.video->RemoveSprite(&sprite2);
 
-	_video->RemoveLight(&sun1);
-	_video->RemoveLight(&sun2);
+	_common.video->RemoveLight(&sun1);
+	_common.video->RemoveLight(&sun2);
 
-	_video->RemoveModel(&board);
+	_common.video->RemoveModel(&board);
 }
 
 void World::Tick()

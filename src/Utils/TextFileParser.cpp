@@ -19,10 +19,22 @@ namespace TextFileParser
 		std::string word;
 
 		char currChar;
+		bool escapeChar = false;
 
 		while (currPos < inFile.size()) {
 			currChar = inFile[currPos];
 			++currPos;
+
+			if (escapeChar) {
+				word.push_back(currChar);
+				escapeChar = false;
+				continue;
+			}
+
+			if (currChar == '\\') {
+				escapeChar = true;
+				continue;
+			}
 
 			bool isWordDelim =
 				wordDelims.find(currChar) != wordDelims.end();
@@ -51,6 +63,10 @@ namespace TextFileParser
 		if (!word.empty()) {
 			line.push_back(word);
 			file.push_back(line);
+		}
+
+		if (escapeChar) {
+			throw std::runtime_error("File ended with '\\'");
 		}
 
 		return file;

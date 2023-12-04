@@ -3,12 +3,12 @@
 
 #include <algorithm>
 
-#include "../VideoEngine/video.h"
 #include "../VideoEngine/GUI/TextBox.h"
 #include "../VideoEngine/GUI/button.h"
 #include "../UniverseEngine/universe.h"
 #include "../Utils/loader.h"
 #include "../Assets/animation.h"
+#include "global.h"
 #include "ship.h"
 #include "shuttle.h"
 #include "GravityField.h"
@@ -17,10 +17,8 @@ class Player : public Actor, public Object, public InputHandler
 {
 public:
 	Player(
-		Video* video,
-		CollisionEngine* rayEngine,
+		Common common,
 		Shuttle* ship,
-		TextHandler* textHandler,
 		GravityField* gf);
 	~Player();
 
@@ -40,9 +38,7 @@ public:
 	void BuildActions(int key, int action);
 
 private:
-	Video* _video;
-	CollisionEngine* _rayEngine;
-	TextHandler* _textHandler;
+	Common _common;
 	GravityField* _gf;
 
 	glm::vec3 _pos;

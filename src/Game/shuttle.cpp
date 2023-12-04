@@ -5,17 +5,12 @@
 
 #include "../Logger/logger.h"
 
-Shuttle::Shuttle(
-	Video* video,
-	CollisionEngine* collisionEngine,
-	TextHandler* textHandler,
-	GravityField* gf)
+Shuttle::Shuttle(Common common, GravityField* gf)
 {
+	_common = common;
+
 	_mass = 1000;
 
-	_video = video;
-	_collisionEngine = collisionEngine;
-	_textHandler = textHandler;
 	_gf = gf;
 
 	_shipMatrix = glm::mat4(1.0);
@@ -23,7 +18,7 @@ Shuttle::Shuttle(
 	SetInputLayer(1);
 	InputArea = {-1, -1, 1, 1};
 
-	_video->GetInputControl()->Subscribe(this);
+	_common.video->GetInputControl()->Subscribe(this);
 
 	_flightMode = false;
 	_grounded = false;
@@ -61,7 +56,7 @@ Shuttle::Shuttle(
 	_base->SetModelMatrix(glm::mat4(1.0));
 	_base->SetModelExternalMatrix(&_shipMatrix);
 	_base->SetModelInnerMatrix(glm::mat4(1.0));
-	_video->RegisterModel(_base);
+	_common.video->RegisterModel(_base);
 
 	_roof = new Model;
 	_roof->SetTexture({_textures["Roof"]});
@@ -70,31 +65,31 @@ Shuttle::Shuttle(
 	_roof->SetModelMatrix(glm::mat4(1.0));
 	_roof->SetModelExternalMatrix(&_shipMatrix);
 	_roof->SetModelInnerMatrix(glm::mat4(1.0));
-	_video->RegisterModel(_roof);
+	_common.video->RegisterModel(_roof);
 
 	_thrusters.resize(4, nullptr);
 
 	_thrusters[0] = new Thruster(
 		{3.25, 11.07, 1.75},
-		_video,
+		_common.video,
 		&_shipMatrix,
 		&_textures,
 		&_models);
 	_thrusters[1] = new Thruster(
 		{-3.25, 11.07, 1.75},
-		_video,
+		_common.video,
 		&_shipMatrix,
 		&_textures,
 		&_models);
 	_thrusters[2] = new Thruster(
 		{4.65, 35, 1.75},
-		_video,
+		_common.video,
 		&_shipMatrix,
 		&_textures,
 		&_models);
 	_thrusters[3] = new Thruster(
 		{-4.65, 35, 1.75},
-		_video,
+		_common.video,
 		&_shipMatrix,
 		&_textures,
 		&_models);
@@ -106,7 +101,7 @@ Shuttle::Shuttle(
 		_thrusters[i]->SetModelMatrix(glm::mat4(1.0));
 		_thrusters[i]->SetModelExternalMatrix(&_shipMatrix);
 		_thrusters[i]->SetModelInnerMatrix(glm::mat4(1.0));
-		_video->RegisterModel(_thrusters[i]);
+		_common.video->RegisterModel(_thrusters[i]);
 	}
 
 	_gearPos = {
@@ -135,7 +130,7 @@ Shuttle::Shuttle(
 
 		gear->SetObjectExternalMatrix(&_shipMatrix);
 
-		_collisionEngine->RegisterObject(gear);
+		_common.collisionEngine->RegisterObject(gear);
 
 		_gear[idx] = gear;
 	}
@@ -143,7 +138,7 @@ Shuttle::Shuttle(
 	_wings.resize(2);
 	_wings[0] = new Wing(
 		{6.5, 18, 2.5},
-		_video,
+		_common.video,
 		&_shipMatrix,
 		&_textures,
 		&_models);
@@ -153,11 +148,11 @@ Shuttle::Shuttle(
 	_wings[0]->SetModelMatrix(glm::mat4(1.0));
 	_wings[0]->SetModelExternalMatrix(&_shipMatrix);
 	_wings[0]->SetModelInnerMatrix(glm::mat4(1.0));
-	_video->RegisterModel(_wings[0]);
+	_common.video->RegisterModel(_wings[0]);
 
 	_wings[1] = new Wing(
 		{-6.5, 18, 2.5},
-		_video,
+		_common.video,
 		&_shipMatrix,
 		&_textures,
 		&_models,
@@ -170,9 +165,9 @@ Shuttle::Shuttle(
 	_wings[1]->SetModelInnerMatrix(glm::scale(
 		glm::mat4(1.0),
 		glm::vec3(-1, 1, 1)));
-	_video->RegisterModel(_wings[1]);
+	_common.video->RegisterModel(_wings[1]);
 
-	_cornerTextBox = new TextBox(_video, _textHandler);
+	_cornerTextBox = new TextBox(_common.video, _common.textHandler);
 	_cornerTextBox->SetPosition(-0.9, -0.9);
 	_cornerTextBox->SetTextSize(0.05);
 	_cornerTextBox->SetText("");
@@ -183,31 +178,31 @@ Shuttle::Shuttle(
 Shuttle::~Shuttle()
 {
 	for (Object* gear : _gear) {
-		_collisionEngine->RemoveObject(gear);
+		_common.collisionEngine->RemoveObject(gear);
 		delete gear;
 	}
 
 	_cornerTextBox->Deactivate();
 	delete _cornerTextBox;
 
-	_video->RemoveModel(_base);
+	_common.video->RemoveModel(_base);
 	delete _base;
 
-	_video->RemoveModel(_roof);
+	_common.video->RemoveModel(_roof);
 	delete _roof;
 
 	for (size_t i = 0; i < _thrusters.size(); ++i) {
-		_video->RemoveModel(_thrusters[i]);
+		_common.video->RemoveModel(_thrusters[i]);
 		delete _thrusters[i];
 	}
 
 	for (size_t i = 0; i < _wings.size(); ++i) {
-		_video->RemoveModel(_wings[i]);
+		_common.video->RemoveModel(_wings[i]);
 		delete _wings[i];
 	}
 
 	UnloadAssets();
-	_video->GetInputControl()->UnSubscribe(this);
+	_common.video->GetInputControl()->UnSubscribe(this);
 }
 
 void Shuttle::LoadAssets()
@@ -215,31 +210,34 @@ void Shuttle::LoadAssets()
 	int tw;
 	int th;
 	auto td = Loader::LoadImage("Models/Shuttle/Base.png", tw, th);
-	_textures["Base"] = _video->GetTextures()->AddTexture(tw, th, td);
+	_textures["Base"] =
+		_common.video->GetTextures()->AddTexture(tw, th, td);
 	auto model = Loader::LoadModel("Models/Shuttle/Base.obj");
-	_models["Base"] = _video->LoadModel(model);
+	_models["Base"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/Roof.png", tw, th);
-	_textures["Roof"] = _video->GetTextures()->AddTexture(tw, th, td);
+	_textures["Roof"] =
+		_common.video->GetTextures()->AddTexture(tw, th, td);
 	model = Loader::LoadModel("Models/Shuttle/Roof.obj");
-	_models["Roof"] = _video->LoadModel(model);
+	_models["Roof"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/Thruster.png", tw, th);
-	_textures["Thruster"] = _video->GetTextures()->AddTexture(tw, th, td);
+	_textures["Thruster"] =
+		_common.video->GetTextures()->AddTexture(tw, th, td);
 	model = Loader::LoadModel("Models/Shuttle/Thruster.obj");
-	_models["Thruster"] = _video->LoadModel(model);
+	_models["Thruster"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/ThrusterExh.png", tw, th);
 	_textures["ThrusterExh"] =
-		_video->GetTextures()->AddTexture(tw, th, td);
+		_common.video->GetTextures()->AddTexture(tw, th, td);
 	model = Loader::LoadModel("Models/Shuttle/ThrusterExh.obj");
-	_models["ThrusterExh"] = _video->LoadModel(model);
+	_models["ThrusterExh"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/Wing.png", tw, th);
 	_textures["Wing"] =
-		_video->GetTextures()->AddTexture(tw, th, td);
+		_common.video->GetTextures()->AddTexture(tw, th, td);
 	model = Loader::LoadModel("Models/Shuttle/Wing.obj");
-	_models["Wing"] = _video->LoadModel(model);
+	_models["Wing"] = _common.video->LoadModel(model);
 
 	for (size_t index = 0; index < model.Indices.size(); index += 3) {
 		uint32_t tmp = model.Indices[index + 1];
@@ -247,17 +245,17 @@ void Shuttle::LoadAssets()
 		model.Indices[index + 2] = tmp;
 	}
 
-	_models["WingInverted"] = _video->LoadModel(model);
+	_models["WingInverted"] = _common.video->LoadModel(model);
 }
 
 void Shuttle::UnloadAssets()
 {
 	for (auto& texture : _textures) {
-		_video->GetTextures()->RemoveTexture(texture.second);
+		_common.video->GetTextures()->RemoveTexture(texture.second);
 	}
 
 	for (auto& model : _models) {
-		_video->UnloadModel(model.second);
+		_common.video->UnloadModel(model.second);
 	}
 }
 
@@ -369,25 +367,32 @@ void Shuttle::TickEarly()
 			dirU * 10.0f * _cameraDist - dirF * 30.0f * _cameraDist;
 		glm::vec3 cameraTarget = _position;
 
-		_video->SetCameraPosition(cameraPosition);
-		_video->SetCameraTarget(cameraTarget);
-		_video->SetCameraUp(dirU);
+		_common.video->SetCameraPosition(cameraPosition);
+		_common.video->SetCameraTarget(cameraTarget);
+		_common.video->SetCameraUp(dirU);
 
 		_cornerTextBox->SetText(
-			std::string("FlightData:\nSpeed: ") +
+			_common.localizer->Localize("FlightData:\nSpeed: ") +
 			std::to_string(_linearSpeed.x) + " " +
 			std::to_string(_linearSpeed.y) + " " +
-			std::to_string(_linearSpeed.z) +
+			std::to_string(_linearSpeed.z) + "\n" +
 
-			"\nTarget speed: " +
+			_common.localizer->Localize("Target speed: ") +
 			std::to_string(_targetSpeed.x) + " " +
 			std::to_string(_targetSpeed.y) + " " +
-			std::to_string(_targetSpeed.z) +
+			std::to_string(_targetSpeed.z) + "\n" +
 
-			"\nFlaps: " + std::to_string(_wings[0]->GetFlap()) +
-			"\nF angle: " + std::to_string(_thrusters[0]->GetFAngle()) +
-			"\nAlt: " + std::to_string(_position.z) +
-			"\nPower: " + std::to_string(powerCoeff));
+			_common.localizer->Localize("Flaps: ") +
+			std::to_string(_wings[0]->GetFlap()) + "\n" +
+
+			_common.localizer->Localize("F angle: ") +
+			std::to_string(_thrusters[0]->GetFAngle()) + "\n" +
+
+			_common.localizer->Localize("Alt: ") +
+			std::to_string(_position.z) + "\n" +
+
+			_common.localizer->Localize("Power: ") +
+			std::to_string(powerCoeff));
 		_cornerTextBox->Activate();
 	}
 }

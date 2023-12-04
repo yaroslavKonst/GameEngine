@@ -3,7 +3,7 @@
 #include "../Utils/CommandLineParser.h"
 #include "../Assets/package.h"
 
-void Run()
+static void Run()
 {
 	World world;
 	world.Run();

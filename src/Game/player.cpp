@@ -3,15 +3,12 @@
 #include "../Logger/logger.h"
 
 Player::Player(
-	Video* video,
-	CollisionEngine* rayEngine,
+	Common common,
 	Shuttle* ship,
-	TextHandler* textHandler,
 	GravityField* gf)
 {
-	_video = video;
-	_rayEngine = rayEngine;
-	_textHandler = textHandler;
+	_common = common;
+
 	_gf = gf;
 	_pos = glm::vec3(0.0, 0.0, 2.0);
 	_dirUp = {0, 0, 1};
@@ -50,10 +47,10 @@ Player::Player(
 	_light.SetLightAngle(30);
 	_light.SetLightAngleFade(10);
 
-	_video->RegisterLight(&_light);
-	_video->GetInputControl()->Subscribe(this);
+	_common.video->RegisterLight(&_light);
+	_common.video->GetInputControl()->Subscribe(this);
 
-	_centerTextBox = new TextBox(_video, _textHandler);
+	_centerTextBox = new TextBox(_common.video, _common.textHandler);
 	_centerTextBox->SetPosition(0.03, 0.03);
 	_centerTextBox->SetTextSize(0.1);
 	_centerTextBox->SetText("Center text");
@@ -61,7 +58,7 @@ Player::Player(
 	_centerTextBox->SetDepth(0);
 	_centerTextBox->Activate();
 
-	_cornerTextBox = new TextBox(_video, _textHandler);
+	_cornerTextBox = new TextBox(_common.video, _common.textHandler);
 	_cornerTextBox->SetPosition(-0.9, -0.9);
 	_cornerTextBox->SetTextSize(0.05);
 	_cornerTextBox->SetText(
@@ -73,7 +70,7 @@ Player::Player(
 	int tw;
 	int th;
 	auto td = Loader::LoadImage("Images/Cross.png", tw, th);
-	_crossTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	_crossTexture = _common.video->GetTextures()->AddTexture(tw, th, td);
 
 	_cross.SetRectanglePosition({-0.02, -0.02, 0.02, 0.02});
 	_cross.SetRectangleTexCoords({0, 0, 1, 1});
@@ -81,21 +78,21 @@ Player::Player(
 	_cross.SetTexture({_crossTexture});
 	_cross.SetDrawEnabled(true);
 
-	_video->RegisterRectangle(&_cross);
+	_common.video->RegisterRectangle(&_cross);
 }
 
 Player::~Player()
 {
-	_video->RemoveRectangle(&_cross);
+	_common.video->RemoveRectangle(&_cross);
 
 	_centerTextBox->Deactivate();
 	delete _centerTextBox;
 	_cornerTextBox->Deactivate();
 	delete _cornerTextBox;
 
-	_video->GetInputControl()->UnSubscribe(this);
-	_video->RemoveLight(&_light);
-	_video->GetTextures()->RemoveTexture(_crossTexture);
+	_common.video->GetInputControl()->UnSubscribe(this);
+	_common.video->RemoveLight(&_light);
+	_common.video->GetTextures()->RemoveTexture(_crossTexture);
 }
 
 void Player::Key(
@@ -117,7 +114,7 @@ void Player::Key(
 
 	if (key == GLFW_KEY_C) {
 		if (action == GLFW_PRESS) {
-			_video->GetInputControl()->
+			_common.video->GetInputControl()->
 				ToggleRawMouseInput();
 		}
 	} else if (key == GLFW_KEY_SPACE) {
@@ -300,20 +297,21 @@ void Player::Tick()
 		glm::vec3 cameraDirection =
 			cameraDirectionRotMat * glm::vec4(_dirF, 0.0f);
 
-		_video->SetCameraPosition(cameraPosition);
-		_video->SetCameraDirection(cameraDirection);
-		_video->SetCameraUp(_dirUp);
+		_common.video->SetCameraPosition(cameraPosition);
+		_common.video->SetCameraDirection(cameraDirection);
+		_common.video->SetCameraUp(_dirUp);
 	}
 
 	_light.SetLightPosition(_pos + _dirUp * 1.2f + _dirR * (-0.3f));
 	_light.SetLightDirection(_dirF);
 
-	CollisionEngine::RayCastResult object = _rayEngine->RayCast(
-		_pos + _dirUp * 1.85f,
-		_dirF,
-		3,
-		nullptr,
-		{this});
+	CollisionEngine::RayCastResult object =
+		_common.collisionEngine->RayCast(
+			_pos + _dirUp * 1.85f,
+			_dirF,
+			3,
+			nullptr,
+			{this});
 
 	if (object.Code == 1) {
 		_centerTextBox->SetText(
@@ -361,12 +359,6 @@ void Player::Tick()
 		_flightMode = true;
 		_ship->SetInputEnabled(true);
 	}
-
-	/*if (_buildMode) {
-		_cornerTextBox->Activate();
-	} else {
-		_cornerTextBox->Deactivate();
-	}*/
 
 	_actionERequested = false;
 	_actionRRequested = false;

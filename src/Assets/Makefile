@@ -4,6 +4,7 @@ all: \
 	../../build/animation.o \
 	../../build/ScriptHandler.o \
 	../../build/package.o \
+	../../build/localizer.o \
 	package
 
 package: ../../build/packer

@@ -1,5 +1,6 @@
 ENTRIES=\
 	Fonts/DroidSans.ttf \
+	Locale/en \
 	Images/transparent.png \
 	Images/Cross.png \
 	Images/Grass.png \

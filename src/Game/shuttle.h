@@ -1,10 +1,8 @@
 #ifndef _SHUTTLE_H
 #define _SHUTTLE_H
 
-#include "../VideoEngine/video.h"
 #include "../VideoEngine/GUI/TextBox.h"
-#include "../PhysicalEngine/CollisionEngine.h"
-#include "../UniverseEngine/actor.h"
+#include "global.h"
 #include "common.h"
 #include "GravityField.h"
 
@@ -100,11 +98,7 @@ private:
 class Shuttle : public InputHandler, public Actor
 {
 public:
-	Shuttle(
-		Video* video,
-		CollisionEngine* collisionEngine,
-		TextHandler* textHandler,
-		GravityField* gf);
+	Shuttle(Common common, GravityField* gf);
 	~Shuttle();
 
 	void TickEarly() override;
@@ -130,6 +124,8 @@ public:
 	}
 
 private:
+	Common _common;
+
 	Library _textures;
 	Library _models;
 
@@ -144,8 +140,6 @@ private:
 	std::vector<Object*> _gear;
 	std::vector<glm::vec3> _gearPos;
 
-	Video* _video;
-	CollisionEngine* _collisionEngine;
 	GravityField* _gf;
 
 	bool _flightMode;
@@ -173,7 +167,6 @@ private:
 
 	float _cameraDist;
 
-	TextHandler* _textHandler;
 	TextBox* _cornerTextBox;
 
 	bool _wingsClosed;
