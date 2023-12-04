@@ -4,6 +4,7 @@
 #include <set>
 #include <list>
 #include <vector>
+#include <mutex>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -100,7 +101,7 @@ public:
 	~InputControl();
 
 	void Subscribe(InputHandler* handler);
-	void UnSubscribe(InputHandler* handler);
+	void Unsubscribe(InputHandler* handler);
 
 	void PollEvents();
 	void SubmitEvents();
@@ -168,6 +169,8 @@ private:
 
 	GLFWwindow* _window;
 
+	std::mutex _mutex;
+
 	float _x;
 	float _y;
 
@@ -176,8 +179,8 @@ private:
 
 	bool _rawMouseInput;
 
-	bool _stagedMouseInput;
-	bool _submittedMouseInput;
+	uint32_t _stagedMouseInput;
+	uint32_t _submittedMouseInput;
 
 	std::set<InputHandler*> _handlers;
 

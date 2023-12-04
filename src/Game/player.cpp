@@ -90,7 +90,7 @@ Player::~Player()
 	_cornerTextBox->Deactivate();
 	delete _cornerTextBox;
 
-	_common.video->GetInputControl()->UnSubscribe(this);
+	_common.video->GetInputControl()->Unsubscribe(this);
 	_common.video->RemoveLight(&_light);
 	_common.video->GetTextures()->RemoveTexture(_crossTexture);
 }

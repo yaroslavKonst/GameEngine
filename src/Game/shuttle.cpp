@@ -202,7 +202,7 @@ Shuttle::~Shuttle()
 	}
 
 	UnloadAssets();
-	_common.video->GetInputControl()->UnSubscribe(this);
+	_common.video->GetInputControl()->Unsubscribe(this);
 }
 
 void Shuttle::LoadAssets()

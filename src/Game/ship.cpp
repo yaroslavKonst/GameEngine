@@ -54,7 +54,7 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 
 Ship::~Ship()
 {
-	_video->GetInputControl()->UnSubscribe(this);
+	_video->GetInputControl()->Unsubscribe(this);
 
 	delete _mainGrid;
 	delete _baseGrid;

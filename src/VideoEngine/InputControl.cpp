@@ -10,8 +10,8 @@ InputControl::InputControl(GLFWwindow* window)
 	_rawX = 0;
 	_rawY = 0;
 	_rawMouseInput = false;
-	_stagedMouseInput = false;
-	_submittedMouseInput = false;
+	_stagedMouseInput = 0;
+	_submittedMouseInput = 0;
 
 	glfwSetWindowUserPointer(_window, this);
 
@@ -33,17 +33,21 @@ InputControl::~InputControl()
 
 void InputControl::Subscribe(InputHandler* handler)
 {
+	_mutex.lock();
 	_handlers.insert(handler);
+	_mutex.unlock();
 }
 
-void InputControl::UnSubscribe(InputHandler* handler)
+void InputControl::Unsubscribe(InputHandler* handler)
 {
+	_mutex.lock();
 	_handlers.erase(handler);
+	_mutex.unlock();
 }
 
 void InputControl::ToggleRawMouseInput()
 {
-	_stagedMouseInput = true;
+	++_stagedMouseInput;
 }
 
 void InputControl::ToggleRawMouseInputInternal()
@@ -109,9 +113,9 @@ void InputControl::PollEvents()
 	_polledEvents.MouseButtonEvents.clear();
 	_polledEvents.ScrollEvents.clear();
 
-	if (_submittedMouseInput) {
+	while (_submittedMouseInput) {
 		ToggleRawMouseInputInternal();
-		_submittedMouseInput = false;
+		--_submittedMouseInput;
 	}
 }
 
@@ -125,9 +129,9 @@ void InputControl::SubmitEvents()
 	_submittedEvents.MouseButtonEvents.clear();
 	_submittedEvents.ScrollEvents.clear();
 
-	if (_stagedMouseInput) {
-		_submittedMouseInput = true;
-		_stagedMouseInput = false;
+	while (_stagedMouseInput) {
+		++_submittedMouseInput;
+		--_stagedMouseInput;
 	}
 }
 

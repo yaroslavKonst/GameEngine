@@ -14,7 +14,7 @@ Button::Button(Video* video, TextHandler* textHandler) :
 
 Button::~Button()
 {
-	_video->GetInputControl()->UnSubscribe(this);
+	_video->GetInputControl()->Unsubscribe(this);
 }
 
 void Button::Activate()
