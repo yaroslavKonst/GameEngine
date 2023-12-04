@@ -5,10 +5,18 @@
 
 #include "../Logger/logger.h"
 
-Shuttle::Shuttle(Video* video, CollisionEngine* collisionEngine)
+Shuttle::Shuttle(
+	Video* video,
+	CollisionEngine* collisionEngine,
+	TextHandler* textHandler,
+	GravityField* gf)
 {
+	_mass = 1000;
+
 	_video = video;
 	_collisionEngine = collisionEngine;
+	_textHandler = textHandler;
+	_gf = gf;
 
 	_shipMatrix = glm::mat4(1.0);
 
@@ -20,21 +28,27 @@ Shuttle::Shuttle(Video* video, CollisionEngine* collisionEngine)
 	_flightMode = false;
 	_grounded = false;
 
-	_position = {0, 0, 5};
+	_position = {0, 10, 5};
 	_linearSpeed = {0, 0, 0};
-	_rotation = {0, 0, 0};
+	_rotation = glm::mat4(1.0);
 	_angularSpeed = {0, 0, 0};
 
 	_targetSpeed = {0, 0, 0};
+
+	_forceMoment = {0, 0, 0};
 
 	_controlF = 0;
 	_controlR = 0;
 	_controlU = 0;
 	_controlYaw = 0;
 	_controlPitch = 0;
+	_controlRoll = 0;
+
+	_cameraDist = 1.0;
 
 	_wingsClosed = false;
 	_fastMode = false;
+	_brakeMode = false;
 
 	_centerOfGravity = {0, 20, 0};
 
@@ -95,22 +109,36 @@ Shuttle::Shuttle(Video* video, CollisionEngine* collisionEngine)
 		_video->RegisterModel(_thrusters[i]);
 	}
 
-	_gear = new Object;
-	auto model = Loader::LoadModel("Models/Ship/MainBlocks/Wall.obj");
-	_gear->SetObjectVertices(model.Vertices);
-	_gear->SetObjectIndices(model.Indices);
-	_gear->SetObjectNormals(model.Normals);
-	_gear->SetObjectCenter();
-	_gear->SetObjectDynamic(true);
-	_gear->SetObjectSphereCenter({0, 0, 0.5});
-	_gear->SetObjectSphereRadius(0.5);
-	_gear->SetObjectDomain(1);
-	_gear->SetObjectMatrix(glm::translate(
-		glm::mat4(1.0),
-		glm::vec3(0, 0, -1)));
-	_gear->SetObjectExternalMatrix(&_shipMatrix);
+	_gearPos = {
+		{0, 0, -1.6},
+		{5, 30, -1.6},
+		{-5, 30, -1.6}
+	};
 
-	_collisionEngine->RegisterObject(_gear);
+	_gear.resize(_gearPos.size());
+	auto model = Loader::LoadModel("Models/Ship/MainBlocks/Wall.obj");
+
+	for (size_t idx = 0; idx < _gear.size(); ++idx) {
+		Object* gear = new Object;
+		gear->SetObjectVertices(model.Vertices);
+		gear->SetObjectIndices(model.Indices);
+		gear->SetObjectNormals(model.Normals);
+		gear->SetObjectCenter();
+		gear->SetObjectDynamic(true);
+		gear->SetObjectSphereCenter({0, 0, 0.5});
+		gear->SetObjectSphereRadius(0.5);
+		gear->SetObjectDomain(1);
+
+		gear->SetObjectMatrix(glm::translate(
+			glm::mat4(1.0),
+			_gearPos[idx]));
+
+		gear->SetObjectExternalMatrix(&_shipMatrix);
+
+		_collisionEngine->RegisterObject(gear);
+
+		_gear[idx] = gear;
+	}
 
 	_wings.resize(2);
 	_wings[0] = new Wing(
@@ -143,11 +171,24 @@ Shuttle::Shuttle(Video* video, CollisionEngine* collisionEngine)
 		glm::mat4(1.0),
 		glm::vec3(-1, 1, 1)));
 	_video->RegisterModel(_wings[1]);
+
+	_cornerTextBox = new TextBox(_video, _textHandler);
+	_cornerTextBox->SetPosition(-0.9, -0.9);
+	_cornerTextBox->SetTextSize(0.05);
+	_cornerTextBox->SetText("");
+	_cornerTextBox->SetTextColor({1, 1, 1, 1});
+	_cornerTextBox->SetDepth(0);
 }
 
 Shuttle::~Shuttle()
 {
-	_collisionEngine->RemoveObject(_gear);
+	for (Object* gear : _gear) {
+		_collisionEngine->RemoveObject(gear);
+		delete gear;
+	}
+
+	_cornerTextBox->Deactivate();
+	delete _cornerTextBox;
 
 	_video->RemoveModel(_base);
 	delete _base;
@@ -222,57 +263,90 @@ void Shuttle::UnloadAssets()
 
 void Shuttle::TickEarly()
 {
-	glm::vec3 dirF = _shipMatrix *
-		glm::vec4(0, -1, 0, 0);
-	glm::vec3 dirR = _shipMatrix *
-		glm::vec4(-1, 0, 0, 0);
-	glm::vec3 dirU = _shipMatrix *
-		glm::vec4(0, 0, 1, 0);
+	glm::vec3 locDirF(0, -1, 0);
+	glm::vec3 locDirR(-1, 0, 0);
+	glm::vec3 locDirU(0, 0, 1);
+
+	glm::vec3 dirF = _shipMatrix * glm::vec4(locDirF, 0.0f);
+	glm::vec3 dirR = _shipMatrix * glm::vec4(locDirR, 0.0f);
+	glm::vec3 dirU = _shipMatrix * glm::vec4(locDirU, 0.0f);
 
 	if (_flightMode) {
 		_targetSpeed =
 			dirF * _controlF +
 			dirR * _controlR +
 			dirU * _controlU;
+
+		_targetSpeed *= 10.0f;
+
+		if (_fastMode) {
+			_targetSpeed += dirF * _controlF * 1000.0f;
+		}
 	} else {
 		_targetSpeed = {0, 0, 0};
 
-		if (glm::length(_linearSpeed) > 0.15) {
+		if (_fastMode) {
 			_targetSpeed = dirF * 100.0f;
-
-			if (_position.z < 5) {
-				_targetSpeed.z += 100;
-			}
 		}
 	}
 
-	_wings[0]->SetAngle(glm::length(_linearSpeed) * 400);
-	_wings[1]->SetAngle(glm::length(_linearSpeed) * 400);
+	_wings[0]->SetAngle(glm::length(_linearSpeed) / 10.0f);
+	_wings[1]->SetAngle(glm::length(_linearSpeed) / 10.0f);
 
-	glm::vec3 mg(0, 0, -1);
+	glm::vec3 targetForce = (_targetSpeed - _linearSpeed) * _mass;
 
-	glm::vec3 thrusterForce = {0, 0, 0};
-	glm::vec3 targetForce = _targetSpeed / 10.0f - _linearSpeed;
+	glm::vec3 envForce = -_linearSpeed;
+
+	glm::vec3 mg = (*_gf)(_position) * _mass;
 
 	targetForce -= mg;
+	targetForce -= envForce;
 
-	glm::vec3 wingForce = GetWingForce(_linearSpeed) * 100.0f;
+	glm::vec3 wingForce = GetWingForce(_linearSpeed, targetForce);
 	targetForce -= wingForce;
 
-	targetForce += _linearSpeed;
+	if (/*_grounded &&*/ !_flightMode) {
+		targetForce = {0, 0, 0};
+	}
 
-	thrusterForce = GetThrusterForce(targetForce);
+	float powerCoeff;
+	glm::vec3 thrusterForce = GetThrusterForce(
+		targetForce,
+		_linearSpeed,
+		powerCoeff);
 
-	glm::vec3 force = mg + thrusterForce - _linearSpeed + wingForce;
+	glm::vec3 force =
+		mg +
+		thrusterForce +
+		envForce +
+		wingForce;
+
+	_linearSpeed += force / _mass / 100.0f;
+	_position += _linearSpeed / 100.0f;
 
 	glm::vec3 targetAngularSpeed =
-		(dirU * _controlYaw + dirR * _controlPitch) / 10.0f;
-	glm::vec3 forceMoment = targetAngularSpeed - _angularSpeed;
+		(locDirU * _controlYaw +
+		locDirR * _controlPitch +
+		locDirF * _controlRoll) / 10.0f;
 
-	_linearSpeed += force / 100.0f;
+	_controlYaw *= 0.97;
+	_controlPitch *= 0.97;
+	_controlRoll *= 0.97;
+
+	glm::vec3 forceMoment = _forceMoment;
+
 	_angularSpeed += forceMoment / 100.0f;
-	_position += _linearSpeed;
-	_rotation += _angularSpeed;
+
+	if (_flightMode) {
+		_angularSpeed += (targetAngularSpeed * 100.0f - _angularSpeed);
+	}
+
+	if (glm::length(_angularSpeed) > 0) {
+		_rotation *= glm::rotate(
+			glm::mat4(1.0f),
+			glm::radians(glm::length(_angularSpeed)) / 100.0f,
+			glm::normalize(_angularSpeed));
+	}
 
 	_shipMatrix = glm::translate(
 		glm::mat4(1.0f),
@@ -282,29 +356,66 @@ void Shuttle::TickEarly()
 		glm::mat4(1.0),
 		_centerOfGravity);
 
-	if (glm::length(_rotation) > 0) {
-		rotationMatrix = glm::rotate(
-			rotationMatrix,
-			glm::radians(glm::length(_rotation)),
-			glm::normalize(_rotation));
-	}
+	rotationMatrix = _rotation * rotationMatrix;
 
 	rotationMatrix = glm::translate(
 		rotationMatrix,
 		-_centerOfGravity);
 
 	_shipMatrix = _shipMatrix * rotationMatrix;
+
+	if (_flightMode) {
+		glm::vec3 cameraPosition = _position +
+			dirU * 10.0f * _cameraDist - dirF * 30.0f * _cameraDist;
+		glm::vec3 cameraTarget = _position;
+
+		_video->SetCameraPosition(cameraPosition);
+		_video->SetCameraTarget(cameraTarget);
+		_video->SetCameraUp(dirU);
+
+		_cornerTextBox->SetText(
+			std::string("FlightData:\nSpeed: ") +
+			std::to_string(_linearSpeed.x) + " " +
+			std::to_string(_linearSpeed.y) + " " +
+			std::to_string(_linearSpeed.z) +
+
+			"\nTarget speed: " +
+			std::to_string(_targetSpeed.x) + " " +
+			std::to_string(_targetSpeed.y) + " " +
+			std::to_string(_targetSpeed.z) +
+
+			"\nFlaps: " + std::to_string(_wings[0]->GetFlap()) +
+			"\nF angle: " + std::to_string(_thrusters[0]->GetFAngle()) +
+			"\nAlt: " + std::to_string(_position.z) +
+			"\nPower: " + std::to_string(powerCoeff));
+		_cornerTextBox->Activate();
+	}
 }
 
 void Shuttle::Tick()
 {
-	glm::vec3 effect = _gear->GetObjectEffect();
+	glm::vec3 effect(0, 0, 0);
+	_forceMoment = {0, 0, 0};
+
+	for (size_t idx = 0; idx < _gear.size(); ++idx) {
+		glm::vec3 eff = _gear[idx]->GetObjectEffect();
+
+		if (glm::length(eff) > glm::length(effect)) {
+			effect = eff;
+		}
+
+		_forceMoment +=
+			glm::cross(eff, _centerOfGravity - _gearPos[idx]) *
+			1000.0f;
+	}
 
 	_position += effect;
 
 	if (glm::dot(effect, _linearSpeed) < 0) {
 		_linearSpeed = glm::vec3(0, 0, 0);
 		_grounded = true;
+	} else {
+		_grounded = false;
 	}
 }
 
@@ -321,94 +432,20 @@ bool Shuttle::MouseMoveRaw(double xoffset, double yoffset)
 		return false;
 	}
 
-	_controlYaw += xoffset / 100;
+	_controlYaw -= xoffset / 100;
 	_controlPitch += yoffset / 100;
 
-	Logger::Verbose() << "Yaw: " << _controlYaw << ", pitch: " <<
-		_controlPitch;
-
 	return true;
-
-	/*glm::vec3 dirU = _shipMatrix *
-		glm::vec4(0, 0, 1, 0);
-
-	glm::vec3 dirR = _shipMatrix *
-		glm::vec4(1, 0, 0, 0);
-
-	glm::vec3 rotation =
-		dirU * (float)xoffset / 10.0f;// + dirR * (float)yoffset / 10.0f;
-
-	glm::mat4 R(1.0);
-
-	if (glm::length(_targetAngle) > 0) {
-		R = glm::rotate(
-			glm::mat4(1.0),
-			glm::radians(glm::length(_targetAngle)),
-			glm::normalize(_targetAngle));
-	}
-
-	if (glm::length(rotation) > 0) {
-		R = glm::rotate(
-			R,
-			glm::radians(glm::length(rotation)),
-			glm::normalize(rotation));
-	}
-
-	rotation = {
-		R[2][1] - R[1][2],
-		R[0][2] - R[2][0],
-		R[1][0] - R[0][1]
-	};
-
-	if (glm::length(rotation) == 0) {
-		_targetAngle = {0, 0, 0};
-		return true;
-	}
-
-	rotation = glm::normalize(rotation);
-
-	glm::mat4 Kn(0.0f);
-
-	Kn[1][0] = rotation.z;
-	Kn[2][0] = -rotation.y;
-	Kn[2][1] = rotation.x;
-
-	Kn[0][1] = -Kn[1][0];
-	Kn[0][2] = -Kn[2][0];
-	Kn[1][2] = -Kn[2][1];
-
-	Kn = Kn * R;
-
-	float traceR = R[0][0] + R[1][1] + R[2][2];
-	float traceKn = Kn[0][0] + Kn[1][1] + Kn[2][2];
-
-	float cosTheta = (traceR - 1.0) / 2.0;
-	float sinTheta = -traceKn / 2.0;
-
-	float angle = asin(sinTheta);
-
-	if (cosTheta < 0) {
-		if (angle < 0) {
-			angle -= M_PI / 2.0;
-		} else {
-			angle += M_PI / 2.0;
-		}
-	}
-
-	rotation = rotation * angle * 180.0f / (float)M_PI;
-
-	Logger::Verbose() << "Rotation: " << rotation.x << " " <<
-		rotation.y << " " << rotation.z;
-	Logger::Verbose() << "Angle: " << angle;
-
-	_targetAngle = rotation;
-
-	return true;*/
 }
 
 bool Shuttle::Scroll(double xoffset, double yoffset)
 {
-	return false;
+	if (!_flightMode) {
+		return false;
+	}
+
+	_cameraDist += yoffset / 10.0;
+	return true;
 }
 
 void Shuttle::Flight(int key, int scancode, int action, int mods)
@@ -449,8 +486,24 @@ void Shuttle::Flight(int key, int scancode, int action, int mods)
 		} else if (action == GLFW_RELEASE) {
 			_controlU += 1;
 		}
+	} else if (key == GLFW_KEY_Q) {
+		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+			_controlRoll -= 0.1;
+		}
+	} else if (key == GLFW_KEY_E) {
+		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+			_controlRoll += 0.1;
+		}
 	} else if (key == GLFW_KEY_C) {
 		if (action == GLFW_PRESS) {
+			if (_brakeMode) {
+				return;
+			}
+
+			if (_wingsClosed) {
+				return;
+			}
+
 			if (_fastMode) {
 				for (size_t i = 0; i < _thrusters.size(); ++i) {
 					_thrusters[i]->SetAngle(90);
@@ -463,8 +516,38 @@ void Shuttle::Flight(int key, int scancode, int action, int mods)
 
 			_fastMode = !_fastMode;
 		}
+	} else if (key == GLFW_KEY_B) {
+		if (action == GLFW_PRESS) {
+			if (_fastMode) {
+				return;
+			}
+
+			if (_wingsClosed) {
+				return;
+			}
+
+			if (_brakeMode) {
+				for (size_t i = 0; i < _thrusters.size(); ++i) {
+					_thrusters[i]->SetAngle(90);
+				}
+			} else {
+				for (size_t i = 0; i < _thrusters.size(); ++i) {
+					_thrusters[i]->SetAngle(120);
+				}
+			}
+
+			_brakeMode = !_brakeMode;
+		}
 	} else if (key == GLFW_KEY_U) {
 		if (action == GLFW_PRESS) {
+			if (_fastMode) {
+				return;
+			}
+
+			if (_brakeMode) {
+				return;
+			}
+
 			if (_wingsClosed) {
 				for (size_t i = 0; i < _wings.size(); ++i) {
 					_wings[i]->Open();
@@ -477,37 +560,49 @@ void Shuttle::Flight(int key, int scancode, int action, int mods)
 
 			_wingsClosed = !_wingsClosed;
 		}
-	} else if (key == GLFW_KEY_Q) {
+	} else if (key == GLFW_KEY_F) {
 		if (action == GLFW_PRESS) {
 			_targetSpeed = glm::vec3(0.0);
 			SetInputEnabled(false);
+			_cornerTextBox->Deactivate();
 			_flightMode = false;
 			return;
 		}
 	}
 }
 
-glm::vec3 Shuttle::GetThrusterForce(const glm::vec3& force)
+glm::vec3 Shuttle::GetThrusterForce(
+	const glm::vec3& force,
+	const glm::vec3& speed,
+	float& powerCoeff)
 {
 	glm::vec3 result(0.0);
 
 	for (auto thruster : _thrusters) {
-		result += thruster->SetDirection(force);
+		result += thruster->SetDirection(force, speed);
 	}
 
 	float coeff = glm::length(result) / glm::length(force);
 
+	powerCoeff = 1;
+
 	if (coeff > 1) {
 		result /= coeff;
+		powerCoeff = 1.0 / coeff;
+	}
+
+	if (glm::length(result) < 0.01f) {
+		powerCoeff = 0;
 	}
 
 	return result;
 }
 
-glm::vec3 Shuttle::GetWingForce(const glm::vec3& speed)
+glm::vec3 Shuttle::GetWingForce(const glm::vec3& speed, const glm::vec3& force)
 {
 	glm::vec3 wingForce =
-		_wings[0]->SetSpeed(speed) + _wings[1]->SetSpeed(speed);
+		_wings[0]->SetSpeed(speed, force) +
+		_wings[1]->SetSpeed(speed, force);
 
 	return wingForce;
 }
@@ -545,7 +640,7 @@ Thruster::~Thruster()
 	delete _exhaust;
 }
 
-glm::vec3 Thruster::SetDirection(const glm::vec3& value)
+glm::vec3 Thruster::SetDirection(const glm::vec3& value, const glm::vec3& speed)
 {
 	if (_angle < _targetAngle) {
 		_angle += 0.05;
@@ -553,7 +648,7 @@ glm::vec3 Thruster::SetDirection(const glm::vec3& value)
 		_angle -= 0.05;
 	}
 
-	_angle = std::clamp(_angle, 0.0f, 90.0f);
+	_angle = std::clamp(_angle, 0.0f, 120.0f);
 
 	glm::mat4 baseMatrix = glm::translate(glm::mat4(1.0f), _position);
 	baseMatrix = glm::rotate(
@@ -562,8 +657,8 @@ glm::vec3 Thruster::SetDirection(const glm::vec3& value)
 		glm::vec3(-1, 0, 0));
 	SetModelMatrix(baseMatrix);
 
-	AdjustFAngle(value);
-	AdjustRAngle(value);
+	AdjustFAngle(value, speed);
+	AdjustRAngle(value, speed);
 
 	glm::mat4 exhaustMatrix = glm::translate(
 		baseMatrix,
@@ -589,14 +684,31 @@ glm::vec3 Thruster::SetDirection(const glm::vec3& value)
 		glm::normalize(value));
 
 	if (angleCos > 0) {
-		return glm::normalize(thrustDir) * angleCos;
+		return glm::normalize(thrustDir) * angleCos * 5000.0f;
 	}
 
 	return glm::vec3(0, 0, 0);
 }
 
-void Thruster::AdjustFAngle(const glm::vec3& value)
+void Thruster::AdjustFAngle(const glm::vec3& value, const glm::vec3& speed)
 {
+	if (_angle < 30 && glm::length(speed) > 30.0f) {
+		if (_angleF > 0.1) {
+			_angleF -= 0.1;
+		} else if (_angleF < -0.1) {
+			_angleF += 0.1;
+		} else {
+			_angleF = 0;
+		}
+
+		return;
+	}
+
+	if (_angle < 30 && _angleF > 0) {
+		_angleF -= 0.1;
+		return;
+	}
+
 	glm::vec3 planePoint1(0, 0, 0);
 	glm::vec3 planePoint2(0, 1, 0);
 	glm::vec3 planePoint3(0, 1, 1);
@@ -649,20 +761,18 @@ void Thruster::AdjustFAngle(const glm::vec3& value)
 		}
 	}
 
-	if (_angle < 30) {
-		_angleF = std::clamp(_angleF, -30.0f, 0.0f);
-	} else {
-		_angleF = std::clamp(_angleF, -30.0f, 30.0f);
-	}
+	_angleF = std::clamp(_angleF, -30.0f, 30.0f);
 }
 
-void Thruster::AdjustRAngle(const glm::vec3& value)
+void Thruster::AdjustRAngle(const glm::vec3& value, const glm::vec3& speed)
 {
 	if (_angle < 30) {
-		if (_angleR > 0) {
+		if (_angleR > 0.1) {
 			_angleR -= 0.1;
-		} else if (_angleR < 0) {
+		} else if (_angleR < -0.1) {
 			_angleR += 0.1;
+		} else {
+			_angleR = 0;
 		}
 
 		return;
@@ -740,13 +850,31 @@ Wing::Wing(
 
 	_angleUp = 0;
 	_targetAngleUp = 0;
+
+	_flap = 0;
+	_targetFlap = 0;
 }
 
 Wing::~Wing()
 {
 }
 
-glm::vec3 Wing::SetSpeed(const glm::vec3& value)
+void Wing::IncFlap(float value)
+{
+	_targetFlap += value;
+	_targetFlap = std::clamp(_targetFlap, 0.0f, 1.0f);
+}
+
+static glm::vec3 ProjVector(
+	const glm::vec3& projectedVector,
+	const glm::vec3& onProjVector)
+{
+	return onProjVector *
+		glm::dot(projectedVector, onProjVector) /
+		glm::dot(onProjVector, onProjVector);
+}
+
+glm::vec3 Wing::SetSpeed(const glm::vec3& value, const glm::vec3& force)
 {
 	if (_angle < _targetAngle && _angleUp == 0) {
 		_angle += 0.05;
@@ -754,6 +882,12 @@ glm::vec3 Wing::SetSpeed(const glm::vec3& value)
 	
 	if (_angle > _targetAngle) {
 		_angle -= 0.05;
+	}
+
+	if (_flap < _targetFlap) {
+		_flap += 0.001;
+	} else if (_flap > _targetFlap) {
+		_flap -= 0.001;
 	}
 
 	_angle = std::clamp(_angle, 0.0f, 30.0f);
@@ -788,25 +922,45 @@ glm::vec3 Wing::SetSpeed(const glm::vec3& value)
 	}
 
 	glm::vec3 forward = *GetModelExternalMatrix() * glm::vec4(0, -1, 0, 0);
-	glm::vec3 right = *GetModelExternalMatrix() * glm::vec4(1, 0, 0, 0);
+	glm::vec3 right = *GetModelExternalMatrix() * glm::vec4(-1, 0, 0, 0);
 	glm::vec3 up = *GetModelExternalMatrix() * glm::vec4(0, 0, 1, 0);
 
 	forward = glm::normalize(forward);
 	right = glm::normalize(right);
+	up = glm::normalize(up);
 
-	glm::vec3 effect = value;
+	glm::vec3 speedProj = value - ProjVector(value, forward);
+	glm::vec3 forceProj = force - ProjVector(force, forward);
 
-	float angleCos = glm::dot(effect, forward);
-	effect -= forward * angleCos;
+	glm::vec3 effect = -glm::normalize(speedProj);
+	effect += up * _flap * 0.3f;
 
-	angleCos = glm::dot(effect, right);
-	effect -= right * angleCos;
+	float speedFactor = glm::length(value) * 200.0f;
 
-	effect -= up * glm::length(value) * 0.1f;
+	effect *= speedFactor * (1.0f - _angleUp / 90.0f);
 
-	float speedFactor = glm::length(value);
+	float forceLenDiff = glm::length(effect) - glm::length(forceProj);
+	bool forceUp = glm::dot(up, forceProj) > 0;
 
-	speedFactor = std::clamp(speedFactor, 0.0f, 1.0f);
+	Logger::Verbose() << "Force up: " << forceUp;
+	Logger::Verbose() << "Force proj: " <<
+		forceProj.x << " " <<
+		forceProj.y << " " <<
+		forceProj.z;
+	Logger::Verbose() << "Effect: " <<
+		effect.x << " " <<
+		effect.y << " " <<
+		effect.z;
+	Logger::Verbose() << "Speed: " <<
+		speedProj.x << " " <<
+		speedProj.y << " " <<
+		speedProj.z;
 
-	return effect * speedFactor * (1.0f - _angleUp / 90.0f) * -0.5f;
+	if (forceLenDiff > 0 || !forceUp) {
+		IncFlap(-0.01);
+	} else if (forceLenDiff < 0) {
+		IncFlap(0.01);
+	}
+
+	return effect;
 }

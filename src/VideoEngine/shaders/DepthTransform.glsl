@@ -1,4 +1,4 @@
 float DepthTransform(float value)
 {
-	return value / 10.0;
+	return value / 32.0f;
 }

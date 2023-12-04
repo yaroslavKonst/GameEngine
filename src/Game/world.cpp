@@ -44,7 +44,7 @@ World::World()
 	_textHandler = new TextHandler(_video->GetTextures());
 	auto glyphs = Text::LoadFont(
 		"Fonts/DroidSans.ttf",
-		Text::DecodeUTF8(" .ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]()"));
+		Text::DecodeUTF8(" -.:;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]()"));
 
 	_textHandler->LoadFont(glyphs);
 }
@@ -76,8 +76,8 @@ void World::Run()
 
 	uint32_t testTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
-	Planet planet(800, {0, 0, -800}, _video, _collisionEngine);
-	gf.AddObject({1000000.0f, {0, 0, -800}});
+	Planet planet(20000, {0, 0, -20000}, _video, _collisionEngine);
+	gf.AddObject({1000000000.0f, {0, 0, -20000}});
 
 	Board board(_video);
 	board.SetTexture({testTexture});
@@ -85,13 +85,21 @@ void World::Run()
 
 	_video->RegisterModel(&board);
 
-	Light sun;
-	sun.SetLightType(Light::Type::Point);
-	sun.SetLightColor({200, 200, 200});
-	sun.SetLightPosition({0, 0, 50});
-	sun.SetLightActive(true);
+	Light sun1;
+	sun1.SetLightType(Light::Type::Point);
+	sun1.SetLightColor({2000000, 2000000, 2000000});
+	sun1.SetLightPosition({0, 0, 5000});
+	sun1.SetLightActive(true);
 
-	_video->RegisterLight(&sun);
+	_video->RegisterLight(&sun1);
+
+	Light sun2;
+	sun2.SetLightType(Light::Type::Point);
+	sun2.SetLightColor({2000000, 2000000, 2000000});
+	sun2.SetLightPosition({0, 0, -45000});
+	sun2.SetLightActive(true);
+
+	_video->RegisterLight(&sun2);
 
 	Sprite sprite1;
 	sprite1.SetSpritePosition({10, 10, 1.8});
@@ -117,7 +125,7 @@ void World::Run()
 
 	_video->RegisterSprite(&sprite2);
 
-	Shuttle ship(_video, _collisionEngine);
+	Shuttle ship(_video, _collisionEngine, _textHandler, &gf);
 
 	Player player(_video, _collisionEngine, &ship, _textHandler, &gf);
 	_universe->RegisterActor(&player);
@@ -139,7 +147,8 @@ void World::Run()
 	_video->RemoveSprite(&sprite1);
 	_video->RemoveSprite(&sprite2);
 
-	_video->RemoveLight(&sun);
+	_video->RemoveLight(&sun1);
+	_video->RemoveLight(&sun2);
 
 	_video->RemoveModel(&board);
 }

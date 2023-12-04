@@ -1185,8 +1185,8 @@ void Swapchain::RecordCommandBuffer(
 	mvp.ProjView = glm::perspective(
 		glm::radians((float)_dataBridge->DrawnScene.FOV),
 		screenRatio,
-		0.01f,
-		1000.0f) * view;
+		1.0f,
+		10.0f) * view;
 
 	// ViewPort and scissor.
 	VkViewport viewport{};

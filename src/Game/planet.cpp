@@ -542,7 +542,7 @@ Planet::Planet(
 
 	int tw;
 	int th;
-	auto td = Loader::LoadImage("Models/Ship/MainBlocks/Wall.png", tw, th);
+	auto td = Loader::LoadImage("Images/Grass.png", tw, th);
 	_blockTexture = _video->GetTextures()->AddTexture(tw, th, td);
 
 	Logger::Verbose() << "Planet: Texture loaded.";
@@ -562,7 +562,7 @@ Planet::Planet(
 				modelData.Vertices.push_back(t->P1);
 				modelData.Normals.push_back(
 					glm::normalize((glm::vec3)t->P1));
-				modelData.TexCoords.push_back({0.55, 0.5});
+				modelData.TexCoords.push_back({0.0, 0.0});
 			}
 
 			if (uniqueVertices.find(t->P2) == uniqueVertices.end()) {
@@ -571,7 +571,7 @@ Planet::Planet(
 				modelData.Vertices.push_back(t->P2);
 				modelData.Normals.push_back(
 					glm::normalize((glm::vec3)t->P2));
-				modelData.TexCoords.push_back({0.55, 0.5});
+				modelData.TexCoords.push_back({0.0, 100.0});
 			}
 
 			if (uniqueVertices.find(t->P3) == uniqueVertices.end()) {
@@ -580,7 +580,7 @@ Planet::Planet(
 				modelData.Vertices.push_back(t->P3);
 				modelData.Normals.push_back(
 					glm::normalize((glm::vec3)t->P3));
-				modelData.TexCoords.push_back({0.55, 0.5});
+				modelData.TexCoords.push_back({100.0, 500.0});
 			}
 
 			modelData.Indices.push_back(uniqueVertices[t->P1]);
@@ -618,7 +618,7 @@ Planet::Planet(
 		segment->SetDrawEnabled(true);
 		segment->SetDrawLight(false);
 
-		segment->SetColorMultiplier(colorMul);
+		//segment->SetColorMultiplier(colorMul);
 
 		if (colorMul.r < 1) {
 			colorMul.r += 0.2;

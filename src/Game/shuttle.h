@@ -2,9 +2,11 @@
 #define _SHUTTLE_H
 
 #include "../VideoEngine/video.h"
+#include "../VideoEngine/GUI/TextBox.h"
 #include "../PhysicalEngine/CollisionEngine.h"
 #include "../UniverseEngine/actor.h"
 #include "common.h"
+#include "GravityField.h"
 
 class Thruster : public Model
 {
@@ -17,10 +19,15 @@ public:
 		Library* models);
 	~Thruster();
 
-	glm::vec3 SetDirection(const glm::vec3& value);
+	glm::vec3 SetDirection(const glm::vec3& value, const glm::vec3& speed);
 	void SetAngle(float value)
 	{
-		_targetAngle = std::clamp(value, 0.0f, 90.0f);
+		_targetAngle = std::clamp(value, 0.0f, 120.0f);
+	}
+
+	float GetFAngle()
+	{
+		return _angleF;
 	}
 
 private:
@@ -35,8 +42,8 @@ private:
 	Video* _video;
 	Model* _exhaust;
 
-	void AdjustFAngle(const glm::vec3& value);
-	void AdjustRAngle(const glm::vec3& value);
+	void AdjustFAngle(const glm::vec3& value, const glm::vec3& speed);
+	void AdjustRAngle(const glm::vec3& value, const glm::vec3& speed);
 };
 
 class Wing : public Model
@@ -51,10 +58,16 @@ public:
 		bool inverted = false);
 	~Wing();
 
-	glm::vec3 SetSpeed(const glm::vec3& value);
+	glm::vec3 SetSpeed(const glm::vec3& value, const glm::vec3& force);
 	void SetAngle(float value)
 	{
 		_targetAngle = std::clamp(value, 0.0f, 30.0f);
+	}
+
+	void IncFlap(float value);
+	float GetFlap()
+	{
+		return _flap;
 	}
 
 	void Open()
@@ -76,6 +89,9 @@ private:
 	float _angleUp;
 	float _targetAngleUp;
 
+	float _flap;
+	float _targetFlap;
+
 	Video* _video;
 
 	bool _inverted;
@@ -84,7 +100,11 @@ private:
 class Shuttle : public InputHandler, public Actor
 {
 public:
-	Shuttle(Video* video, CollisionEngine* collisionEngine);
+	Shuttle(
+		Video* video,
+		CollisionEngine* collisionEngine,
+		TextHandler* textHandler,
+		GravityField* gf);
 	~Shuttle();
 
 	void TickEarly() override;
@@ -93,10 +113,15 @@ public:
 	void Key(int key, int scancode, int action, int mods) override;
 	bool Scroll(double xoffset, double yoffset) override;
 	bool MouseMoveRaw(double xoffset, double yoffset) override;
+	bool InInputArea(float x, float y) override
+	{
+		return true;
+	}
 
 	void ActivateFlight()
 	{
 		_flightMode = true;
+		_cornerTextBox->Activate();
 	}
 
 	const glm::mat4& GetMatrix()
@@ -111,21 +136,27 @@ private:
 	Model* _base;
 	Model* _roof;
 
+	float _mass;
+
 	std::vector<Thruster*> _thrusters;
 	std::vector<Wing*> _wings;
 
-	Object* _gear;
+	std::vector<Object*> _gear;
+	std::vector<glm::vec3> _gearPos;
 
 	Video* _video;
 	CollisionEngine* _collisionEngine;
+	GravityField* _gf;
 
 	bool _flightMode;
 
 	glm::vec3 _position;
-	glm::vec3 _rotation;
+	glm::mat4 _rotation;
 	glm::vec3 _linearSpeed;
 	glm::vec3 _angularSpeed;
 	glm::mat4 _shipMatrix;
+
+	glm::vec3 _forceMoment;
 
 	glm::vec3 _targetSpeed;
 	bool _grounded;
@@ -138,16 +169,26 @@ private:
 
 	float _controlYaw;
 	float _controlPitch;
+	float _controlRoll;
+
+	float _cameraDist;
+
+	TextHandler* _textHandler;
+	TextBox* _cornerTextBox;
 
 	bool _wingsClosed;
 	bool _fastMode;
+	bool _brakeMode;
 
 	void LoadAssets();
 	void UnloadAssets();
 	void Flight(int key, int scancode, int action, int mods);
 
-	glm::vec3 GetThrusterForce(const glm::vec3& force);
-	glm::vec3 GetWingForce(const glm::vec3& speed);
+	glm::vec3 GetThrusterForce(
+		const glm::vec3& force,
+		const glm::vec3& speed,
+		float& powerCoeff);
+	glm::vec3 GetWingForce(const glm::vec3& speed, const glm::vec3& force);
 };
 
 #endif

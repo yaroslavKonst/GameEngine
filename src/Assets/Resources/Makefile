@@ -2,6 +2,7 @@ ENTRIES=\
 	Fonts/DroidSans.ttf \
 	Images/transparent.png \
 	Images/Cross.png \
+	Images/Grass.png \
 	Skybox/skybox.png \
 	Models/Archive/field.obj \
 	Models/Archive/floor.jpg \

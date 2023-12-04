@@ -69,7 +69,6 @@ Player::Player(
 [T] Change type\n[R] Next layer\n[F] Previous layer\n[Scroll] Rotate block");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
-	_cornerTextBox->Activate();
 
 	int tw;
 	int th;
@@ -106,7 +105,7 @@ void Player::Key(
 	int mods)
 {
 	if (_flightMode) {
-		if (key == GLFW_KEY_Q) {
+		if (key == GLFW_KEY_F) {
 			if (action == GLFW_PRESS) {
 				_flightMode = false;
 				SetObjectDomain(0);
@@ -289,55 +288,22 @@ void Player::Tick()
 		SetObjectMatrix(
 			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
 				glm::radians(_angleH), glm::vec3(0, 0, 1)));
+	}
 
-		glm::vec3 cameraPosition = _pos + glm::vec3(0, 0, 1.85);
+	if (!_flightMode) {
+		glm::mat4 cameraDirectionRotMat = glm::rotate(
+			glm::mat4(1.0),
+			glm::radians(_angleV),
+			_dirR);
+
+		glm::vec3 cameraPosition = _pos + _dirUp * 1.85f;
+		glm::vec3 cameraDirection =
+			cameraDirectionRotMat * glm::vec4(_dirF, 0.0f);
+
 		_video->SetCameraPosition(cameraPosition);
+		_video->SetCameraDirection(cameraDirection);
+		_video->SetCameraUp(_dirUp);
 	}
-
-	glm::mat4 cameraDirectionRotMat = glm::rotate(
-		glm::mat4(1.0),
-		glm::radians(_angleV),
-		_dirR);
-
-	glm::vec3 cameraPosition = _pos + _dirUp * 1.85f;
-	glm::vec3 cameraDirection =
-		cameraDirectionRotMat * glm::vec4(_dirF, 0.0f);
-
-	if (_flightMode) {
-		cameraPosition -= glm::normalize(cameraDirection) * 40.0f;
-	}
-
-	glm::vec3 buildCamPosTarget = glm::vec3(0.0);
-
-	float buildCamDist = glm::length(_buildCamPos - buildCamPosTarget);
-
-	if (buildCamDist > 0.04) {
-		_buildCamPos -=
-			glm::normalize(_buildCamPos - buildCamPosTarget) *
-				std::clamp(0.008f * buildCamDist, 0.04f, 1.0f);
-	} else {
-		_buildCamPos = buildCamPosTarget;
-	}
-
-	cameraPosition = cameraPosition * (1.0f - _buildCamCoeff) +
-		(_buildCamPos + glm::vec3(-5, -2, 10)) *
-		_buildCamCoeff;
-
-	cameraDirection = cameraDirection * (1.0f - _buildCamCoeff) +
-		(_buildCamPos - cameraPosition) *
-		_buildCamCoeff;
-
-	if (!_buildMode) {
-		_buildCamCoeff -= 0.02;
-	} else {
-		_buildCamCoeff += 0.02;
-	}
-
-	_buildCamCoeff = std::clamp(_buildCamCoeff, 0.0f, 1.0f);
-
-	_video->SetCameraPosition(cameraPosition);
-	_video->SetCameraDirection(cameraDirection);
-	_video->SetCameraUp(_dirUp);
 
 	_light.SetLightPosition(_pos + _dirUp * 1.2f + _dirR * (-0.3f));
 	_light.SetLightDirection(_dirF);
