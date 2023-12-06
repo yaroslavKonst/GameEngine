@@ -3,8 +3,51 @@
 
 #include <list>
 #include <vector>
+#include <map>
+#include <set>
 #include <mutex>
 #include <vulkan/vulkan.h>
+
+class IntervalStorage
+{
+public:
+	IntervalStorage(size_t minLimit, size_t maxLimit);
+	~IntervalStorage();
+
+	bool Find(size_t length, size_t& begin);
+	void Allocate(size_t begin, size_t length);
+	void Free(size_t begin, size_t length);
+
+	size_t Allocated()
+	{
+		return _allocated;
+	}
+
+private:
+	struct Interval
+	{
+		size_t Begin;
+		size_t End;
+
+		std::map<size_t, Interval*>::iterator BeginIterator;
+		std::map<size_t, Interval*>::iterator EndIterator;
+		std::multimap<size_t, Interval*>::iterator LengthIterator;
+	};
+
+	std::map<size_t, Interval*> _intervalBegin;
+	std::map<size_t, Interval*> _intervalEnd;
+	std::multimap<size_t, Interval*> _intervalLength;
+
+	std::set<Interval*> _intervals;
+
+	size_t _minLimit;
+	size_t _maxLimit;
+
+	size_t _allocated;
+
+	void AddInterval(Interval* interval);
+	void RemoveInterval(Interval* interval);
+};
 
 class MemoryManager
 {
@@ -32,7 +75,7 @@ private:
 	struct PageDescriptor
 	{
 		VkDeviceMemory memory;
-		std::vector<bool> data;
+		IntervalStorage* data;
 		void* mapping;
 	};
 

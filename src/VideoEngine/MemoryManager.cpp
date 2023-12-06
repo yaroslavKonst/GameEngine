@@ -41,11 +41,9 @@ MemoryManager::~MemoryManager()
 
 		vkFreeMemory(_device, page.memory, nullptr);
 
-		for (bool sector : page.data) {
-			if (sector) {
-				++leakedSectors;
-			}
-		}
+		leakedSectors += page.data->Allocated();
+
+		delete page.data;
 	}
 
 	Logger::Verbose() <<
@@ -62,7 +60,7 @@ void MemoryManager::AddPage()
 	allocInfo.memoryTypeIndex = _memoryTypeIndex;
 
 	PageDescriptor page;
-	page.data = std::vector<bool>(_sectorCount, false);
+	page.data = new IntervalStorage(0, _sectorCount - 1);
 
 	VkResult res = vkAllocateMemory(
 		_device,
@@ -104,49 +102,32 @@ MemoryManager::Allocation MemoryManager::Allocate(uint32_t size)
 	uint32_t requiredSectors = (size - 1) / _alignment + 1;
 
 	for (auto& page : _pages) {
-		uint32_t sectorIndex = 0;
-		uint32_t sectorSpan = 0;
+		size_t begin;
+		bool spaceFound = page.data->Find(requiredSectors, begin);
 
-		while (sectorIndex < _sectorCount) {
-			if (!page.data[sectorIndex]) {
-				++sectorSpan;
+		if (spaceFound) {
+			page.data->Allocate(begin, requiredSectors);
+
+			Allocation allocation;
+			allocation.Memory = page.memory;
+			allocation.Offset = _alignment * begin;
+			allocation.Size = size;
+
+			if (_mapped) {
+				allocation.Mapping =
+					(char*)page.mapping +
+					allocation.Offset;
 			} else {
-				sectorSpan = 0;
+				allocation.Mapping = nullptr;
 			}
 
-			++sectorIndex;
-
-			if (sectorSpan == requiredSectors) {
-				while (sectorSpan > 0) {
-					--sectorSpan;
-					--sectorIndex;
-
-					page.data[sectorIndex] = true;
-				}
-
-				Allocation allocation;
-				allocation.Memory = page.memory;
-				allocation.Offset = _alignment * sectorIndex;
-				allocation.Size = size;
-
-				if (_mapped) {
-					allocation.Mapping =
-						(char*)page.mapping +
-						allocation.Offset;
-				} else {
-					allocation.Mapping = nullptr;
-				}
-
-				return allocation;
-			}
+			return allocation;
 		}
 	}
 
 	AddPage();
 
-	for (uint32_t sector = 0; sector < requiredSectors; ++sector) {
-		_pages.back().data[sector] = true;
-	}
+	_pages.back().data->Allocate(0, requiredSectors);
 
 	Allocation allocation;
 	allocation.Memory = _pages.back().memory;
@@ -171,13 +152,123 @@ void MemoryManager::Free(Allocation allocation)
 			uint32_t startSector =
 				allocation.Offset / _alignment;
 
-			for (uint32_t idx = 0; idx < sectors; ++idx) {
-				page.data[idx + startSector] = false;
-			}
-
+			page.data->Free(startSector, sectors);
 			return;
 		}
 	}
 
 	throw std::runtime_error("Tried to free invalid memory block.");
+}
+
+IntervalStorage::IntervalStorage(size_t minLimit, size_t maxLimit)
+{
+	_minLimit = minLimit;
+	_maxLimit = maxLimit;
+
+	_allocated = 0;
+
+	Interval* interval = new Interval;
+	interval->Begin = _minLimit;
+	interval->End = _maxLimit;
+
+	AddInterval(interval);
+}
+
+IntervalStorage::~IntervalStorage()
+{
+	for (Interval* interval : _intervals) {
+		delete interval;
+	}
+}
+
+void IntervalStorage::AddInterval(Interval* interval)
+{
+	size_t begin = interval->Begin;
+	size_t end = interval->End;
+
+	interval->BeginIterator =
+		_intervalBegin.insert({begin, interval}).first;
+	interval->EndIterator = _intervalEnd.insert({end, interval}).first;
+	interval->LengthIterator = _intervalLength.insert(
+		{end - begin + 1, interval});
+
+	_intervals.insert(interval);
+}
+
+void IntervalStorage::RemoveInterval(Interval* interval)
+{
+	_intervals.erase(interval);
+	_intervalBegin.erase(interval->BeginIterator);
+	_intervalEnd.erase(interval->EndIterator);
+	_intervalLength.erase(interval->LengthIterator);
+}
+
+bool IntervalStorage::Find(size_t length, size_t& begin)
+{
+	std::multimap<size_t, Interval*>::iterator intervalIt =
+		_intervalLength.lower_bound(length);
+
+	if (intervalIt == _intervalLength.end()) {
+		return false;
+	}
+
+	begin = intervalIt->second->Begin;
+	return true;
+}
+
+void IntervalStorage::Allocate(size_t begin, size_t length)
+{
+	_allocated += length;
+
+	Interval* oldInterval = _intervalBegin[begin];
+	RemoveInterval(oldInterval);
+
+	size_t end = begin + length - 1;
+
+	if (end == oldInterval->End) {
+		delete oldInterval;
+		return;
+	}
+
+	Interval* newInterval = new Interval;
+	newInterval->Begin = end + 1;
+	newInterval->End = oldInterval->End;
+
+	delete oldInterval;
+
+	AddInterval(newInterval);
+}
+
+void IntervalStorage::Free(size_t begin, size_t length)
+{
+	_allocated -= length;
+
+	size_t end = begin + length - 1;
+
+	bool hasPrevInterval =
+		begin > _minLimit &&
+		_intervalEnd.find(begin - 1) != _intervalEnd.end();
+
+	if (hasPrevInterval) {
+		Interval* interval = _intervalEnd[begin - 1];
+		RemoveInterval(interval);
+		begin = interval->Begin;
+		delete interval;
+	}
+
+	bool hasNextInterval =
+		end < _maxLimit &&
+		_intervalBegin.find(end + 1) != _intervalBegin.end();
+
+	if (hasNextInterval) {
+		Interval* interval = _intervalBegin[end + 1];
+		RemoveInterval(interval);
+		end = interval->End;
+		delete interval;
+	}
+
+	Interval* newInterval = new Interval;
+	newInterval->Begin = begin;
+	newInterval->End = end;
+	AddInterval(newInterval);
 }
