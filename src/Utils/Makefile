@@ -5,7 +5,8 @@ all: \
 	../../build/TextFileParser.o \
 	../../build/ThreadPool.o \
 	../../build/Text.o \
-	../../build/CommandLineParser.o
+	../../build/CommandLineParser.o \
+	../../build/compressor.o
 
 ../../build/%.o: %.cpp %.h
 	$(CC) $(CC_OPTS) $(CC_OBJ) -o $@ $<

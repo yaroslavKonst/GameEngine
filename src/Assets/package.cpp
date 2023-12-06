@@ -1,5 +1,9 @@
 #include "package.h"
 
+#include <iostream>
+
+#include "../Utils/compressor.h"
+
 Package* Package::_instance = nullptr;
 
 Package* Package::Instance()
@@ -108,7 +112,7 @@ std::vector<uint8_t> Package::GetData(std::string name)
 	std::vector<uint8_t> result(mapping.Size);
 	_packageFile.read((char*)result.data(), result.size());
 
-	return result;
+	return Compressor::Decompress(result);
 }
 
 void Package::BuildPackage(
@@ -155,10 +159,27 @@ void Package::BuildPackage(
 		entryFile.read((char*)entryData.data(), entrySize);
 		entryFile.close();
 
-		tableEntry[0] = packageFile.tellp();
-		tableEntry[1] = entrySize;
+		std::vector<uint8_t> compressedEntryData =
+			Compressor::Compress(entryData);
 
-		packageFile.write((char*)entryData.data(), entrySize);
+		std::cout << fileNames[entryIndex] << ": ";
+
+		if (compressedEntryData.size() > entryData.size()) {
+			std::cout << "stored";
+		} else {
+			std::cout << "compressed (" <<
+				(float)compressedEntryData.size() /
+				entryData.size() << ")";
+		}
+
+		std::cout << std::endl;
+
+		tableEntry[0] = packageFile.tellp();
+		tableEntry[1] = compressedEntryData.size();
+
+		packageFile.write(
+			(char*)compressedEntryData.data(),
+			compressedEntryData.size());
 
 		entryTable[entryIndex] = tableEntry;
 	}

@@ -212,7 +212,7 @@ Planet::Planet(
 					(char*)&clusterSize,
 					sizeof(clusterSize));
 
-				clusterSizes.push_back(clusterSize);
+				clusterSizes[cIdx] = clusterSize;
 
 				for (
 					size_t tIdx = 0;
@@ -251,6 +251,10 @@ Planet::Planet(
 				}
 
 				clusters.push_back(cluster);
+			}
+
+			if (it != triangles.end()) {
+				Logger::Error() << "Error in cluster reading";
 			}
 		}
 	}
@@ -707,7 +711,6 @@ Planet::Planet(
 			normal += glm::normalize((glm::vec3)triangle->P3);
 		}
 
-		normal /= cluster.size() * 3;
 		normal = glm::normalize(normal);
 		normals.push_back(normal);
 	}
@@ -731,6 +734,11 @@ Planet::Planet(
 				auto nearestCluster = clusters.begin();
 				auto nearestNormal = normals.begin();
 
+				if (nearestCluster == it) {
+					++nearestCluster;
+					++nearestNormal;
+				}
+
 				auto nCluster = clusters.begin();
 				auto nNormal = normals.begin();
 
@@ -738,7 +746,7 @@ Planet::Planet(
 					"Looking for nearest cluster";
 
 				while (nCluster != clusters.end()) {
-					if (*nNormal == *normIt) {
+					if (nNormal == normIt) {
 						++nCluster;
 						++nNormal;
 						continue;
@@ -777,11 +785,11 @@ Planet::Planet(
 						(glm::vec3)t->P3);
 				}
 
-				normal /= nearestCluster->size() * 3;
 				normal = glm::normalize(normal);
 				*nearestNormal = normal;
 
 				clusters.erase(it);
+				normals.erase(normIt);
 				break;
 			}
 		}

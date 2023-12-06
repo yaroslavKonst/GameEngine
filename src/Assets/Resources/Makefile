@@ -51,5 +51,5 @@ ENTRIES=\
 
 all: ../../../build/resources.bin
 
-../../../build/resources.bin: $(ENTRIES)
+../../../build/resources.bin: ../../../build/packer $(ENTRIES)
 	../../../build/packer $@ $(ENTRIES)
