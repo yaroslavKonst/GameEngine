@@ -40,6 +40,7 @@ public:
 		bool ClearColorImage;
 		bool ClearDepthImage;
 		bool InvertFace;
+		bool AlphaBlending;
 	};
 
 	Pipeline(InitInfo* initInfo);

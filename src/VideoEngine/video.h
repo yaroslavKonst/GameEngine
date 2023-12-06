@@ -96,27 +96,39 @@ public:
 		bool async = false);
 	void DestroySkyboxTexture(uint32_t texture);
 
+	void SetSkyboxNumber(uint32_t count)
+	{
+		_dataBridge.StagedScene.skybox.resize(count);
+
+		for (size_t idx = 0; idx < count; ++idx) {
+			_dataBridge.StagedScene.skybox[idx] = Skybox();
+		}
+	}
+
+	void SetSkyboxEnabled(bool enabled, uint32_t index = 0)
+	{
+		_dataBridge.StagedScene.skybox[index].Enabled = enabled;
+	}
+
 	void SetSkyboxTexture(uint32_t texture, uint32_t index = 0)
 	{
-		_dataBridge.StagedScene.skybox.Texture[index] = texture;
-		if (index == 0) {
-			_dataBridge.StagedScene.skybox.Enabled = true;
-		}
+		_dataBridge.StagedScene.skybox[index].Texture = texture;
 	}
 
 	void SetSkyboxColor(const glm::vec3& color, uint32_t index = 0)
 	{
-		_dataBridge.StagedScene.skybox.ColorMultiplier[index] = color;
+		_dataBridge.StagedScene.skybox[index].ColorMultiplier = color;
 	}
 
 	void SetSkyboxGradient(
 		bool enabled,
-		const glm::vec3& value = {0, 0, 0},
-		float offset = 0)
+		const glm::vec3& value,
+		float offset,
+		uint32_t index = 0)
 	{
-		_dataBridge.StagedScene.skybox.GradientEnabled = enabled;
-		_dataBridge.StagedScene.skybox.GradientOffset = offset;
-		_dataBridge.StagedScene.skybox.Gradient = value;
+		_dataBridge.StagedScene.skybox[index].GradientEnabled = enabled;
+		_dataBridge.StagedScene.skybox[index].GradientOffset = offset;
+		_dataBridge.StagedScene.skybox[index].Gradient = value;
 	}
 
 	float GetScreenRatio()

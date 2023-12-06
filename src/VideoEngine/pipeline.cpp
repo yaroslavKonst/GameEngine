@@ -160,9 +160,17 @@ Pipeline::Pipeline(InitInfo* initInfo)
 		VK_COLOR_COMPONENT_B_BIT |
 		VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment.blendEnable = VK_TRUE;
-	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-	colorBlendAttachment.dstColorBlendFactor =
-		VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+
+	if (initInfo->AlphaBlending) {
+		colorBlendAttachment.srcColorBlendFactor =
+			VK_BLEND_FACTOR_SRC_ALPHA;
+		colorBlendAttachment.dstColorBlendFactor =
+			VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	} else {
+		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+	}
+
 	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;

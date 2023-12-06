@@ -28,12 +28,16 @@ World::World()
 	_common.collisionEngine = new CollisionEngine();
 	_common.universe->RegisterCollisionEngine(_common.collisionEngine);
 
+	_common.video->SetSkyboxNumber(2);
+
 	auto skyboxData = Loader::LoadImage("Skybox/skybox.png");
 	_skyboxDay = _common.video->CreateSkyboxTexture(skyboxData);
+	_common.video->SetSkyboxEnabled(true);
 	_common.video->SetSkyboxTexture(_skyboxDay);
 
 	skyboxData = Loader::LoadImage("Skybox/skybox_night.png");
 	_skyboxNight = _common.video->CreateSkyboxTexture(skyboxData);
+	_common.video->SetSkyboxEnabled(true, 1);
 	_common.video->SetSkyboxTexture(_skyboxNight, 1);
 
 	_common.video->SetFOV(80);
@@ -167,7 +171,11 @@ void World::Tick()
 
 	float gx = sin(_skyboxTime);
 	float gy = cos(_skyboxTime);
-	glm::vec3 gradient = glm::vec3(gx, gy, 0.2f) * 2.0f;
+	glm::vec3 gradient1 = glm::normalize(glm::vec3(gx, gy, 0.2f)) * 2.0f;
+	glm::vec3 gradient2 = -gradient1;
 
-	_common.video->SetSkyboxGradient(true, gradient, 0);
+	float offset = sin(_skyboxTime * 4) * 3.0;
+
+	_common.video->SetSkyboxGradient(true, gradient1, offset, 0);
+	_common.video->SetSkyboxGradient(true, gradient2, -offset, 1);
 }

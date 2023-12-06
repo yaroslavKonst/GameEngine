@@ -23,7 +23,7 @@ struct Scene
 	std::set<Light*> Lights;
 	std::set<Sprite*> Sprites;
 
-	Skybox skybox;
+	std::vector<Skybox> skybox;
 
 	double FOV;
 	glm::vec3 CameraPosition;
@@ -38,7 +38,7 @@ struct SceneContainer
 	std::vector<Light> Lights;
 	std::vector<Sprite> Sprites;
 
-	Skybox skybox;
+	std::vector<Skybox> skybox;
 
 	double FOV;
 	glm::vec3 CameraPosition;

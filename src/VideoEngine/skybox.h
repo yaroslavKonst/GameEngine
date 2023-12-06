@@ -15,8 +15,7 @@ struct Skybox
 	{
 		alignas(16) glm::vec3 Direction;
 		alignas(16) glm::vec3 Up;
-		alignas(16) glm::vec3 ColorModifier1;
-		alignas(16) glm::vec3 ColorModifier2;
+		alignas(16) glm::vec3 ColorModifier;
 		alignas(16) glm::vec3 Gradient;
 		alignas(4) float FOV;
 		alignas(4) float Ratio;
@@ -24,8 +23,8 @@ struct Skybox
 		alignas(4) float GradientOffset;
 	};
 	
-	uint32_t Texture[2];
-	glm::vec3 ColorMultiplier[2];
+	uint32_t Texture;
+	glm::vec3 ColorMultiplier;
 	bool Enabled;
 
 	bool GradientEnabled;
@@ -35,10 +34,8 @@ struct Skybox
 	Skybox()
 	{
 		Enabled = false;
-		ColorMultiplier[0] = {1, 1, 1};
-		ColorMultiplier[1] = {1, 1, 1};
-		Texture[0] = 0;
-		Texture[1] = 0;
+		ColorMultiplier = {1, 1, 1};
+		Texture = 0;
 
 		GradientEnabled = false;
 		GradientOffset = 0;

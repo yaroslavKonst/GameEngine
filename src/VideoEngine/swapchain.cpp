@@ -696,6 +696,7 @@ void Swapchain::CreatePipelines()
 	initInfo.ColorImage = true;
 	initInfo.DepthImage = true;
 	initInfo.InvertFace = false;
+	initInfo.AlphaBlending = true;
 	initInfo.DepthImageFinalLayout =
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	initInfo.ColorImageFinalLayout =
@@ -805,6 +806,7 @@ void Swapchain::CreatePipelines()
 	// Skybox pipeline
 	initInfo.DepthTestEnabled = VK_FALSE;
 	initInfo.ResolveImage = false;
+	initInfo.AlphaBlending = false;
 	initInfo.VertexBindingDescriptions.clear();
 	initInfo.VertexAttributeDescriptions.clear();
 	initInfo.VertexShaderCode = SkyboxShaderVert;
@@ -812,7 +814,6 @@ void Swapchain::CreatePipelines()
 	initInfo.FragmentShaderCode = SkyboxShaderFrag;
 	initInfo.FragmentShaderSize = sizeof(SkyboxShaderFrag);
 	initInfo.DescriptorSetLayouts = {
-		_descriptorSetLayout,
 		_descriptorSetLayout
 	};
 	initInfo.ClearColorImage = true;
@@ -830,6 +831,8 @@ void Swapchain::CreatePipelines()
 		{_imageViews[0]},
 		{_colorImageView},
 		{_depthImageView});
+
+	initInfo.AlphaBlending = true;
 
 	// Shadow pipeline
 	initInfo.Extent.width = _shadowSize;
@@ -1208,73 +1211,47 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	bool validSkybox =
-		_dataBridge->DrawnScene.skybox.Enabled &&
-		_dataBridge->Textures->CheckTexture(
-			_dataBridge->DrawnScene.skybox.Texture[0]);
+	Skybox::ShaderData shaderData;
+	shaderData.Direction = _dataBridge->DrawnScene.CameraDirection;
+	shaderData.Up = _dataBridge->DrawnScene.CameraUp;
+	shaderData.FOV = glm::radians((float)_dataBridge->DrawnScene.FOV);
+	shaderData.Ratio = (float)_extent.width / (float)_extent.height;
 
-	if (_dataBridge->DrawnScene.skybox.GradientEnabled) {
-		bool secondTextureValid = _dataBridge->Textures->CheckTexture(
-			_dataBridge->DrawnScene.skybox.Texture[1]);
+	for (Skybox& skybox : _dataBridge->DrawnScene.skybox) {
+		bool validSkybox =
+			skybox.Enabled &&
+			_dataBridge->Textures->CheckTexture(skybox.Texture);
 
-		if (!secondTextureValid) {
-			_dataBridge->DrawnScene.skybox.GradientEnabled = false;
+		if (validSkybox) {
+			shaderData.ColorModifier = skybox.ColorMultiplier;
+			shaderData.Gradient = skybox.Gradient;
+			shaderData.GradientEnabled = skybox.GradientEnabled;
+			shaderData.GradientOffset = skybox.GradientOffset;
+
+			vkCmdPushConstants(
+				commandBuffer,
+				_skyboxPipeline->GetPipelineLayout(),
+				VK_SHADER_STAGE_VERTEX_BIT |
+				VK_SHADER_STAGE_FRAGMENT_BIT,
+				0,
+				sizeof(Skybox::ShaderData),
+				&shaderData);
+
+			auto& tex1 = _dataBridge->Textures->GetTexture(
+				skybox.Texture);
+
+			vkCmdBindDescriptorSets(
+				commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				_skyboxPipeline->GetPipelineLayout(),
+				0,
+				1,
+				&tex1.DescriptorSet,
+				0,
+				nullptr);
+
+			vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 		}
-	}
-
-	if (validSkybox) {
-		Skybox::ShaderData shaderData;
-		shaderData.Direction = _dataBridge->DrawnScene.CameraDirection;
-		shaderData.Up = _dataBridge->DrawnScene.CameraUp;
-		shaderData.FOV =
-			glm::radians((float)_dataBridge->DrawnScene.FOV);
-		shaderData.Ratio = (float)_extent.width / (float)_extent.height;
-		shaderData.ColorModifier1 =
-			_dataBridge->DrawnScene.skybox.ColorMultiplier[0];
-		shaderData.ColorModifier2 =
-			_dataBridge->DrawnScene.skybox.ColorMultiplier[1];
-		shaderData.Gradient =
-			_dataBridge->DrawnScene.skybox.Gradient;
-		shaderData.GradientEnabled =
-			_dataBridge->DrawnScene.skybox.GradientEnabled;
-		shaderData.GradientOffset =
-			_dataBridge->DrawnScene.skybox.GradientOffset;
-
-		vkCmdPushConstants(
-			commandBuffer,
-			_skyboxPipeline->GetPipelineLayout(),
-			VK_SHADER_STAGE_VERTEX_BIT |
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			0,
-			sizeof(Skybox::ShaderData),
-			&shaderData);
-
-		auto& tex1 = _dataBridge->Textures->GetTexture(
-			_dataBridge->DrawnScene.skybox.Texture[0]);
-
-		std::vector<VkDescriptorSet> descriptorSets = {
-			tex1.DescriptorSet,
-			tex1.DescriptorSet
-		};
-
-		if (shaderData.GradientEnabled) {
-			auto& tex2 = _dataBridge->Textures->GetTexture(
-				_dataBridge->DrawnScene.skybox.Texture[1]);
-
-			descriptorSets[1] = tex2.DescriptorSet;
-		}
-
-		vkCmdBindDescriptorSets(
-			commandBuffer,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			_skyboxPipeline->GetPipelineLayout(),
-			0,
-			descriptorSets.size(),
-			descriptorSets.data(),
-			0,
-			nullptr);
-
-		vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 	}
 
 	vkCmdEndRenderPass(commandBuffer);
