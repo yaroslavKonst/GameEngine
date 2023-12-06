@@ -4,9 +4,13 @@ layout(push_constant) uniform MVP
 {
 	vec3 Direction;
 	vec3 Up;
-	vec3 ColorModifier;
+	vec3 ColorModifier1;
+	vec3 ColorModifier2;
+	vec3 Gradient;
 	float FOV;
 	float Ratio;
+	int GradientEnabled;
+	float GradientOffset;
 } mvp;
 
 layout(location = 0) out vec3 texCoord;

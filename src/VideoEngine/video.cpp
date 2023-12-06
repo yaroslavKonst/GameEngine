@@ -478,26 +478,30 @@ void Video::RemoveRectangle(Rectangle* rectangle)
 }
 
 uint32_t Video::CreateSkyboxTexture(
-	uint32_t texWidth,
-	uint32_t texHeight,
-	const std::vector<uint8_t>& texData,
+	const Loader::Image& image,
 	bool async)
 {
+	uint32_t texWidth = image.Width;
+	uint32_t texHeight = image.Height;
 	uint32_t layerCount = 6;
 
 	// Texture layout transformation.
 	texWidth /= layerCount;
-	std::vector<uint8_t> texDataTransformed(texData.size(), 100);
+
+	Loader::Image resImage;
+	resImage.Width = texWidth;
+	resImage.Height = texHeight;
+	resImage.PixelData.resize(image.PixelData.size(), 100);
 
 	for (uint32_t layer = 0; layer < layerCount; ++layer) {
 		for (uint32_t y = 0; y < texHeight; ++y) {
 			for (uint32_t x = 0; x < texWidth; ++x) {
 				for (uint32_t c = 0; c < 4; ++c) {
-					texDataTransformed[
+					resImage.PixelData[
 						(texWidth * texHeight * layer +
 						texWidth * y +
 						x) * 4 + c] =
-					texData[(texWidth * layer +
+					image.PixelData[(texWidth * layer +
 						x +
 						texWidth * layerCount * y) *
 						4 + c];
@@ -508,57 +512,55 @@ uint32_t Video::CreateSkyboxTexture(
 
 	// 1.
 	ImageHelper::RotateClockWise(
-		texDataTransformed.data(),
+		resImage.PixelData.data(),
 		texWidth,
 		texHeight);
 	ImageHelper::FlipHorizontally(
-		texDataTransformed.data(),
+		resImage.PixelData.data(),
 		texHeight,
 		texWidth);
 
 	// 2.
 	ImageHelper::FlipHorizontally(
-		texDataTransformed.data() + texWidth * texHeight * 4,
+		resImage.PixelData.data() + texWidth * texHeight * 4,
 		texHeight,
 		texWidth);
 
 	// 3.
 	ImageHelper::RotateCounterClockWise(
-		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 2,
 		texWidth,
 		texHeight);
 	ImageHelper::FlipHorizontally(
-		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 2,
 		texHeight,
 		texWidth);
 
 	// 4.
 	ImageHelper::FlipVertically(
-		texDataTransformed.data() + texWidth * texHeight * 4 * 3,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 3,
 		texHeight,
 		texWidth);
 
 	// Ordering.
 	ImageHelper::Swap(
-		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
-		texDataTransformed.data() + texWidth * texHeight * 4,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 2,
+		resImage.PixelData.data() + texWidth * texHeight * 4,
 		texWidth,
 		texHeight);
 	ImageHelper::Swap(
-		texDataTransformed.data() + texWidth * texHeight * 4 * 3,
-		texDataTransformed.data() + texWidth * texHeight * 4 * 2,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 3,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 2,
 		texWidth,
 		texHeight);
 	ImageHelper::Swap(
-		texDataTransformed.data() + texWidth * texHeight * 4 * 4,
-		texDataTransformed.data() + texWidth * texHeight * 4 * 5,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 4,
+		resImage.PixelData.data() + texWidth * texHeight * 4 * 5,
 		texWidth,
 		texHeight);
 
 	return _dataBridge.Textures->AddTexture(
-		texWidth,
-		texHeight,
-		texDataTransformed,
+		resImage,
 		true,
 		async,
 		TextureHandler::TextureType::TCube,

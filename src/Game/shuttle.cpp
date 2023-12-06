@@ -207,35 +207,33 @@ Shuttle::~Shuttle()
 
 void Shuttle::LoadAssets()
 {
-	int tw;
-	int th;
-	auto td = Loader::LoadImage("Models/Shuttle/Base.png", tw, th);
+	auto td = Loader::LoadImage("Models/Shuttle/Base.png");
 	_textures["Base"] =
-		_common.video->GetTextures()->AddTexture(tw, th, td);
+		_common.video->GetTextures()->AddTexture(td);
 	auto model = Loader::LoadModel("Models/Shuttle/Base.obj");
 	_models["Base"] = _common.video->LoadModel(model);
 
-	td = Loader::LoadImage("Models/Shuttle/Roof.png", tw, th);
+	td = Loader::LoadImage("Models/Shuttle/Roof.png");
 	_textures["Roof"] =
-		_common.video->GetTextures()->AddTexture(tw, th, td);
+		_common.video->GetTextures()->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/Roof.obj");
 	_models["Roof"] = _common.video->LoadModel(model);
 
-	td = Loader::LoadImage("Models/Shuttle/Thruster.png", tw, th);
+	td = Loader::LoadImage("Models/Shuttle/Thruster.png");
 	_textures["Thruster"] =
-		_common.video->GetTextures()->AddTexture(tw, th, td);
+		_common.video->GetTextures()->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/Thruster.obj");
 	_models["Thruster"] = _common.video->LoadModel(model);
 
-	td = Loader::LoadImage("Models/Shuttle/ThrusterExh.png", tw, th);
+	td = Loader::LoadImage("Models/Shuttle/ThrusterExh.png");
 	_textures["ThrusterExh"] =
-		_common.video->GetTextures()->AddTexture(tw, th, td);
+		_common.video->GetTextures()->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/ThrusterExh.obj");
 	_models["ThrusterExh"] = _common.video->LoadModel(model);
 
-	td = Loader::LoadImage("Models/Shuttle/Wing.png", tw, th);
+	td = Loader::LoadImage("Models/Shuttle/Wing.png");
 	_textures["Wing"] =
-		_common.video->GetTextures()->AddTexture(tw, th, td);
+		_common.video->GetTextures()->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/Wing.obj");
 	_models["Wing"] = _common.video->LoadModel(model);
 
@@ -946,20 +944,6 @@ glm::vec3 Wing::SetSpeed(const glm::vec3& value, const glm::vec3& force)
 
 	float forceLenDiff = glm::length(effect) - glm::length(forceProj);
 	bool forceUp = glm::dot(up, forceProj) > 0;
-
-	Logger::Verbose() << "Force up: " << forceUp;
-	Logger::Verbose() << "Force proj: " <<
-		forceProj.x << " " <<
-		forceProj.y << " " <<
-		forceProj.z;
-	Logger::Verbose() << "Effect: " <<
-		effect.x << " " <<
-		effect.y << " " <<
-		effect.z;
-	Logger::Verbose() << "Speed: " <<
-		speedProj.x << " " <<
-		speedProj.y << " " <<
-		speedProj.z;
 
 	if (forceLenDiff > 0 || !forceUp) {
 		IncFlap(-0.01);

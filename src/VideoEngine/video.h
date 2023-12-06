@@ -92,21 +92,31 @@ public:
 	}
 
 	uint32_t CreateSkyboxTexture(
-		uint32_t texWidth,
-		uint32_t texHeight,
-		const std::vector<uint8_t>& texData,
+		const Loader::Image& image,
 		bool async = false);
 	void DestroySkyboxTexture(uint32_t texture);
 
-	void SetSkyboxTexture(uint32_t texture)
+	void SetSkyboxTexture(uint32_t texture, uint32_t index = 0)
 	{
-		_dataBridge.StagedScene.skybox.Texture = texture;
-		_dataBridge.StagedScene.skybox.Enabled = true;
+		_dataBridge.StagedScene.skybox.Texture[index] = texture;
+		if (index == 0) {
+			_dataBridge.StagedScene.skybox.Enabled = true;
+		}
 	}
 
-	void SetSkyboxColor(const glm::vec3& color)
+	void SetSkyboxColor(const glm::vec3& color, uint32_t index = 0)
 	{
-		_dataBridge.StagedScene.skybox.ColorMultiplier = color;
+		_dataBridge.StagedScene.skybox.ColorMultiplier[index] = color;
+	}
+
+	void SetSkyboxGradient(
+		bool enabled,
+		const glm::vec3& value = {0, 0, 0},
+		float offset = 0)
+	{
+		_dataBridge.StagedScene.skybox.GradientEnabled = enabled;
+		_dataBridge.StagedScene.skybox.GradientOffset = offset;
+		_dataBridge.StagedScene.skybox.Gradient = value;
 	}
 
 	float GetScreenRatio()

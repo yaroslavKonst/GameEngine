@@ -18,7 +18,9 @@ private:
 
 	std::thread* _universeThread;
 
-	uint32_t _skyboxTexture;
+	uint32_t _skyboxDay;
+	uint32_t _skyboxNight;
+	float _skyboxTime;
 };
 
 #endif

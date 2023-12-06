@@ -12,6 +12,7 @@
 #include "ship.h"
 #include "shuttle.h"
 #include "GravityField.h"
+#include "planet.h"
 
 class Player : public Actor, public Object, public InputHandler
 {
@@ -19,7 +20,8 @@ public:
 	Player(
 		Common common,
 		Shuttle* ship,
-		GravityField* gf);
+		GravityField* gf,
+		Planet* planet);
 	~Player();
 
 	void Key(
@@ -40,11 +42,13 @@ public:
 private:
 	Common _common;
 	GravityField* _gf;
+	Planet* _planet;
 
 	glm::vec3 _pos;
 	glm::vec3 _dirUp;
 	glm::vec3 _dirF;
 	glm::vec3 _dirR;
+	glm::mat4 _matrix;
 
 	float _angleH;
 	float _angleV;

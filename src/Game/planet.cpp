@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdlib>
+#include <fstream>
 
 #include "../Logger/logger.h"
 
@@ -184,345 +185,421 @@ Planet::Planet(
 	_video = video;
 	_collisionEngine = collisionEngine;
 
+	_position = position;
 	_matrix = glm::translate(glm::mat4(1.0), position);
 
-	std::map<float, std::vector<float>> angles;
-	std::map<float, std::map<float, float>> radiuses;
-
-	Logger::Verbose() << "Planet: Building surface.";
-
-	float latStep = 1;
-
-	for (
-		float angleLat = -90.0 + latStep / 2.0;
-		angleLat <= 90.0 - latStep / 2.0;
-		angleLat += latStep)
-	{
-		int lonAngleCount = ceilf(360.0 / latStep *
-			fabs(cosf(glm::radians(angleLat))));
-
-		float lonStep = 360.0 / lonAngleCount;
-
-		Logger::Verbose() << "Planet: Lat: " << angleLat <<
-			", point count: " << lonAngleCount;
-
-		std::vector<float> dirs;
-		std::map<float, float> rad;
-
-		for (float angleLon = 0; angleLon < 360; angleLon += lonStep) {
-			dirs.push_back(angleLon);
-			rad[angleLon] = radius;
-		}
-
-		angles[angleLat] = dirs;
-		radiuses[angleLat] = rad;
-	}
-
-	Logger::Verbose() << "Planet: Vertices built.";
+	size_t clusterSizeLimit = 1000;
 
 	std::vector<Triangle> triangles;
 	typedef std::vector<Triangle>::iterator TrianglePtr;
+	std::list<std::list<TrianglePtr>> clusters;
 
-	float lonBase = angles.begin()->second.front();
-	float latBase = angles.begin()->first;
-
-	for (
-		auto lonIt = angles.begin()->second.begin() + 1;
-		lonIt != angles.begin()->second.end() - 1;
-		++lonIt)
 	{
-		glm::vec3 p1 = AngleToPoint(
-			latBase,
-			lonBase,
-			radiuses);
+		std::fstream inClusters(
+			"../cluster_dump.bin",
+			std::ios::in | std::ios::binary);
 
-		glm::vec3 p2 = AngleToPoint(
-			latBase,
-			*lonIt,
-			radiuses);
+		if (inClusters.is_open()) {
+			size_t clusterCount;
+			inClusters.read(
+				(char*)&clusterCount,
+				sizeof(clusterCount));
+			std::vector<size_t> clusterSizes(clusterCount);
 
-		glm::vec3 p3 = AngleToPoint(
-			latBase,
-			*(lonIt + 1),
-			radiuses);
+			for (size_t cIdx = 0; cIdx < clusterCount; ++cIdx) {
+				size_t clusterSize;
+				inClusters.read(
+					(char*)&clusterSize,
+					sizeof(clusterSize));
 
-		Triangle t;
-		t.P1 = p1;
-		t.P2 = p2;
-		t.P3 = p3;
+				clusterSizes.push_back(clusterSize);
 
-		if (t.NonRedundant()) {
-			t.SetParams();
-			triangles.push_back(t);
+				for (
+					size_t tIdx = 0;
+					tIdx < clusterSize;
+					++tIdx)
+				{
+					Vec3 p1;
+					Vec3 p2;
+					Vec3 p3;
+
+					inClusters.read((char*)&p1, sizeof(p1));
+					inClusters.read((char*)&p2, sizeof(p2));
+					inClusters.read((char*)&p3, sizeof(p3));
+
+					Triangle t;
+					t.P1 = p1;
+					t.P2 = p2;
+					t.P3 = p3;
+
+					triangles.push_back(t);
+				}
+			}
+
+			auto it = triangles.begin();
+
+			for (size_t cIdx = 0; cIdx < clusterCount; ++cIdx) {
+				std::list<TrianglePtr> cluster;
+
+				for (
+					size_t tIdx = 0;
+					tIdx < clusterSizes[cIdx];
+					++tIdx)
+				{
+					cluster.push_back(it);
+					++it;
+				}
+
+				clusters.push_back(cluster);
+			}
 		}
 	}
 
-	lonBase = angles.rbegin()->second.front();
-	latBase = angles.rbegin()->first;
+	if (triangles.empty()) {
+		std::map<float, std::vector<float>> angles;
+		std::map<float, std::map<float, float>> radiuses;
 
-	for (
-		auto lonIt = angles.rbegin()->second.begin() + 1;
-		lonIt != angles.rbegin()->second.end() - 1;
-		++lonIt)
-	{
-		glm::vec3 p1 = AngleToPoint(
-			latBase,
-			lonBase,
-			radiuses);
+		Logger::Verbose() << "Planet: Building surface.";
 
-		glm::vec3 p2 = AngleToPoint(
-			latBase,
-			*lonIt,
-			radiuses);
+		float latStep = 0.05;
 
-		glm::vec3 p3 = AngleToPoint(
-			latBase,
-			*(lonIt + 1),
-			radiuses);
-
-		Triangle t;
-		t.P1 = p2;
-		t.P2 = p1;
-		t.P3 = p3;
-
-		if (t.NonRedundant()) {
-			t.SetParams();
-			triangles.push_back(t);
-		}
-	}
-
-	auto latIt1 = angles.begin();
-	auto latIt2 = angles.begin();
-	++latIt2;
-
-	for (; latIt2 != angles.end(); ++latIt1, ++latIt2) {
-		auto lonIt1 = latIt1->second.begin();
-		auto lonIt2 = latIt2->second.begin();
-
-		float lon1 = *lonIt1;
-		float lon2 = *lonIt2;
-
-		++lonIt1;
-		++lonIt2;
-
-		while (
-			lonIt1 != latIt1->second.end() ||
-			lonIt2 != latIt2->second.end())
+		for (
+			float angleLat = -90.0 + latStep / 2.0;
+			angleLat <= 90.0 - latStep / 2.0;
+			angleLat += latStep)
 		{
-			bool advL1;
+			int lonAngleCount = ceilf(360.0 / latStep *
+				fabs(cosf(glm::radians(angleLat))));
 
-			if (lonIt1 != latIt1->second.end() &&
+			float lonStep = 360.0 / lonAngleCount;
+
+			Logger::Verbose() << "Planet: Lat: " << angleLat <<
+				", point count: " << lonAngleCount;
+
+			std::vector<float> dirs;
+			std::map<float, float> rad;
+
+			for (
+				float angleLon = 0;
+				angleLon < 360;
+				angleLon += lonStep)
+			{
+				dirs.push_back(angleLon);
+				rad[angleLon] = radius;
+			}
+
+			angles[angleLat] = dirs;
+			radiuses[angleLat] = rad;
+		}
+
+		Logger::Verbose() << "Planet: Vertices built.";
+
+		size_t maxRowSize = 0;
+
+		float lonBase = angles.begin()->second.front();
+		float latBase = angles.begin()->first;
+
+		for (
+			auto lonIt = angles.begin()->second.begin() + 1;
+			lonIt != angles.begin()->second.end() - 1;
+			++lonIt)
+		{
+			glm::vec3 p1 = AngleToPoint(
+				latBase,
+				lonBase,
+				radiuses);
+
+			glm::vec3 p2 = AngleToPoint(
+				latBase,
+				*lonIt,
+				radiuses);
+
+			glm::vec3 p3 = AngleToPoint(
+				latBase,
+				*(lonIt + 1),
+				radiuses);
+
+			Triangle t;
+			t.P1 = p1;
+			t.P2 = p2;
+			t.P3 = p3;
+
+			if (t.NonRedundant()) {
+				t.SetParams();
+				triangles.push_back(t);
+			}
+		}
+
+		auto latIt1 = angles.begin();
+		auto latIt2 = angles.begin();
+		++latIt2;
+
+		for (; latIt2 != angles.end(); ++latIt1, ++latIt2) {
+			auto lonIt1 = latIt1->second.begin();
+			auto lonIt2 = latIt2->second.begin();
+
+			float lon1 = *lonIt1;
+			float lon2 = *lonIt2;
+
+			++lonIt1;
+			++lonIt2;
+
+			size_t rowSize = 0;
+
+			while (
+				lonIt1 != latIt1->second.end() ||
 				lonIt2 != latIt2->second.end())
 			{
-				advL1 = *lonIt1 <= *lonIt2;
-			} else if (lonIt1 != latIt1->second.end()) {
-				advL1 = true;
-			} else {
-				advL1 = false;
-			}
+				bool advL1;
 
-			if (advL1) {
-				float prevL = *lonIt1;
-				++lonIt1;
-
-				glm::vec3 p1 = AngleToPoint(
-					latIt1->first,
-					prevL,
-					radiuses);
-
-				glm::vec3 p2 = AngleToPoint(
-					latIt2->first,
-					lon2,
-					radiuses);
-
-				glm::vec3 p3 = AngleToPoint(
-					latIt1->first,
-					lon1,
-					radiuses);
-
-				lon1 = prevL;
-
-				Triangle t;
-				t.P1 = p2;
-				t.P2 = p1;
-				t.P3 = p3;
-
-				if (t.NonRedundant()) {
-					t.SetParams();
-					triangles.push_back(t);
+				if (lonIt1 != latIt1->second.end() &&
+					lonIt2 != latIt2->second.end())
+				{
+					advL1 = *lonIt1 <= *lonIt2;
+				} else if (lonIt1 != latIt1->second.end()) {
+					advL1 = true;
+				} else {
+					advL1 = false;
 				}
-			} else {
-				float prevL = *lonIt2;
-				++lonIt2;
 
-				glm::vec3 p1 = AngleToPoint(
-					latIt1->first,
-					lon1,
-					radiuses);
+				if (advL1) {
+					float prevL = *lonIt1;
+					++lonIt1;
 
-				glm::vec3 p2 = AngleToPoint(
-					latIt2->first,
-					prevL,
-					radiuses);
+					glm::vec3 p1 = AngleToPoint(
+						latIt1->first,
+						prevL,
+						radiuses);
 
-				glm::vec3 p3 = AngleToPoint(
-					latIt2->first,
-					lon2,
-					radiuses);
+					glm::vec3 p2 = AngleToPoint(
+						latIt2->first,
+						lon2,
+						radiuses);
 
-				lon2 = prevL;
+					glm::vec3 p3 = AngleToPoint(
+						latIt1->first,
+						lon1,
+						radiuses);
 
-				Triangle t;
-				t.P1 = p2;
-				t.P2 = p1;
-				t.P3 = p3;
+					lon1 = prevL;
 
-				if (t.NonRedundant()) {
-					t.SetParams();
-					triangles.push_back(t);
+					Triangle t;
+					t.P1 = p2;
+					t.P2 = p1;
+					t.P3 = p3;
+
+					if (t.NonRedundant()) {
+						t.SetParams();
+						triangles.push_back(t);
+						rowSize += 1;
+					}
+				} else {
+					float prevL = *lonIt2;
+					++lonIt2;
+
+					glm::vec3 p1 = AngleToPoint(
+						latIt1->first,
+						lon1,
+						radiuses);
+
+					glm::vec3 p2 = AngleToPoint(
+						latIt2->first,
+						prevL,
+						radiuses);
+
+					glm::vec3 p3 = AngleToPoint(
+						latIt2->first,
+						lon2,
+						radiuses);
+
+					lon2 = prevL;
+
+					Triangle t;
+					t.P1 = p2;
+					t.P2 = p1;
+					t.P3 = p3;
+
+					if (t.NonRedundant()) {
+						t.SetParams();
+						triangles.push_back(t);
+						rowSize += 1;
+					}
 				}
 			}
-		}
 
-		glm::vec3 p1 = AngleToPoint(
-			latIt1->first,
-			lon1,
-			radiuses);
+			glm::vec3 p1 = AngleToPoint(
+				latIt1->first,
+				lon1,
+				radiuses);
 
-		glm::vec3 p2 = AngleToPoint(
-			latIt2->first,
-			lon2,
-			radiuses);
+			glm::vec3 p2 = AngleToPoint(
+				latIt2->first,
+				lon2,
+				radiuses);
 
-		glm::vec3 p3 = AngleToPoint(
-			latIt1->first,
-			latIt1->second.front(),
-			radiuses);
+			glm::vec3 p3 = AngleToPoint(
+				latIt1->first,
+				latIt1->second.front(),
+				radiuses);
 
-		Triangle t;
-		t.P1 = p1;
-		t.P2 = p2;
-		t.P3 = p3;
+			Triangle t;
+			t.P1 = p1;
+			t.P2 = p2;
+			t.P3 = p3;
 
-		if (t.NonRedundant()) {
-			t.SetParams();
-			triangles.push_back(t);
-		}
+			if (t.NonRedundant()) {
+				t.SetParams();
+				triangles.push_back(t);
+				rowSize += 1;
+			}
 
-		p1 = AngleToPoint(
-			latIt2->first,
-			lon2,
-			radiuses);
+			p1 = AngleToPoint(
+				latIt2->first,
+				lon2,
+				radiuses);
 
-		p2 = AngleToPoint(
-			latIt2->first,
-			latIt2->second.front(),
-			radiuses);
+			p2 = AngleToPoint(
+				latIt2->first,
+				latIt2->second.front(),
+				radiuses);
 
-		p3 = AngleToPoint(
-			latIt1->first,
-			latIt1->second.front(),
-			radiuses);
+			p3 = AngleToPoint(
+				latIt1->first,
+				latIt1->second.front(),
+				radiuses);
 
-		t.P1 = p1;
-		t.P2 = p2;
-		t.P3 = p3;
+			t.P1 = p1;
+			t.P2 = p2;
+			t.P3 = p3;
 
-		if (t.NonRedundant()) {
-			t.SetParams();
-			triangles.push_back(t);
-		}
-	}
+			if (t.NonRedundant()) {
+				t.SetParams();
+				triangles.push_back(t);
+				rowSize += 1;
+			}
 
-	Logger::Verbose() << "Planet: Triangle count: " << triangles.size();
+			rowSize += 5;
 
-	Logger::Verbose() << "Planet: Neighbour map building.";
-
-	std::map<TrianglePtr, std::set<TrianglePtr>> neighbourTriangles;
-
-	for (auto iter = triangles.begin(); iter != triangles.end(); ++iter) {
-		neighbourTriangles[iter] = std::set<TrianglePtr>();
-	}
-
-	size_t index = 0;
-	for (auto iter = triangles.begin(); iter != triangles.end(); ++iter) {
-		Logger::Verbose() << "Planet: Neighbour map building: " <<
-			index << " / " << triangles.size();
-
-		for (auto it = iter + 1; it != triangles.end(); ++it) {
-			if (Neighbours(*iter, *it)) {
-				neighbourTriangles[iter].insert(it);
-				neighbourTriangles[it].insert(iter);
+			if (maxRowSize < rowSize) {
+				maxRowSize = rowSize;
 			}
 		}
 
-		++index;
-	}
+		lonBase = angles.rbegin()->second.front();
+		latBase = angles.rbegin()->first;
 
-	Logger::Verbose() << "Planet: Neighbour map built.";
-
-	Logger::Verbose() << "Planet: Clusterization.";
-
-	size_t clusterSizeLimit = 1500;
-
-	std::list<std::list<TrianglePtr>> clusters;
-	std::set<TrianglePtr> freeTriangles;
-
-	for (auto iter = triangles.begin(); iter != triangles.end(); ++iter) {
-		freeTriangles.insert(iter);
-	}
-
-	while (!freeTriangles.empty()) {
-		std::list<TrianglePtr> cluster;
-		cluster.push_back(*freeTriangles.begin());
-		freeTriangles.erase(cluster.front());
-
-		std::set<TrianglePtr> clusterNeighbours;
-
-		for (auto neighbour : neighbourTriangles[cluster.front()]) {
-			if (
-				freeTriangles.find(neighbour) !=
-				freeTriangles.end())
-			{
-				clusterNeighbours.insert(neighbour);
-			}
-		}
-
-		while (!clusterNeighbours.empty() &&
-			cluster.size() < clusterSizeLimit)
+		for (
+			auto lonIt = angles.rbegin()->second.begin() + 1;
+			lonIt != angles.rbegin()->second.end() - 1;
+			++lonIt)
 		{
-			glm::vec3 clusterCenter = {0, 0, 0};
+			glm::vec3 p1 = AngleToPoint(
+				latBase,
+				lonBase,
+				radiuses);
 
-			for (auto vertex : cluster) {
-				clusterCenter += (glm::vec3)vertex->Center;
+			glm::vec3 p2 = AngleToPoint(
+				latBase,
+				*lonIt,
+				radiuses);
+
+			glm::vec3 p3 = AngleToPoint(
+				latBase,
+				*(lonIt + 1),
+				radiuses);
+
+			Triangle t;
+			t.P1 = p2;
+			t.P2 = p1;
+			t.P3 = p3;
+
+			if (t.NonRedundant()) {
+				t.SetParams();
+				triangles.push_back(t);
+			}
+		}
+
+		Logger::Verbose() << "Planet: Triangle count: " <<
+			triangles.size();
+
+		Logger::Verbose() << "Planet: Neighbour map building.";
+
+		std::map<TrianglePtr, std::set<TrianglePtr>> neighbourTriangles;
+
+		for (
+			auto iter = triangles.begin();
+			iter != triangles.end();
+			++iter)
+		{
+			neighbourTriangles[iter] = std::set<TrianglePtr>();
+		}
+
+		size_t index = 0;
+		for (
+			auto iter = triangles.begin();
+			iter != triangles.end();
+			++iter)
+		{
+			size_t rowSize = 0;
+
+			float coeff =
+				sin((float)index / triangles.size() * M_PI) +
+				0.2;
+
+			size_t rowSizeLim = maxRowSize;// * coeff;
+
+			if (index % 1000 == 0) {
+				coeff = round(coeff * 1000) / 1000;
+
+				Logger::Verbose() <<
+					"Planet: Neighbour map: " <<
+					index << " / " << triangles.size() <<
+					" " << coeff;
 			}
 
-			clusterCenter /= (float)cluster.size();
+			if (rowSizeLim > maxRowSize) {
+				rowSizeLim = maxRowSize;
+			}
 
-			float cDist = radius * 2;
-
-			auto cVert = clusterNeighbours.begin();
-
-			auto vert = clusterNeighbours.begin();
-			while (vert != clusterNeighbours.end()) {
-				float dist = glm::length(
-					clusterCenter -
-					(glm::vec3)(*vert)->Center);
-
-				if (dist < cDist) {
-					cDist = dist;
-					cVert = vert;
+			for (
+				auto it = iter + 1;
+				it != triangles.end() && rowSize < rowSizeLim;
+				++it, ++rowSize)
+			{
+				if (Neighbours(*iter, *it)) {
+					neighbourTriangles[iter].insert(it);
+					neighbourTriangles[it].insert(iter);
 				}
-
-				++vert;
 			}
 
-			cluster.push_back(*cVert);
-			freeTriangles.erase(*cVert);
+			++index;
+		}
 
-			clusterNeighbours.erase(*cVert);
+		Logger::Verbose() << "Planet: Neighbour map built.";
 
-			for (auto neighbour : neighbourTriangles[*cVert]) {
+		Logger::Verbose() << "Planet: Clusterization.";
+
+		std::set<TrianglePtr> freeTriangles;
+
+		for (
+			auto iter = triangles.begin();
+			iter != triangles.end();
+			++iter)
+		{
+			freeTriangles.insert(iter);
+		}
+
+		while (!freeTriangles.empty()) {
+			std::list<TrianglePtr> cluster;
+			cluster.push_back(*freeTriangles.begin());
+			freeTriangles.erase(cluster.front());
+
+			std::set<TrianglePtr> clusterNeighbours;
+
+			for (
+				auto neighbour :
+				neighbourTriangles[cluster.front()])
+			{
 				if (
 					freeTriangles.find(neighbour) !=
 					freeTriangles.end())
@@ -530,20 +607,193 @@ Planet::Planet(
 					clusterNeighbours.insert(neighbour);
 				}
 			}
+
+			while (!clusterNeighbours.empty() &&
+				cluster.size() < clusterSizeLimit)
+			{
+				glm::vec3 clusterCenter = {0, 0, 0};
+
+				for (auto vertex : cluster) {
+					clusterCenter +=
+						(glm::vec3)vertex->Center;
+				}
+
+				clusterCenter /= (float)cluster.size();
+
+				float cDist = radius * 2;
+
+				auto cVert = clusterNeighbours.begin();
+
+				auto vert = clusterNeighbours.begin();
+				while (vert != clusterNeighbours.end()) {
+					float dist = glm::length(
+						clusterCenter -
+						(glm::vec3)(*vert)->Center);
+
+					if (dist < cDist) {
+						cDist = dist;
+						cVert = vert;
+					}
+
+					++vert;
+				}
+
+				cluster.push_back(*cVert);
+				freeTriangles.erase(*cVert);
+
+				clusterNeighbours.erase(*cVert);
+
+				for (
+					auto neighbour :
+					neighbourTriangles[*cVert])
+				{
+					if (
+						freeTriangles.find(neighbour) !=
+						freeTriangles.end())
+					{
+						clusterNeighbours.insert(
+							neighbour);
+					}
+				}
+			}
+
+			clusters.push_back(cluster);
+
+			Logger::Verbose() << "Cluster " << clusters.size() <<
+				" built. Vertices remaining: " <<
+				freeTriangles.size();
 		}
 
-		clusters.push_back(cluster);
+		Logger::Verbose() << "Writing cluster dump file";
 
-		Logger::Verbose() << "Cluster " << clusters.size() <<
-			" built. Vertices remaining: " << freeTriangles.size();
+		std::fstream clusterFile(
+			"../cluster_dump.bin",
+			std::ios::out | std::ios::binary);
+
+		size_t clusterCount = clusters.size();
+
+		clusterFile.write((char*)&clusterCount, sizeof(clusterCount));
+
+		for (auto& cluster : clusters) {
+			size_t clusterSize = cluster.size();
+			clusterFile.write(
+				(char*)&clusterSize,
+				sizeof(clusterSize));
+
+			for (auto& t : cluster) {
+				Vec3 p1 = t->P1;
+				Vec3 p2 = t->P2;
+				Vec3 p3 = t->P3;
+
+				clusterFile.write((char*)&p1, sizeof(p1));
+				clusterFile.write((char*)&p2, sizeof(p2));
+				clusterFile.write((char*)&p3, sizeof(p3));
+			}
+		}
+
+		clusterFile.close();
+
+		Logger::Verbose() << "Cluster dump file is written";
+	}
+
+	std::list<glm::vec3> normals;
+
+	for (auto& cluster : clusters) {
+		glm::vec3 normal(0, 0, 0);
+
+		for (auto& triangle : cluster) {
+			normal += glm::normalize((glm::vec3)triangle->P1);
+			normal += glm::normalize((glm::vec3)triangle->P2);
+			normal += glm::normalize((glm::vec3)triangle->P3);
+		}
+
+		normal /= cluster.size() * 3;
+		normal = glm::normalize(normal);
+		normals.push_back(normal);
+	}
+
+	bool mergedCluster = true;
+
+	while (mergedCluster) {
+		mergedCluster = false;
+
+		auto normIt = normals.begin();
+		for (
+			auto it = clusters.begin();
+			it != clusters.end();
+			++it, ++normIt)
+		{
+			if (it->size() < clusterSizeLimit * 0.1) {
+				mergedCluster = true;
+
+				Logger::Verbose() << "Found small cluster";
+
+				auto nearestCluster = clusters.begin();
+				auto nearestNormal = normals.begin();
+
+				auto nCluster = clusters.begin();
+				auto nNormal = normals.begin();
+
+				Logger::Verbose() <<
+					"Looking for nearest cluster";
+
+				while (nCluster != clusters.end()) {
+					if (*nNormal == *normIt) {
+						++nCluster;
+						++nNormal;
+						continue;
+					}
+
+					float angleCos =
+						glm::dot(*normIt, *nNormal);
+
+					float angleCosRef = glm::dot(
+						*normIt,
+						*nearestNormal);
+
+					if (angleCos > angleCosRef) {
+						nearestNormal = nNormal;
+						nearestCluster = nCluster;
+					}
+
+					++nCluster;
+					++nNormal;
+				}
+
+				Logger::Verbose() << "Merging clusters";
+
+				for (auto& t : *it) {
+					nearestCluster->push_back(t);
+				}
+
+				glm::vec3 normal(0, 0, 0);
+
+				for (auto& t : *nearestCluster) {
+					normal += glm::normalize(
+						(glm::vec3)t->P1);
+					normal += glm::normalize(
+						(glm::vec3)t->P2);
+					normal += glm::normalize(
+						(glm::vec3)t->P3);
+				}
+
+				normal /= nearestCluster->size() * 3;
+				normal = glm::normalize(normal);
+				*nearestNormal = normal;
+
+				clusters.erase(it);
+				break;
+			}
+		}
+
+		Logger::Verbose() << "Clusters remaining: " <<
+			clusters.size();
 	}
 
 	Logger::Verbose() << "Planet: Clusterization end.";
 
-	int tw;
-	int th;
-	auto td = Loader::LoadImage("Images/Grass.png", tw, th);
-	_blockTexture = _video->GetTextures()->AddTexture(tw, th, td);
+	auto td = Loader::LoadImage("Images/White.png");
+	_blockTexture = _video->GetTextures()->AddTexture(td);
 
 	Logger::Verbose() << "Planet: Texture loaded.";
 
@@ -602,7 +852,7 @@ Planet::Planet(
 
 		Segment* segment = new Segment;
 
-		segment->Normal = normal;
+		segment->Normal = glm::normalize(normal);
 
 		segment->SetObjectVertices(modelData.Vertices);
 		segment->SetObjectNormals(modelData.Normals);
@@ -615,10 +865,9 @@ Planet::Planet(
 
 		segment->SetTexture({_blockTexture});
 		segment->SetModels({_blockModel.back()});
-		segment->SetDrawEnabled(true);
-		segment->SetDrawLight(false);
+		segment->SetDrawLight(true);
 
-		//segment->SetColorMultiplier(colorMul);
+		segment->SetColorMultiplier(colorMul);
 
 		if (colorMul.r < 1) {
 			colorMul.r += 0.2;
@@ -635,13 +884,32 @@ Planet::Planet(
 			colorMul.b = 0;
 		}
 		
-		_video->RegisterModel(segment);
-		_collisionEngine->RegisterObject(segment);
-
 		_segments.push_back(segment);
+
+		Logger::Verbose() << "Planet: Loaded segment " <<
+			_segments.size() << " / " << clusters.size();
 	}
 
 	Logger::Verbose() << "Planet: Models loaded.";
+
+	for (Segment* segment : _segments) {
+		std::set<Segment*> neighbours;
+
+		for (Segment* seg : _segments) {
+			if (seg == segment) {
+				continue;
+			}
+
+			float angleCos = glm::dot(segment->Normal, seg->Normal);
+
+			if (angleCos > 0.97) {
+				neighbours.insert(seg);
+			}
+		}
+
+		_segmentNeighbours[segment] = neighbours;
+		_subActiveSegments.insert(segment);
+	}
 }
 
 Planet::~Planet()
@@ -657,4 +925,78 @@ Planet::~Planet()
 	}
 
 	_video->GetTextures()->RemoveTexture(_blockTexture);
+}
+
+void Planet::Update(glm::vec3 playerCoord)
+{
+	glm::vec3 playerNorm = glm::normalize(playerCoord - _position);
+
+	std::set<Segment*> segToDeactivate;
+	std::set<Segment*> segToActivate;
+	std::set<Segment*> segToRemove;
+
+	for (Segment* segment : _activeSegments) {
+		float angleCos = glm::dot(playerNorm, segment->Normal);
+
+		if (angleCos < 0.985) {
+			segToDeactivate.insert(segment);
+		}
+	}
+
+	for (Segment* segment : _subActiveSegments) {
+		float angleCos = glm::dot(playerNorm, segment->Normal);
+
+		if (angleCos > 0.995) {
+			segToActivate.insert(segment);
+		} else if (angleCos < 0.975) {
+			segToRemove.insert(segment);
+		}
+	}
+
+	for (Segment* segment : segToRemove) {
+		_subActiveSegments.erase(segment);
+	}
+
+	for (Segment* segment : segToActivate) {
+		ActivateSegment(segment);
+
+		for (Segment* seg : _segmentNeighbours[segment]) {
+			bool addSegment =
+				_activeSegments.find(seg) ==
+				_activeSegments.end() &&
+				_subActiveSegments.find(seg) ==
+				_subActiveSegments.end();
+
+			if (addSegment) {
+				_subActiveSegments.insert(seg);
+			}
+		}
+
+		_activeSegments.insert(segment);
+		_subActiveSegments.erase(segment);
+	}
+
+	for (Segment* segment : segToDeactivate) {
+		DeactivateSegment(segment);
+		_activeSegments.erase(segment);
+		_subActiveSegments.insert(segment);
+	}
+
+	Logger::Verbose() << "Active segments: " << _activeSegments.size();
+	Logger::Verbose() << "Tracked segments: " <<
+		_activeSegments.size() + _subActiveSegments.size();
+}
+
+void Planet::ActivateSegment(Segment* segment)
+{
+	segment->SetDrawEnabled(true);
+	_video->RegisterModel(segment);
+	_collisionEngine->RegisterObject(segment);
+}
+
+void Planet::DeactivateSegment(Segment* segment)
+{
+	segment->SetDrawEnabled(false);
+	_video->RemoveModel(segment);
+	_collisionEngine->RemoveObject(segment);
 }

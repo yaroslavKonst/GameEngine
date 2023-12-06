@@ -12,12 +12,11 @@
 
 namespace Loader
 {
-	std::vector<uint8_t> LoadImage(
-		std::string name,
-		int& width,
-		int& height)
+	Image LoadImage(std::string name)
 	{
 		int channels;
+		int width;
+		int height;
 
 		auto imageData = Package::Instance()->GetData(name);
 
@@ -34,12 +33,15 @@ namespace Loader
 				"Failed to load image.");
 		}
 
-		std::vector<uint8_t> data(width * height * 4);
-		memcpy(data.data(), pixels, data.size());
+		Image image;
+		image.Width = width;
+		image.Height = height;
+		image.PixelData.resize(width * height * 4);
+		memcpy(image.PixelData.data(), pixels, image.PixelData.size());
 
 		stbi_image_free(pixels);
 
-		return data;
+		return image;
 	}
 
 	VertexData LoadModel(std::string name)

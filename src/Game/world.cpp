@@ -28,18 +28,13 @@ World::World()
 	_common.collisionEngine = new CollisionEngine();
 	_common.universe->RegisterCollisionEngine(_common.collisionEngine);
 
-	int skyboxWidth;
-	int skyboxHeight;
-	auto skyboxData = Loader::LoadImage(
-		"Skybox/skybox.png",
-		skyboxWidth,
-		skyboxHeight);
+	auto skyboxData = Loader::LoadImage("Skybox/skybox.png");
+	_skyboxDay = _common.video->CreateSkyboxTexture(skyboxData);
+	_common.video->SetSkyboxTexture(_skyboxDay);
 
-	_skyboxTexture = _common.video->CreateSkyboxTexture(
-		skyboxWidth,
-		skyboxHeight,
-		skyboxData);
-	_common.video->SetSkyboxTexture(_skyboxTexture);
+	skyboxData = Loader::LoadImage("Skybox/skybox_night.png");
+	_skyboxNight = _common.video->CreateSkyboxTexture(skyboxData);
+	_common.video->SetSkyboxTexture(_skyboxNight, 1);
 
 	_common.video->SetFOV(80);
 	_common.video->SetCameraUp({0, 0, 1});
@@ -52,11 +47,14 @@ World::World()
 		_common.localizer->GetCharSet());
 
 	_common.textHandler->LoadFont(glyphs);
+
+	_skyboxTime = 0;
 }
 
 World::~World()
 {
-	_common.video->DestroySkyboxTexture(_skyboxTexture);
+	_common.video->DestroySkyboxTexture(_skyboxDay);
+	_common.video->DestroySkyboxTexture(_skyboxNight);
 
 	delete _common.textHandler;
 	delete _common.localizer;
@@ -75,15 +73,8 @@ void World::Run()
 {
 	GravityField gf;
 
-	int tw;
-	int th;
-	auto td = Loader::LoadImage(
-		"Images/transparent.png",
-		tw,
-		th);
-
-	uint32_t testTexture =
-		_common.video->GetTextures()->AddTexture(tw, th, td);
+	auto td = Loader::LoadImage("Images/transparent.png");
+	uint32_t testTexture = _common.video->GetTextures()->AddTexture(td);
 
 	Planet planet(
 		20000,
@@ -140,7 +131,7 @@ void World::Run()
 
 	Shuttle ship(_common, &gf);
 
-	Player player(_common, &ship, &gf);
+	Player player(_common, &ship, &gf, &planet);
 	_common.universe->RegisterActor(&player);
 	_common.universe->RegisterActor(&ship);
 	_common.collisionEngine->RegisterObject(&player);
@@ -168,4 +159,15 @@ void World::Run()
 
 void World::Tick()
 {
+	_skyboxTime += 0.001;
+
+	if (_skyboxTime >= M_PI * 2.0) {
+		_skyboxTime = 0;
+	}
+
+	float gx = sin(_skyboxTime);
+	float gy = cos(_skyboxTime);
+	glm::vec3 gradient = glm::vec3(gx, gy, 0.2f) * 2.0f;
+
+	_common.video->SetSkyboxGradient(true, gradient, 0);
 }

@@ -5,15 +5,19 @@
 Player::Player(
 	Common common,
 	Shuttle* ship,
-	GravityField* gf)
+	GravityField* gf,
+	Planet* planet)
 {
 	_common = common;
+
+	_planet = planet;
 
 	_gf = gf;
 	_pos = glm::vec3(0.0, 0.0, 2.0);
 	_dirUp = {0, 0, 1};
 	_dirF = {0, 1, 0};
 	_dirR = {1, 0, 0};
+	_matrix = glm::mat4(1.0);
 	_angleH = 0;
 	_angleV = 0;
 	_go = 0;
@@ -67,10 +71,8 @@ Player::Player(
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
 
-	int tw;
-	int th;
-	auto td = Loader::LoadImage("Images/Cross.png", tw, th);
-	_crossTexture = _common.video->GetTextures()->AddTexture(tw, th, td);
+	auto td = Loader::LoadImage("Images/Cross.png");
+	_crossTexture = _common.video->GetTextures()->AddTexture(td);
 
 	_cross.SetRectanglePosition({-0.02, -0.02, 0.02, 0.02});
 	_cross.SetRectangleTexCoords({0, 0, 1, 1});
@@ -224,6 +226,8 @@ void Player::TickEarly()
 			angle,
 			-glm::normalize(rotAxis));
 
+		_matrix = rotMat * _matrix;
+
 		_dirUp = rotMat * glm::vec4(_dirUp, 0.0f);
 		_dirF = rotMat * glm::vec4(_dirF, 0.0f);
 		_dirR = rotMat * glm::vec4(_dirR, 0.0f);
@@ -235,6 +239,8 @@ void Player::TickEarly()
 			glm::radians(_angleH),
 			glm::normalize(_dirUp));
 
+		_matrix = rotMat * _matrix;
+
 		_dirUp = rotMat * glm::vec4(_dirUp, 0.0f);
 		_dirF = rotMat * glm::vec4(_dirF, 0.0f);
 		_dirR = rotMat * glm::vec4(_dirR, 0.0f);
@@ -243,14 +249,11 @@ void Player::TickEarly()
 	}
 
 	if (!_flightMode) {
-
 		_speed += gravityF / 100.0f / 80.0f;
 
 		_pos += _speed / 100.0f;
 
-		SetObjectMatrix(
-			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
-				glm::radians(_angleH), glm::vec3(0, 0, 1)));
+		SetObjectMatrix(_matrix * glm::translate(glm::mat4(1.0), _pos));
 	}
 }
 
@@ -259,6 +262,8 @@ void Player::Tick()
 	glm::vec3 effect = GetObjectEffect();
 
 	_pos += effect;
+
+	_planet->Update(_pos);
 
 	if (glm::dot(effect, _dirUp) > 0) {
 		glm::vec3 hspeed = _dirF * (float)_go +
@@ -282,9 +287,7 @@ void Player::Tick()
 			0, 0, 5, 1.0f)) +
 			offset;
 
-		SetObjectMatrix(
-			glm::rotate(glm::translate(glm::mat4(1.0), _pos),
-				glm::radians(_angleH), glm::vec3(0, 0, 1)));
+		SetObjectMatrix(_matrix * glm::translate(glm::mat4(1.0), _pos));
 	}
 
 	if (!_flightMode) {

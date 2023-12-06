@@ -51,9 +51,7 @@ void TextureHandler::PollTextureMessages()
 }
 
 uint32_t TextureHandler::AddTexture(
-	uint32_t width,
-	uint32_t height,
-	std::vector<uint8_t> texture,
+	Loader::Image image,
 	bool repeat,
 	bool async,
 	TextureType type,
@@ -75,9 +73,7 @@ uint32_t TextureHandler::AddTexture(
 		[this,
 		index,
 		type,
-		width,
-		height,
-		texture,
+		image,
 		repeat,
 		flags,
 		layerCount]() -> void
@@ -86,9 +82,7 @@ uint32_t TextureHandler::AddTexture(
 				index,
 				CreateTextureDescriptor(
 					type,
-					width,
-					height,
-					texture,
+					image,
 					repeat,
 					flags,
 					layerCount)});
@@ -112,9 +106,7 @@ void TextureHandler::RemoveTexture(uint32_t index)
 
 TextureHandler::TextureDescriptor TextureHandler::CreateTextureDescriptor(
 	TextureType type,
-	uint32_t width,
-	uint32_t height,
-	const std::vector<uint8_t>& texture,
+	const Loader::Image& image,
 	bool repeat,
 	VkImageCreateFlagBits flags,
 	uint32_t layerCount)
@@ -123,9 +115,9 @@ TextureHandler::TextureDescriptor TextureHandler::CreateTextureDescriptor(
 
 	uint32_t mipLevels;
 	descriptor.Image = CreateTextureImage(
-		width,
-		height,
-		texture,
+		image.Width,
+		image.Height,
+		image.PixelData,
 		mipLevels,
 		flags,
 		layerCount);

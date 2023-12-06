@@ -16,10 +16,14 @@
 
 namespace Loader
 {
-	std::vector<uint8_t> LoadImage(
-		std::string name,
-		int& width,
-		int& height);
+	struct Image
+	{
+		uint32_t Width;
+		uint32_t Height;
+		std::vector<uint8_t> PixelData;
+	};
+
+	Image LoadImage(std::string name);
 
 	struct VertexData
 	{

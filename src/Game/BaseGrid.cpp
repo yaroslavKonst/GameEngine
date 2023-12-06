@@ -13,31 +13,29 @@ BaseGrid::BaseGrid(
 	_collisionEngine = collisionEngine;
 	_extMat = extMat;
 
-	int tw;
-	int th;
-	auto td = Loader::LoadImage("Models/Ship/ShipFloor.png", tw, th);
-	Textures["Floor"] = _video->GetTextures()->AddTexture(tw, th, td);
+	auto td = Loader::LoadImage("Models/Ship/ShipFloor.png");
+	Textures["Floor"] = _video->GetTextures()->AddTexture(td);
 
-	td = Loader::LoadImage("Models/Ship/ShipFloorComm.png", tw, th);
-	Textures["FloorComm"] = _video->GetTextures()->AddTexture(tw, th, td);
+	td = Loader::LoadImage("Models/Ship/ShipFloorComm.png");
+	Textures["FloorComm"] = _video->GetTextures()->AddTexture(td);
 
-	td = Loader::LoadImage("Models/Ship/ShipFloorCommDelim.png", tw, th);
+	td = Loader::LoadImage("Models/Ship/ShipFloorCommDelim.png");
 	Textures["FloorCommDelim"] =
-		_video->GetTextures()->AddTexture(tw, th, td);
+		_video->GetTextures()->AddTexture(td);
 
-	td = Loader::LoadImage("Models/Ship/ShipPowerCableHub.png", tw, th);
+	td = Loader::LoadImage("Models/Ship/ShipPowerCableHub.png");
 	Textures["PowerCableHub"] =
-		_video->GetTextures()->AddTexture(tw, th, td);
+		_video->GetTextures()->AddTexture(td);
 
-	td = Loader::LoadImage("Models/Ship/ShipPowerCable.png", tw, th);
-	Textures["PowerCable"] = _video->GetTextures()->AddTexture(tw, th, td);
+	td = Loader::LoadImage("Models/Ship/ShipPowerCable.png");
+	Textures["PowerCable"] = _video->GetTextures()->AddTexture(td);
 
-	td = Loader::LoadImage("Models/Ship/ShipDataCable.png", tw, th);
-	Textures["DataCable"] = _video->GetTextures()->AddTexture(tw, th, td);
+	td = Loader::LoadImage("Models/Ship/ShipDataCable.png");
+	Textures["DataCable"] = _video->GetTextures()->AddTexture(td);
 
-	td = Loader::LoadImage("Models/Ship/ShipDataCableHub.png", tw, th);
+	td = Loader::LoadImage("Models/Ship/ShipDataCableHub.png");
 	Textures["DataCableHub"] =
-		_video->GetTextures()->AddTexture(tw, th, td);
+		_video->GetTextures()->AddTexture(td);
 
 	_preview = nullptr;
 

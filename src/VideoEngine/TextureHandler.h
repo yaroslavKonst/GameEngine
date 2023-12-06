@@ -10,6 +10,7 @@
 #include "VkQueueObject.h"
 #include "../Utils/RingBuffer.h"
 #include "../Utils/ThreadPool.h"
+#include "../Utils/loader.h"
 
 class TextureHandler
 {
@@ -41,9 +42,7 @@ public:
 	~TextureHandler();
 
 	uint32_t AddTexture(
-		uint32_t width,
-		uint32_t height,
-		const std::vector<uint8_t> texture,
+		Loader::Image image,
 		bool repeat = true,
 		bool async = false,
 		TextureType type = TextureType::T2D,
@@ -97,9 +96,7 @@ private:
 
 	TextureDescriptor CreateTextureDescriptor(
 		TextureType type,
-		uint32_t width,
-		uint32_t height,
-		const std::vector<uint8_t>& texture,
+		const Loader::Image& image,
 		bool repeat,
 		VkImageCreateFlagBits flags = (VkImageCreateFlagBits)0,
 		uint32_t layerCount = 1);
