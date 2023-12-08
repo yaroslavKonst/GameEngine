@@ -19,94 +19,20 @@ public:
 		Direct = 2
 	};
 
+	glm::vec3 Position;
+	glm::vec3 Color;
+	glm::vec3 Direction;
+	Type Type;
+	float Angle;
+	float AngleFade;
+
+	bool Enabled;
+
 	Light()
 	{
-		_active = false;
+		Enabled = false;
+		Color = {1, 1, 1};
 	}
-
-	virtual ~Light()
-	{
-	}
-
-	virtual const glm::vec3& GetLightPosition()
-	{
-		return _position;
-	}
-
-	virtual void SetLightPosition(const glm::vec3& value)
-	{
-		_position = value;
-	}
-
-	virtual const glm::vec3& GetLightColor()
-	{
-		return _color;
-	}
-
-	virtual void SetLightColor(const glm::vec3& value)
-	{
-		_color = value;
-	}
-
-	virtual const glm::vec3& GetLightDirection()
-	{
-		return _direction;
-	}
-
-	virtual void SetLightDirection(const glm::vec3& value)
-	{
-		_direction = value;
-	}
-
-	virtual Type GetLightType()
-	{
-		return _type;
-	}
-
-	virtual void SetLightType(Type value)
-	{
-		_type = value;
-	}
-
-	virtual float GetLightAngle()
-	{
-		return _angle;
-	}
-
-	virtual void SetLightAngle(float value)
-	{
-		_angle = value;
-	}
-
-	virtual float GetLightAngleFade()
-	{
-		return _angleFade;
-	}
-
-	virtual void SetLightAngleFade(float value)
-	{
-		_angleFade = value;
-	}
-
-	virtual bool IsLightActive()
-	{
-		return _active;
-	}
-
-	virtual void SetLightActive(bool value)
-	{
-		_active = value;
-	}
-
-private:
-	glm::vec3 _position;
-	glm::vec3 _color;
-	glm::vec3 _direction;
-	Type _type;
-	float _angle;
-	float _angleFade;
-
-	bool _active;
 };
 
 #endif

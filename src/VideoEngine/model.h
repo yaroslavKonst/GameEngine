@@ -16,78 +16,26 @@
 class Model : public Texturable
 {
 public:
-	Model();
-	virtual ~Model();
-
-	virtual const glm::mat4& GetModelMatrix()
+	struct VideoModelValues
 	{
-		return _modelMatrix;
-	}
+		uint32_t Model;
+		bool Holed;
 
-	virtual void SetModelMatrix(const glm::mat4& matrix)
+		glm::mat4 Matrix;
+		glm::mat4 InnerMatrix;
+		const glm::mat4* ExternalMatrix;
+
+		glm::vec3 Center;
+	};
+
+	VideoModelValues ModelParams;
+
+	Model()
 	{
-		_modelMatrix = matrix;
+		ModelParams.Holed = false;
+		ModelParams.ExternalMatrix = nullptr;
+		ModelParams.InnerMatrix = glm::mat4(1.0);
 	}
-
-	virtual const std::vector<uint32_t>& GetModels()
-	{
-		return _models;
-	}
-
-	virtual void SetModels(const std::vector<uint32_t>& models)
-	{
-		_models = models;
-	}
-
-	virtual const glm::mat4& GetModelInnerMatrix()
-	{
-		return _modelInnerMatrix;
-	}
-
-	virtual void SetModelInnerMatrix(const glm::mat4& matrix)
-	{
-		_modelInnerMatrix = matrix;
-	}
-
-	virtual const glm::vec3& GetModelCenter()
-	{
-		return _modelCenter;
-	}
-
-	virtual void SetModelCenter(const glm::vec3& value)
-	{
-		_modelCenter = value;
-	}
-
-	virtual bool IsModelHoled()
-	{
-		return _holed;
-	}
-
-	virtual void SetModelHoled(bool value)
-	{
-		_holed = value;
-	}
-
-	virtual const glm::mat4* GetModelExternalMatrix()
-	{
-		return _externMatrix;
-	}
-
-	virtual void SetModelExternalMatrix(const glm::mat4* matrix)
-	{
-		_externMatrix = matrix;
-	}
-
-private:
-	std::vector<uint32_t> _models;
-	bool _holed;
-
-	glm::mat4 _modelMatrix;
-	glm::mat4 _modelInnerMatrix;
-	const glm::mat4* _externMatrix;
-
-	glm::vec3 _modelCenter;
 };
 
 #endif

@@ -6,38 +6,19 @@
 class Texturable : public Drawable
 {
 public:
-	virtual uint32_t GetTexCount()
+	struct TexturableValues
 	{
-		return _textures.size();
-	}
+		uint32_t Diffuse;
+		uint32_t Specular;
 
-	virtual void SetTexCount(uint32_t value)
-	{
-		_textures.resize(value);
-	}
+		void SetAll(uint32_t texture)
+		{
+			Diffuse = texture;
+			Specular = texture;
+		}
+	};
 
-	virtual uint32_t GetTexture(uint32_t index)
-	{
-		return _textures[index];
-	}
-
-	virtual void SetTexture(uint32_t index, uint32_t value)
-	{
-		_textures[index] = value;
-	}
-
-	virtual const std::vector<uint32_t>& GetTextures()
-	{
-		return _textures;
-	}
-
-	virtual void SetTexture(const std::vector<uint32_t> textures)
-	{
-		_textures = textures;
-	}
-
-private:
-	std::vector<uint32_t> _textures;
+	TexturableValues TextureParams;
 };
 
 #endif

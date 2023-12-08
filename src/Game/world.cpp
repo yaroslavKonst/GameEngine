@@ -88,48 +88,44 @@ void World::Run()
 	gf.AddObject({1000000000.0f, {0, 0, -20000}});
 
 	Board board(_common.video);
-	board.SetTexture({testTexture});
-	board.SetModelHoled(true);
+	board.TextureParams.SetAll(testTexture);
+	board.ModelParams.Holed = true;
 
 	_common.video->RegisterModel(&board);
 
 	Light sun1;
-	sun1.SetLightType(Light::Type::Point);
-	sun1.SetLightColor({2000000, 2000000, 2000000});
-	sun1.SetLightPosition({0, 0, 5000});
-	sun1.SetLightActive(true);
+	sun1.Type = Light::Type::Point;
+	sun1.Color = {2000000, 2000000, 2000000};
+	sun1.Position = {0, 0, 5000};
+	sun1.Enabled = true;
 
 	_common.video->RegisterLight(&sun1);
 
 	Light sun2;
-	sun2.SetLightType(Light::Type::Point);
-	sun2.SetLightColor({2000000, 2000000, 2000000});
-	sun2.SetLightPosition({0, 0, -45000});
-	sun2.SetLightActive(true);
+	sun2.Type = Light::Type::Point;
+	sun2.Color = {2000000, 2000000, 2000000};
+	sun2.Position = {0, 0, -45000};
+	sun2.Enabled = true;
 
 	_common.video->RegisterLight(&sun2);
 
 	Sprite sprite1;
-	sprite1.SetSpritePosition({10, 10, 1.8});
-	sprite1.SetSpriteUp({0, 0, 1});
-	sprite1.SetSpriteTexCoords({0, 0, 1, 1});
-	sprite1.SetSpriteSize({1, 1});
-	sprite1.SetDrawEnabled(true);
-	sprite1.SetTexCount(1);
-	sprite1.SetTexture(0, testTexture);
+	sprite1.SpriteParams.Position = {10, 10, 1.8};
+	sprite1.SpriteParams.Up = {0, 0, 1};
+	sprite1.SpriteParams.Size = {1, 1};
+	sprite1.DrawParams.Enabled = true;
+	sprite1.TextureParams.SetAll(testTexture);
 
 	_common.video->RegisterSprite(&sprite1);
 
 	Sprite sprite2;
-	sprite2.SetSpritePosition({10, 0, 1.8});
-	sprite2.SetSpriteUp({0, 0, 1});
-	sprite2.SetSpriteTexCoords({0, 0, 1, 1});
-	sprite2.SetSpriteSize({1, 1});
-	sprite2.SetDrawEnabled(true);
-	sprite2.SetTexCount(1);
-	sprite2.SetTexture(0, testTexture);
-	sprite2.SetColorMultiplier({40, 40, 40, 1});
-	sprite2.SetDrawLight(true);
+	sprite2.SpriteParams.Position = {10, 0, 1.8};
+	sprite2.SpriteParams.Up = {0, 0, 1};
+	sprite2.SpriteParams.Size = {1, 1};
+	sprite2.DrawParams.Enabled = true;
+	sprite2.TextureParams.SetAll(testTexture);
+	sprite2.DrawParams.ColorMultiplier = {40, 40, 40, 1};
+	sprite2.DrawParams.IsLight = true;
 
 	_common.video->RegisterSprite(&sprite2);
 

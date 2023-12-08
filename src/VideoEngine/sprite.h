@@ -14,52 +14,21 @@
 class Sprite : public Texturable
 {
 public:
-	const glm::vec3& GetSpritePosition()
+	struct SpriteValues
 	{
-		return _position;
-	}
+		glm::vec3 Position;
+		glm::vec3 Up;
+		glm::vec2 Size;
 
-	void SetSpritePosition(const glm::vec3& value)
+		glm::vec4 TexCoords;
+	};
+
+	SpriteValues SpriteParams;
+
+	Sprite()
 	{
-		_position = value;
+		SpriteParams.TexCoords = {0, 0, 1, 1};
 	}
-
-	const glm::vec3& GetSpriteUp()
-	{
-		return _up;
-	}
-
-	void SetSpriteUp(const glm::vec3& value)
-	{
-		_up = value;
-	}
-
-	const glm::vec4& GetSpriteTexCoords()
-	{
-		return _texCoords;
-	}
-
-	void SetSpriteTexCoords(const glm::vec4& value)
-	{
-		_texCoords = value;
-	}
-
-	const glm::vec2& GetSpriteSize()
-	{
-		return _size;
-	}
-
-	void SetSpriteSize(const glm::vec2& value)
-	{
-		_size = value;
-	}
-
-private:
-	glm::vec3 _position;
-	glm::vec3 _up;
-	glm::vec2 _size;
-
-	glm::vec4 _texCoords;
 };
 
 #endif

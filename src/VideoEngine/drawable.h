@@ -12,54 +12,21 @@
 class Drawable
 {
 public:
-	Drawable();
-	virtual ~Drawable();
-
-	virtual bool _IsDrawEnabled()
+	struct DrawableValues
 	{
-		return _active && _ready;
-	}
+		bool Enabled;
+		bool IsLight;
+		glm::vec4 ColorMultiplier;
+	};
 
-	virtual void SetDrawEnabled(bool active)
+	DrawableValues DrawParams;
+
+	Drawable()
 	{
-		_active = active;
+		DrawParams.Enabled = false;
+		DrawParams.IsLight = false;
+		DrawParams.ColorMultiplier = glm::vec4(1.0f);
 	}
-
-	virtual bool GetDrawEnabled()
-	{
-		return _active;
-	}
-
-	virtual void _SetDrawReady(bool ready)
-	{
-		_ready = ready;
-	}
-
-	virtual bool DrawLight()
-	{
-		return _isLight;
-	}
-
-	virtual void SetDrawLight(bool value)
-	{
-		_isLight = value;
-	}
-
-	virtual const glm::vec4& GetColorMultiplier()
-	{
-		return _colorMultiplier;
-	}
-
-	virtual void SetColorMultiplier(const glm::vec4& value)
-	{
-		_colorMultiplier = value;
-	}
-
-private:
-	bool _active;
-	bool _ready;
-	bool _isLight;
-	glm::vec4 _colorMultiplier;
 };
 
 #endif

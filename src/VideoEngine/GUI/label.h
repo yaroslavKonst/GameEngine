@@ -42,17 +42,17 @@ public:
 
 	void SetImage(uint32_t texture)
 	{
-		_image.SetTexture({texture});
+		_image.TextureParams.Diffuse = texture;
 	}
 
 	void SetImageColor(const glm::vec4& value)
 	{
-		_image.SetColorMultiplier(value);
+		_image.DrawParams.ColorMultiplier = value;
 	}
 
 	void SetDepth(float value)
 	{
-		_image.SetRectangleDepth(value);
+		_image.RectangleParams.Depth = value;
 		_textBox.SetDepth(value + 0.01);
 	}
 

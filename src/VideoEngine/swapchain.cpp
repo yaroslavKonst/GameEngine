@@ -1317,7 +1317,7 @@ void Swapchain::RecordCommandBuffer(
 
 	for (auto& light : _dataBridge->DrawnScene.Lights) {
 		orderedLights.insert({glm::length(
-			light.GetLightPosition() -
+			light.Position -
 				_dataBridge->DrawnScene.CameraPosition),
 			&light
 		});
@@ -1338,24 +1338,24 @@ void Swapchain::RecordCommandBuffer(
 		glm::perspective(glm::radians(90.0f), 1.0f, 0.01f, 500.0f);
 
 	for (auto& light : orderedLights) {
-		if (!light.second->IsLightActive()) {
+		if (!light.second->Enabled) {
 			continue;
 		}
 
 		lightDescriptors[selectedLights].Position =
-			light.second->GetLightPosition();
+			light.second->Position;
 		lightDescriptors[selectedLights].Color =
-			light.second->GetLightColor();
+			light.second->Color;
 		lightDescriptors[selectedLights].Direction =
-			light.second->GetLightDirection();
+			light.second->Direction;
 		lightDescriptors[selectedLights].Type =
-			(uint32_t)light.second->GetLightType();
+			(uint32_t)light.second->Type;
 		lightDescriptors[selectedLights].Angle =
-			cos(glm::radians(light.second->GetLightAngle()));
+			cos(glm::radians(light.second->Angle));
 		lightDescriptors[selectedLights].OuterAngle =
 			cos(glm::radians(
-			light.second->GetLightAngle() +
-			light.second->GetLightAngleFade()));
+			light.second->Angle +
+			light.second->AngleFade));
 
 		glm::vec3 lightPos = lightDescriptors[selectedLights].Position;
 
@@ -1447,28 +1447,28 @@ void Swapchain::RecordCommandBuffer(
 		std::set<Model*> holedModels;
 
 		for (auto& model : _dataBridge->DrawnScene.Models) {
-			if (!model._IsDrawEnabled()) {
+			if (!model.DrawParams.Enabled) {
 				continue;
 			}
 
-			if (model.DrawLight()) {
+			if (model.DrawParams.IsLight) {
 				continue;
 			}
 
-			if (model.GetColorMultiplier().a < 1.0f) {
+			if (model.DrawParams.ColorMultiplier.a < 1.0f) {
 				continue;
 			}
 
-			if (model.IsModelHoled()) {
+			if (model.ModelParams.Holed) {
 				holedModels.insert(&model);
 				continue;
 			}
 
-			mvp.Model = model.GetModelMatrix();
-			mvp.InnerModel = model.GetModelInnerMatrix();
+			mvp.Model = model.ModelParams.Matrix;
+			mvp.InnerModel = model.ModelParams.InnerMatrix;
 
 			if (_dataBridge->ModelDescriptors.find(
-				model.GetModels()[0]) ==
+				model.ModelParams.Model) ==
 				_dataBridge->ModelDescriptors.end())
 			{
 				continue;
@@ -1476,7 +1476,7 @@ void Swapchain::RecordCommandBuffer(
 
 			auto& desc =
 				_dataBridge->ModelDescriptors[
-					model.GetModels()[0]];
+					model.ModelParams.Model];
 
 			if (desc.InstanceCount == 0) {
 				continue;
@@ -1566,11 +1566,11 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
 
 		for (auto& model : holedModels) {
-			mvp.Model = model->GetModelMatrix();
-			mvp.InnerModel = model->GetModelInnerMatrix();
+			mvp.Model = model->ModelParams.Matrix;
+			mvp.InnerModel = model->ModelParams.InnerMatrix;
 
 			if (_dataBridge->ModelDescriptors.find(
-				model->GetModels()[0]) ==
+				model->ModelParams.Model) ==
 				_dataBridge->ModelDescriptors.end())
 			{
 				continue;
@@ -1578,14 +1578,14 @@ void Swapchain::RecordCommandBuffer(
 
 			auto& desc =
 				_dataBridge->ModelDescriptors[
-					model->GetModels()[0]];
+					model->ModelParams.Model];
 
 			if (desc.InstanceCount == 0) {
 				continue;
 			}
 
 			if (!_dataBridge->Textures->CheckTexture(
-				model->GetTextures()[0]))
+				model->TextureParams.Diffuse))
 			{
 				continue;
 			}
@@ -1627,7 +1627,7 @@ void Swapchain::RecordCommandBuffer(
 				&lightIndex);
 
 			auto& texDiff = _dataBridge->Textures->GetTexture(
-				model->GetTextures()[0]);
+				model->TextureParams.Diffuse);
 
 			std::vector<VkDescriptorSet> descriptorSets = {
 				_lightDescriptorSets[currentFrame],
@@ -1666,21 +1666,21 @@ void Swapchain::RecordCommandBuffer(
 	std::set<Model*> holedModels;
 
 	for (auto& model : _dataBridge->DrawnScene.Models) {
-		if (!model._IsDrawEnabled()) {
+		if (!model.DrawParams.Enabled) {
 			continue;
 		}
 
-		if (model.GetColorMultiplier().a < 1.0f) {
+		if (model.DrawParams.ColorMultiplier.a < 1.0f) {
 			float distance = glm::length(
 				_dataBridge->DrawnScene.CameraPosition -
-				model.GetModelCenter());
+				model.ModelParams.Center);
 
 			transparentModels.insert({distance, &model});
 
 			continue;
 		}
 
-		if (model.IsModelHoled()) {
+		if (model.ModelParams.Holed) {
 			holedModels.insert(&model);
 			continue;
 		}
@@ -1743,12 +1743,12 @@ void Swapchain::RecordCommandBuffer(
 	std::multimap<float, Sprite*> orderedSprites;
 
 	for (auto& sprite : _dataBridge->DrawnScene.Sprites) {
-		if (!sprite._IsDrawEnabled()) {
+		if (!sprite.DrawParams.Enabled) {
 			continue;
 		}
 
 		orderedSprites.insert({
-			glm::length(sprite.GetSpritePosition() -
+			glm::length(sprite.SpriteParams.Position -
 				_dataBridge->DrawnScene.CameraPosition),
 			&sprite
 		});
@@ -1763,11 +1763,11 @@ void Swapchain::RecordCommandBuffer(
 
 		bool validDiffTexture =
 			_dataBridge->Textures->CheckTexture(
-				sprite.second->GetTexture(0));
+				sprite.second->TextureParams.Diffuse);
 
-		bool validSpecTexture = sprite.second->GetTexCount() > 1 ?
+		bool validSpecTexture =
 			_dataBridge->Textures->CheckTexture(
-				sprite.second->GetTexture(1)) : true;
+				sprite.second->TextureParams.Specular);
 
 		if (!(validDiffTexture && validSpecTexture)) {
 			continue;
@@ -1776,11 +1776,11 @@ void Swapchain::RecordCommandBuffer(
 		SpriteDescriptor spriteDesc;
 
 		spriteDesc.ProjView = mvp.ProjView;
-		spriteDesc.TexCoords = sprite.second->GetSpriteTexCoords();
-		spriteDesc.SpritePos = sprite.second->GetSpritePosition();
+		spriteDesc.TexCoords = sprite.second->SpriteParams.TexCoords;
+		spriteDesc.SpritePos = sprite.second->SpriteParams.Position;
 		spriteDesc.CameraPos = _dataBridge->DrawnScene.CameraPosition;
-		spriteDesc.SpriteUp = sprite.second->GetSpriteUp();
-		spriteDesc.Size = sprite.second->GetSpriteSize();
+		spriteDesc.SpriteUp = sprite.second->SpriteParams.Up;
+		spriteDesc.Size = sprite.second->SpriteParams.Size;
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1798,7 +1798,7 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(glm::vec3),
 			&_dataBridge->DrawnScene.CameraPosition);
 
-		uint32_t isLight = sprite.second->DrawLight() ? 1 : 0;
+		uint32_t isLight = sprite.second->DrawParams.IsLight ? 1 : 0;
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1809,7 +1809,7 @@ void Swapchain::RecordCommandBuffer(
 			&isLight);
 
 		const glm::vec4 colorMultiplier =
-			sprite.second->GetColorMultiplier();
+			sprite.second->DrawParams.ColorMultiplier;
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1820,11 +1820,10 @@ void Swapchain::RecordCommandBuffer(
 			&colorMultiplier);
 
 		auto& texDiff = _dataBridge->Textures->GetTexture(
-			sprite.second->GetTexture(0));
+			sprite.second->TextureParams.Diffuse);
 
-		auto& texSpec = sprite.second->GetTexCount() > 1 ?
-			_dataBridge->Textures->GetTexture(
-				sprite.second->GetTexture(1)) : texDiff;
+		auto& texSpec = _dataBridge->Textures->GetTexture(
+			sprite.second->TextureParams.Specular);
 
 		std::vector<VkDescriptorSet> descriptorSets = {
 			texDiff.DescriptorSet,
@@ -1858,27 +1857,27 @@ void Swapchain::RecordCommandBuffer(
 	std::multimap<float, Rectangle*> orderedRectangles;
 
 	for (auto& rectangle : _dataBridge->DrawnScene.Rectangles) {
-		if (!rectangle._IsDrawEnabled()) {
+		if (!rectangle.DrawParams.Enabled) {
 			continue;
 		}
 
 		orderedRectangles.insert({
-			rectangle.GetRectangleDepth(),
+			rectangle.RectangleParams.Depth,
 			&rectangle
 		});
 	}
 
 	for (auto& rect : orderedRectangles) {
-		auto rectangle = rect.second;
+		Rectangle* rectangle = rect.second;
 
 		if (!_dataBridge->Textures->CheckTexture(
-			rectangle->GetTexture(0)))
+			rectangle->TextureParams.Diffuse))
 		{
 			continue;
 		}
 
-		rectData[0] = rectangle->GetRectanglePosition();
-		rectData[1] = rectangle->GetRectangleTexCoords();
+		rectData[0] = rectangle->RectangleParams.Position;
+		rectData[1] = rectangle->RectangleParams.TexCoords;
 
 		rectData[0][0] /= screenRatio;
 		rectData[0][2] /= screenRatio;
@@ -1892,7 +1891,7 @@ void Swapchain::RecordCommandBuffer(
 			rectData.data());
 
 		glm::vec4 colorMultiplier =
-			rectangle->GetColorMultiplier();
+			rectangle->DrawParams.ColorMultiplier;
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1903,7 +1902,7 @@ void Swapchain::RecordCommandBuffer(
 			&colorMultiplier);
 
 		auto& tex = _dataBridge->Textures->GetTexture(
-			rectangle->GetTexture(0));
+			rectangle->TextureParams.Diffuse);
 
 		vkCmdBindDescriptorSets(
 			commandBuffer,
@@ -1980,30 +1979,30 @@ void Swapchain::RecordObjectCommandBuffer(
 	MVP mvp,
 	Pipeline* pipeline)
 {
-	mvp.Model = model->GetModelMatrix();
-	mvp.InnerModel = model->GetModelInnerMatrix();
+	mvp.Model = model->ModelParams.Matrix;
+	mvp.InnerModel = model->ModelParams.InnerMatrix;
 
 	if (_dataBridge->ModelDescriptors.find(
-		model->GetModels()[0]) ==
+		model->ModelParams.Model) ==
 		_dataBridge->ModelDescriptors.end())
 	{
 		return;
 	}
 
-	auto& desc = _dataBridge->ModelDescriptors[model->GetModels()[0]];
+	auto& desc = _dataBridge->ModelDescriptors[model->ModelParams.Model];
 
 	if (desc.InstanceCount == 0) {
 		return;
 	}
 
-	auto& textures = model->GetTextures();
+	uint32_t diffTexIndex = model->TextureParams.Diffuse;
+	uint32_t specTexIndex = model->TextureParams.Specular;
 
 	bool validDiffTexture =
-		_dataBridge->Textures->CheckTexture(textures[0]);
+		_dataBridge->Textures->CheckTexture(diffTexIndex);
 
-	bool validSpecTexture = textures.size() > 1 ?
-		_dataBridge->Textures->CheckTexture(textures[1]) :
-		true;
+	bool validSpecTexture =
+		_dataBridge->Textures->CheckTexture(specTexIndex);
 
 	if (!(validDiffTexture && validSpecTexture)) {
 		return;
@@ -2044,7 +2043,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		sizeof(glm::vec3),
 		&_dataBridge->DrawnScene.CameraPosition);
 
-	uint32_t isLight = model->DrawLight() ? 1 : 0;
+	uint32_t isLight = model->DrawParams.IsLight ? 1 : 0;
 
 	vkCmdPushConstants(
 		commandBuffer,
@@ -2055,7 +2054,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		&isLight);
 
 	glm::vec4 colorMultiplier =
-		model->GetColorMultiplier();
+		model->DrawParams.ColorMultiplier;
 
 	vkCmdPushConstants(
 		commandBuffer,
@@ -2065,11 +2064,8 @@ void Swapchain::RecordObjectCommandBuffer(
 		sizeof(glm::vec4),
 		&colorMultiplier);
 
-	auto& texDiff = _dataBridge->Textures->GetTexture(textures[0]);
-
-	auto& texSpec = textures.size() > 1 ?
-		_dataBridge->Textures->GetTexture(textures[1]) :
-		texDiff;
+	auto& texDiff = _dataBridge->Textures->GetTexture(diffTexIndex);
+	auto& texSpec = _dataBridge->Textures->GetTexture(specTexIndex);
 
 	std::vector<VkDescriptorSet> descriptorSets = {
 		texDiff.DescriptorSet,

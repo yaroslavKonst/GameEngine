@@ -36,19 +36,19 @@ void Label::Activate()
 	}
 
 	_textBox.SetPosition(tbX, tbY, _alignment);
-	_image.SetRectanglePosition({
+	_image.RectangleParams.Position = {
 		x - _width / 2,
 		y - _height / 2,
 		x + _width / 2,
 		y + _height / 2
-	});
+	};
 
-	_image.SetDrawEnabled(true);
+	_image.DrawParams.Enabled = true;
 	_textBox.Activate();
 }
 
 void Label::Deactivate()
 {
-	_image.SetDrawEnabled(false);
+	_image.DrawParams.Enabled = false;
 	_textBox.Deactivate();
 }

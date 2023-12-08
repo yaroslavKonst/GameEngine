@@ -868,14 +868,14 @@ Planet::Planet(
 		segment->SetObjectExternalMatrix(&_matrix);
 		segment->SetObjectMatrix(glm::mat4(1.0));
 
-		segment->SetModelExternalMatrix(&_matrix);
-		segment->SetModelMatrix(glm::mat4(1.0));
+		segment->ModelParams.ExternalMatrix = &_matrix;
+		segment->ModelParams.Matrix = glm::mat4(1.0);
 
-		segment->SetTexture({_blockTexture});
-		segment->SetModels({_blockModel.back()});
-		segment->SetDrawLight(true);
+		segment->TextureParams.SetAll(_blockTexture);
+		segment->ModelParams.Model = _blockModel.back();
+		segment->DrawParams.IsLight = true;
 
-		segment->SetColorMultiplier(colorMul);
+		segment->DrawParams.ColorMultiplier = colorMul;
 
 		if (colorMul.r < 1) {
 			colorMul.r += 0.2;
@@ -997,14 +997,14 @@ void Planet::Update(glm::vec3 playerCoord)
 
 void Planet::ActivateSegment(Segment* segment)
 {
-	segment->SetDrawEnabled(true);
+	segment->DrawParams.Enabled = true;
 	_video->RegisterModel(segment);
 	_collisionEngine->RegisterObject(segment);
 }
 
 void Planet::DeactivateSegment(Segment* segment)
 {
-	segment->SetDrawEnabled(false);
+	segment->DrawParams.Enabled = false;
 	_video->RemoveModel(segment);
 	_collisionEngine->RemoveObject(segment);
 }

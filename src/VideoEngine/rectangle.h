@@ -16,43 +16,19 @@
 class Rectangle : public Texturable
 {
 public:
-	Rectangle();
-	virtual ~Rectangle();
-
-	virtual glm::vec4 GetRectanglePosition()
+	struct RectangleValues
 	{
-		return _position;
-	}
+		glm::vec4 Position;
+		glm::vec4 TexCoords;
+		float Depth;
+	};
 
-	virtual void SetRectanglePosition(glm::vec4 position)
+	RectangleValues RectangleParams;
+
+	Rectangle()
 	{
-		_position = position;
+		RectangleParams.TexCoords = {0, 0, 1, 1};
 	}
-
-	virtual glm::vec4 GetRectangleTexCoords()
-	{
-		return _texCoords;
-	}
-
-	virtual void SetRectangleTexCoords(glm::vec4 texCoords)
-	{
-		_texCoords = texCoords;
-	}
-
-	virtual float GetRectangleDepth()
-	{
-		return _depth;
-	}
-
-	virtual void SetRectangleDepth(float depth)
-	{
-		_depth = depth;
-	}
-
-private:
-	glm::vec4 _position;
-	glm::vec4 _texCoords;
-	float _depth;
 };
 
 #endif

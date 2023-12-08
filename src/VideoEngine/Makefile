@@ -12,11 +12,8 @@ all: \
 	../../build/MemorySystem.o \
 	../../build/ImageHelper.o \
 	../../build/pipeline.o \
-	../../build/model.o \
 	../../build/ModelDescriptor.o \
 	../../build/BufferHelper.o \
-	../../build/rectangle.o \
-	../../build/drawable.o \
 	../../build/InputControl.o \
 	../../build/TextureHandler.o \
 	../../build/TextHandler.o \

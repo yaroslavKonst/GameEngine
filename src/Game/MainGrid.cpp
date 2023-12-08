@@ -127,13 +127,11 @@ void MainGrid::InsertBlock(
 			glm::vec3(0, 0, 1));
 	}
 
-	block->SetDrawEnabled(true);
-	block->SetModelMatrix(matrix);
+	block->DrawParams.Enabled = true;
+	block->ModelParams.Matrix = matrix;
 	block->SetObjectMatrix(matrix);
-	block->SetModelExternalMatrix(_extMat);
+	block->ModelParams.ExternalMatrix = _extMat;
 	block->SetObjectExternalMatrix(_extMat);
-
-	block->SetModelInnerMatrix(glm::mat4(1.0));
 
 	_video->RegisterModel(block);
 	_collisionEngine->RegisterObject(block);
@@ -212,19 +210,19 @@ void MainGrid::PreviewBlock(
 			glm::vec3(0, 0, 1));
 	}
 
-	_preview->SetDrawEnabled(true);
-	_preview->SetDrawLight(true);
-	_preview->SetModelMatrix(matrix);
-	_preview->SetModelExternalMatrix(_extMat);
+	_preview->DrawParams.Enabled = true;
+	_preview->DrawParams.IsLight = true;
+	_preview->ModelParams.Matrix = matrix;
+	_preview->ModelParams.ExternalMatrix = _extMat;
 
-	_preview->SetModelInnerMatrix(glm::scale(
+	_preview->ModelParams.InnerMatrix = glm::scale(
 		glm::mat4(1.0),
-		glm::vec3(1.01, 1.01, 1.01)));
+		glm::vec3(1.01, 1.01, 1.01));
 
 	if (available) {
-		_preview->SetColorMultiplier({0.5, 1, 0.5, 0.4});
+		_preview->DrawParams.ColorMultiplier = {0.5, 1, 0.5, 0.4};
 	} else {
-		_preview->SetColorMultiplier({1.0, 0.5, 0.5, 0.4});
+		_preview->DrawParams.ColorMultiplier = {1.0, 0.5, 0.5, 0.4};
 	}
 
 	_video->RegisterModel(_preview);
@@ -284,8 +282,8 @@ Wall::Wall(
 	MainGrid* grid) :
 	MainBlock(x, y, 0, grid)
 {
-	SetTexture({_grid->Textures["Wall"]});
-	SetModels({_grid->Models["Wall"]});
+	TextureParams.SetAll(_grid->Textures["Wall"]);
+	ModelParams.Model = _grid->Models["Wall"];
 
 	auto model = Loader::LoadModel("Models/Ship/MainBlocks/Wall.obj");
 	SetObjectVertices(model.Vertices);
@@ -305,8 +303,8 @@ FlightControl::FlightControl(
 	MainGrid* grid) :
 	MainBlock(x, y, rotation, grid)
 {
-	SetTexture({_grid->Textures["FlightControl"]});
-	SetModels({_grid->Models["FlightControl"]});
+	TextureParams.SetAll(_grid->Textures["FlightControl"]);
+	ModelParams.Model = _grid->Models["FlightControl"];
 
 	auto model = Loader::LoadModel(
 		"Models/Ship/MainBlocks/Wall.obj");
@@ -334,8 +332,8 @@ StaticThruster::StaticThruster(
 	MainGrid* grid) :
 	MainBlock(x, y, rotation, grid)
 {
-	SetTexture({_grid->Textures["StaticThruster"]});
-	SetModels({_grid->Models["StaticThruster"]});
+	TextureParams.SetAll(_grid->Textures["StaticThruster"]);
+	ModelParams.Model = _grid->Models["StaticThruster"];
 
 	auto model = Loader::LoadModel(
 		"Models/Ship/MainBlocks/StaticThrusterCollision.obj");
@@ -353,7 +351,7 @@ glm::vec3 StaticThruster::SetDirection(const glm::vec3& value)
 {
 	glm::vec3 thrDir(0, 1, 0);
 
-	thrDir = *GetModelExternalMatrix() * GetModelMatrix() *
+	thrDir = *ModelParams.ExternalMatrix * ModelParams.Matrix *
 		glm::vec4(thrDir, 0.0);
 
 	float angleCos =
@@ -379,8 +377,8 @@ DynamicThruster::DynamicThruster(
 	_video = video;
 	_extMat = extMat;
 
-	SetTexture({_grid->Textures["DynamicThrusterBase"]});
-	SetModels({_grid->Models["DynamicThrusterBase"]});
+	TextureParams.SetAll(_grid->Textures["DynamicThrusterBase"]);
+	ModelParams.Model = _grid->Models["DynamicThrusterBase"];
 
 	auto model = Loader::LoadModel(
 		"Models/Ship/MainBlocks/DynamicThrusterBase.obj");
@@ -415,18 +413,17 @@ DynamicThruster::DynamicThruster(
 		glm::radians(_angle),
 		glm::vec3(0, 1, 0));
 
-	_thruster->SetTexture({_grid->Textures["DynamicThruster"]});
-	_thruster->SetModels({_grid->Models["DynamicThruster"]});
+	_thruster->TextureParams.SetAll(_grid->Textures["DynamicThruster"]);
+	_thruster->ModelParams.Model = _grid->Models["DynamicThruster"];
 
-	_thruster->SetDrawEnabled(true);
-	_thruster->SetModelMatrix(matrix);
-	_thruster->SetModelExternalMatrix(_extMat);
+	_thruster->DrawParams.Enabled = true;
+	_thruster->ModelParams.Matrix = matrix;
+	_thruster->ModelParams.ExternalMatrix = _extMat;
 
-	_thruster->SetModelInnerMatrix(glm::mat4(1.0));
-	_thruster->SetColorMultiplier(colorMultiplier);
+	_thruster->DrawParams.ColorMultiplier = colorMultiplier;
 
 	if (colorMultiplier.a < 1) {
-		_thruster->SetDrawLight(true);
+		_thruster->DrawParams.IsLight = true;
 	}
 
 	_video->RegisterModel(_thruster);
@@ -447,9 +444,9 @@ glm::vec3 DynamicThruster::SetDirection(const glm::vec3& value)
 
 	glm::vec3 aDir(0, cosf(glm::radians(20.0)), 1);
 
-	glm::mat4 matrix = *GetModelExternalMatrix() * GetModelMatrix();
-	glm::mat4 rotMatrix = *GetModelExternalMatrix() *
-		_thruster->GetModelMatrix();
+	glm::mat4 matrix = *ModelParams.ExternalMatrix * ModelParams.Matrix;
+	glm::mat4 rotMatrix = *ModelParams.ExternalMatrix *
+		_thruster->ModelParams.Matrix;
 
 	p1 = matrix * glm::vec4(p1, 1.0f);
 	p2 = matrix * glm::vec4(p2, 1.0f);
@@ -513,7 +510,7 @@ glm::vec3 DynamicThruster::SetDirection(const glm::vec3& value)
 		glm::radians(_angle),
 		glm::vec3(0, 1, 0));
 
-	_thruster->SetModelMatrix(thrMatrix);
+	_thruster->ModelParams.Matrix = thrMatrix;
 
 	float angleCos = glm::dot(glm::normalize(aDir), glm::normalize(value));
 

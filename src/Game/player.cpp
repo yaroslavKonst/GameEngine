@@ -46,10 +46,10 @@ Player::Player(
 
 	SetInputEnabled(true);
 
-	_light.SetLightType(Light::Type::Spot);
-	_light.SetLightColor({1.7, 1.7, 1.7});
-	_light.SetLightAngle(30);
-	_light.SetLightAngleFade(10);
+	_light.Type = Light::Type::Spot;
+	_light.Color = {1.7, 1.7, 1.7};
+	_light.Angle = 30;
+	_light.AngleFade = 10;
 
 	_common.video->RegisterLight(&_light);
 	_common.video->GetInputControl()->Subscribe(this);
@@ -74,11 +74,11 @@ Player::Player(
 	auto td = Loader::LoadImage("Images/Cross.png");
 	_crossTexture = _common.video->GetTextures()->AddTexture(td);
 
-	_cross.SetRectanglePosition({-0.02, -0.02, 0.02, 0.02});
-	_cross.SetRectangleTexCoords({0, 0, 1, 1});
-	_cross.SetRectangleDepth(0);
-	_cross.SetTexture({_crossTexture});
-	_cross.SetDrawEnabled(true);
+	_cross.RectangleParams.Position = {-0.02, -0.02, 0.02, 0.02};
+	_cross.RectangleParams.TexCoords = {0, 0, 1, 1};
+	_cross.RectangleParams.Depth = 0;
+	_cross.TextureParams.SetAll(_crossTexture);
+	_cross.DrawParams.Enabled = true;
 
 	_common.video->RegisterRectangle(&_cross);
 }
@@ -128,10 +128,10 @@ void Player::Key(
 	} else if (key == GLFW_KEY_Z) {
 		if (action == GLFW_PRESS) {
 			if (_lightActive) {
-				_light.SetLightActive(false);
+				_light.Enabled = false;
 				_lightActive = false;
 			} else {
-				_light.SetLightActive(true);
+				_light.Enabled = true;
 				_lightActive = true;
 			}
 		}
@@ -305,8 +305,8 @@ void Player::Tick()
 		_common.video->SetCameraUp(_dirUp);
 	}
 
-	_light.SetLightPosition(_pos + _dirUp * 1.2f + _dirR * (-0.3f));
-	_light.SetLightDirection(_dirF);
+	_light.Position = _pos + _dirUp * 1.2f + _dirR * -0.3f;
+	_light.Direction = _dirF;
 
 	CollisionEngine::RayCastResult object =
 		_common.collisionEngine->RayCast(
@@ -320,7 +320,7 @@ void Player::Tick()
 		_centerTextBox->SetText(
 			"Communications\n[E] Power\n[R] Data");
 		_centerTextBox->Activate();
-		_cross.SetColorMultiplier({0.3, 1.0, 0.3, 1.0});
+		_cross.DrawParams.ColorMultiplier = {0.3, 1.0, 0.3, 1.0};
 
 		if (_actionERequested) {
 			FloorCommBlock* block = static_cast<FloorCommBlock*>(
@@ -339,7 +339,7 @@ void Player::Tick()
 		_centerTextBox->SetText(
 			"FlightControl\n[E] Use");
 		_centerTextBox->Activate();
-		_cross.SetColorMultiplier({0.3, 1.0, 0.3, 1.0});
+		_cross.DrawParams.ColorMultiplier = {0.3, 1.0, 0.3, 1.0};
 
 		if (_actionERequested) {
 			FlightControl* block = static_cast<FlightControl*>(
@@ -354,7 +354,7 @@ void Player::Tick()
 		}
 	} else {
 		_centerTextBox->Deactivate();
-		_cross.SetColorMultiplier({1.0, 1.0, 1.0, 1.0});
+		_cross.DrawParams.ColorMultiplier = {1.0, 1.0, 1.0, 1.0};
 	}
 
 	if (_actionFRequested) {

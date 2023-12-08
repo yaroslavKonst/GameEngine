@@ -59,12 +59,10 @@ public:
 
 		_model = _video->LoadModel(model);
 
-		SetModels({_model});
+		ModelParams.Model = _model;
 
-		SetModelMatrix(glm::mat4(1.0f));
-		SetModelInnerMatrix(glm::mat4(1.0f));
-
-		SetDrawEnabled(true);
+		ModelParams.Matrix = glm::mat4(1.0f);
+		DrawParams.Enabled = true;
 	}
 
 	~Board()

@@ -102,12 +102,12 @@ struct DataBridge
 			SubmittedScene.Models[idx] = *model;
 
 			const glm::mat4* extMat =
-				SubmittedScene.Models[idx].GetModelExternalMatrix();
+				SubmittedScene.Models[idx].ModelParams.ExternalMatrix;
 
 			if (extMat) {
-				SubmittedScene.Models[idx].SetModelMatrix(
+				SubmittedScene.Models[idx].ModelParams.Matrix =
 					*extMat *
-					SubmittedScene.Models[idx].GetModelMatrix());
+					SubmittedScene.Models[idx].ModelParams.Matrix;
 			}
 
 			++idx;

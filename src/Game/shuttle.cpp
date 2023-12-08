@@ -50,21 +50,19 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 	LoadAssets();
 
 	_base = new Model;
-	_base->SetTexture({_textures["Base"]});
-	_base->SetModels({_models["Base"]});
-	_base->SetDrawEnabled(true);
-	_base->SetModelMatrix(glm::mat4(1.0));
-	_base->SetModelExternalMatrix(&_shipMatrix);
-	_base->SetModelInnerMatrix(glm::mat4(1.0));
+	_base->TextureParams.SetAll(_textures["Base"]);
+	_base->ModelParams.Model = _models["Base"];
+	_base->DrawParams.Enabled = true;
+	_base->ModelParams.Matrix = glm::mat4(1.0);
+	_base->ModelParams.ExternalMatrix = &_shipMatrix;
 	_common.video->RegisterModel(_base);
 
 	_roof = new Model;
-	_roof->SetTexture({_textures["Roof"]});
-	_roof->SetModels({_models["Roof"]});
-	_roof->SetDrawEnabled(true);
-	_roof->SetModelMatrix(glm::mat4(1.0));
-	_roof->SetModelExternalMatrix(&_shipMatrix);
-	_roof->SetModelInnerMatrix(glm::mat4(1.0));
+	_roof->TextureParams.SetAll(_textures["Roof"]);
+	_roof->ModelParams.Model = _models["Roof"];
+	_roof->DrawParams.Enabled = true;
+	_roof->ModelParams.Matrix = glm::mat4(1.0);
+	_roof->ModelParams.ExternalMatrix = &_shipMatrix;
 	_common.video->RegisterModel(_roof);
 
 	_thrusters.resize(4, nullptr);
@@ -95,12 +93,11 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 		&_models);
 
 	for (size_t i = 0; i < _thrusters.size(); ++i) {
-		_thrusters[i]->SetTexture({_textures["Thruster"]});
-		_thrusters[i]->SetModels({_models["Thruster"]});
-		_thrusters[i]->SetDrawEnabled(true);
-		_thrusters[i]->SetModelMatrix(glm::mat4(1.0));
-		_thrusters[i]->SetModelExternalMatrix(&_shipMatrix);
-		_thrusters[i]->SetModelInnerMatrix(glm::mat4(1.0));
+		_thrusters[i]->TextureParams.SetAll(_textures["Thruster"]);
+		_thrusters[i]->ModelParams.Model = _models["Thruster"];
+		_thrusters[i]->DrawParams.Enabled = true;
+		_thrusters[i]->ModelParams.Matrix = glm::mat4(1.0);
+		_thrusters[i]->ModelParams.ExternalMatrix = &_shipMatrix;
 		_common.video->RegisterModel(_thrusters[i]);
 	}
 
@@ -142,12 +139,11 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 		&_shipMatrix,
 		&_textures,
 		&_models);
-	_wings[0]->SetTexture({_textures["Wing"]});
-	_wings[0]->SetModels({_models["Wing"]});
-	_wings[0]->SetDrawEnabled(true);
-	_wings[0]->SetModelMatrix(glm::mat4(1.0));
-	_wings[0]->SetModelExternalMatrix(&_shipMatrix);
-	_wings[0]->SetModelInnerMatrix(glm::mat4(1.0));
+	_wings[0]->TextureParams.SetAll(_textures["Wing"]);
+	_wings[0]->ModelParams.Model = _models["Wing"];
+	_wings[0]->DrawParams.Enabled = true;
+	_wings[0]->ModelParams.Matrix = glm::mat4(1.0);
+	_wings[0]->ModelParams.ExternalMatrix = &_shipMatrix;
 	_common.video->RegisterModel(_wings[0]);
 
 	_wings[1] = new Wing(
@@ -157,14 +153,14 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 		&_textures,
 		&_models,
 		true);
-	_wings[1]->SetTexture({_textures["Wing"]});
-	_wings[1]->SetModels({_models["WingInverted"]});
-	_wings[1]->SetDrawEnabled(true);
-	_wings[1]->SetModelMatrix(glm::mat4(1.0));
-	_wings[1]->SetModelExternalMatrix(&_shipMatrix);
-	_wings[1]->SetModelInnerMatrix(glm::scale(
+	_wings[1]->TextureParams.SetAll(_textures["Wing"]);
+	_wings[1]->ModelParams.Model = _models["WingInverted"];
+	_wings[1]->DrawParams.Enabled = true;
+	_wings[1]->ModelParams.Matrix = glm::mat4(1.0);
+	_wings[1]->ModelParams.ExternalMatrix = &_shipMatrix;
+	_wings[1]->ModelParams.InnerMatrix = glm::scale(
 		glm::mat4(1.0),
-		glm::vec3(-1, 1, 1)));
+		glm::vec3(-1, 1, 1));
 	_common.video->RegisterModel(_wings[1]);
 
 	_cornerTextBox = new TextBox(_common.video, _common.textHandler);
@@ -628,12 +624,11 @@ Thruster::Thruster(
 	_video = video;
 
 	_exhaust = new Model;
-	_exhaust->SetTexture({(*textures)["ThrusterExh"]});
-	_exhaust->SetModels({(*models)["ThrusterExh"]});
-	_exhaust->SetDrawEnabled(true);
-	_exhaust->SetModelMatrix(glm::mat4(1.0));
-	_exhaust->SetModelExternalMatrix(extMat);
-	_exhaust->SetModelInnerMatrix(glm::mat4(1.0));
+	_exhaust->TextureParams.SetAll((*textures)["ThrusterExh"]);
+	_exhaust->ModelParams.Model = (*models)["ThrusterExh"];
+	_exhaust->DrawParams.Enabled = true;
+	_exhaust->ModelParams.Matrix = glm::mat4(1.0);
+	_exhaust->ModelParams.ExternalMatrix = extMat;
 	_video->RegisterModel(_exhaust);
 }
 
@@ -658,7 +653,7 @@ glm::vec3 Thruster::SetDirection(const glm::vec3& value, const glm::vec3& speed)
 		baseMatrix,
 		glm::radians(_angle),
 		glm::vec3(-1, 0, 0));
-	SetModelMatrix(baseMatrix);
+	ModelParams.Matrix = baseMatrix;
 
 	AdjustFAngle(value, speed);
 	AdjustRAngle(value, speed);
@@ -672,14 +667,14 @@ glm::vec3 Thruster::SetDirection(const glm::vec3& value, const glm::vec3& speed)
 		glm::radians(_angleF),
 		glm::vec3(1, 0, 0));
 
-	_exhaust->SetModelMatrix(glm::rotate(
+	_exhaust->ModelParams.Matrix = glm::rotate(
 		exhaustMatrix,
 		glm::radians(_angleR),
-		glm::vec3(0, 0, 1)));
+		glm::vec3(0, 0, 1));
 
 	glm::vec3 thrustDir(0, -1, 0);
-	glm::mat4 rotMatrix = *GetModelExternalMatrix() *
-		_exhaust->GetModelMatrix();
+	glm::mat4 rotMatrix = *ModelParams.ExternalMatrix *
+		_exhaust->ModelParams.Matrix;
 	thrustDir = rotMatrix * glm::vec4(thrustDir, 0.0f);
 
 	float angleCos = glm::dot(
@@ -719,9 +714,9 @@ void Thruster::AdjustFAngle(const glm::vec3& value, const glm::vec3& speed)
 
 	glm::vec3 thrustDir(0, -1, 0);
 
-	glm::mat4 matrix = *GetModelExternalMatrix() * GetModelMatrix();
-	glm::mat4 rotMatrix = *GetModelExternalMatrix() *
-		_exhaust->GetModelMatrix();
+	glm::mat4 matrix = *ModelParams.ExternalMatrix * ModelParams.Matrix;
+	glm::mat4 rotMatrix = *ModelParams.ExternalMatrix *
+		_exhaust->ModelParams.Matrix;
 
 	planePoint1 = matrix * glm::vec4(planePoint1, 1.0f);
 	planePoint2 = matrix * glm::vec4(planePoint2, 1.0f);
@@ -788,9 +783,9 @@ void Thruster::AdjustRAngle(const glm::vec3& value, const glm::vec3& speed)
 
 	glm::vec3 thrustDir(0, -1, 0);
 
-	glm::mat4 matrix = *GetModelExternalMatrix() * GetModelMatrix();
-	glm::mat4 rotMatrix = *GetModelExternalMatrix() *
-		_exhaust->GetModelMatrix();
+	glm::mat4 matrix = *ModelParams.ExternalMatrix * ModelParams.Matrix;
+	glm::mat4 rotMatrix = *ModelParams.ExternalMatrix *
+		_exhaust->ModelParams.Matrix;
 
 	planePoint1 = matrix * glm::vec4(planePoint1, 1.0f);
 	planePoint2 = matrix * glm::vec4(planePoint2, 1.0f);
@@ -918,15 +913,16 @@ glm::vec3 Wing::SetSpeed(const glm::vec3& value, const glm::vec3& force)
 		glm::radians(_angleUp),
 		glm::vec3(0, _inverted ? 1 : -1, 0));
 
-	SetModelMatrix(matrix);
+	ModelParams.Matrix = matrix;
 
 	if (glm::length(value) < 0.00001) {
 		return glm::vec3(0);
 	}
 
-	glm::vec3 forward = *GetModelExternalMatrix() * glm::vec4(0, -1, 0, 0);
-	glm::vec3 right = *GetModelExternalMatrix() * glm::vec4(-1, 0, 0, 0);
-	glm::vec3 up = *GetModelExternalMatrix() * glm::vec4(0, 0, 1, 0);
+	glm::vec3 forward =
+		*ModelParams.ExternalMatrix * glm::vec4(0, -1, 0, 0);
+	glm::vec3 right = *ModelParams.ExternalMatrix * glm::vec4(-1, 0, 0, 0);
+	glm::vec3 up = *ModelParams.ExternalMatrix * glm::vec4(0, 0, 1, 0);
 
 	forward = glm::normalize(forward);
 	right = glm::normalize(right);

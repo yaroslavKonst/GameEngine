@@ -80,19 +80,21 @@ void TextBox::Place()
 			float ypos = yoffset -
 				coeff * glyph.Data.BearingY;
 
-			_line[i]->SetRectanglePosition({
+			_line[i]->RectangleParams.Position = {
 				xpos,
 				ypos,
 				xpos + coeff * glyph.Data.Width,
 				ypos + coeff * glyph.Data.Height
-			});
+			};
 
-			_line[i]->SetRectangleDepth(_depth);
-			_line[i]->SetColorMultiplier(_color);
+			_line[i]->RectangleParams.Depth = _depth;
+			_line[i]->DrawParams.ColorMultiplier = _color;
 
 			if (!_textUpdated) {
-				_line[i]->SetRectangleTexCoords({0, 0, 1, 1});
-				_line[i]->SetTexture({glyph.Texture});
+				_line[i]->RectangleParams.TexCoords =
+					{0, 0, 1, 1};
+				_line[i]->TextureParams.Diffuse =
+					glyph.Texture;
 
 				_video->RegisterRectangle(_line[i]);
 			}
@@ -120,13 +122,8 @@ void TextBox::Place()
 
 		for (auto rectangle : _line) {
 			if (rectangle) {
-				glm::vec4 pos =
-					rectangle->GetRectanglePosition();
-
-				pos[0] += shift;
-				pos[2] += shift;
-
-				rectangle->SetRectanglePosition(pos);
+				rectangle->RectangleParams.Position[0] += shift;
+				rectangle->RectangleParams.Position[2] += shift;
 			}
 		}
 	}
@@ -140,7 +137,7 @@ void TextBox::Activate()
 
 	for (auto rectangle : _line) {
 		if (rectangle) {
-			rectangle->SetDrawEnabled(true);
+			rectangle->DrawParams.Enabled = true;
 		}
 	}
 }
@@ -149,7 +146,7 @@ void TextBox::Deactivate()
 {
 	for (auto rectangle : _line) {
 		if (rectangle) {
-			rectangle->SetDrawEnabled(false);
+			rectangle->DrawParams.Enabled = false;
 		}
 	}
 }

@@ -64,13 +64,13 @@ void Ship::TickEarly()
 {
 	if (_flightMode) {
 		glm::vec3 dirF = _shipMatrix *
-			_activeFlightControl->GetModelMatrix() *
+			_activeFlightControl->ModelParams.Matrix *
 			glm::vec4(0, 1, 0, 0);
 		glm::vec3 dirR = _shipMatrix *
-			_activeFlightControl->GetModelMatrix() *
+			_activeFlightControl->ModelParams.Matrix *
 			glm::vec4(1, 0, 0, 0);
 		glm::vec3 dirU = _shipMatrix *
-			_activeFlightControl->GetModelMatrix() *
+			_activeFlightControl->ModelParams.Matrix *
 			glm::vec4(0, 0, 1, 0);
 
 		_targetSpeed =
@@ -344,7 +344,7 @@ bool Ship::MouseMoveRaw(double xoffset, double yoffset)
 	}
 
 	glm::vec3 dirU = _shipMatrix *
-		_activeFlightControl->GetModelMatrix() *
+		_activeFlightControl->ModelParams.Matrix *
 		glm::vec4(0, 0, 1, 0);
 
 	_rotationMatrix = glm::rotate(

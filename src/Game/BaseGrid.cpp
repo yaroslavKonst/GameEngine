@@ -120,12 +120,10 @@ void BaseGrid::InsertBlock(
 		glm::mat4(1.0),
 		glm::vec3(x, y, 0));
 
-	block->SetDrawEnabled(true);
-	block->SetModelMatrix(matrix);
-	block->SetModelExternalMatrix(_extMat);
+	block->DrawParams.Enabled = true;
+	block->ModelParams.Matrix = matrix;
+	block->ModelParams.ExternalMatrix = _extMat;
 	block->SetObjectExternalMatrix(_extMat);
-
-	block->SetModelInnerMatrix(glm::mat4(1.0));
 
 	auto model = Loader::LoadModel("Models/Ship/ShipFloorCollision.obj");
 	block->SetObjectVertices(model.Vertices);
@@ -193,24 +191,24 @@ void BaseGrid::PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type)
 		_blocks.find({x, y - 1}) != _blocks.end() ||
 		_blocks.find({x, y + 1}) != _blocks.end());
 
-	_preview->SetDrawEnabled(true);
-	_preview->SetDrawLight(true);
+	_preview->DrawParams.Enabled = true;
+	_preview->DrawParams.IsLight = true;
 
 	if (available) {
-		_preview->SetColorMultiplier({0.5, 1, 0.5, 0.4});
+		_preview->DrawParams.ColorMultiplier = {0.5, 1, 0.5, 0.4};
 	} else {
-		_preview->SetColorMultiplier({1.0, 0.5, 0.5, 0.4});
+		_preview->DrawParams.ColorMultiplier = {1.0, 0.5, 0.5, 0.4};
 	}
 
-	_preview->SetModelMatrix(glm::translate(
+	_preview->ModelParams.Matrix = glm::translate(
 		glm::mat4(1.0),
-		glm::vec3(x, y, 0)));
+		glm::vec3(x, y, 0));
 
-	_preview->SetModelExternalMatrix(_extMat);
+	_preview->ModelParams.ExternalMatrix = _extMat;
 
-	_preview->SetModelInnerMatrix(glm::scale(
+	_preview->ModelParams.InnerMatrix = glm::scale(
 		glm::mat4(1.0),
-		glm::vec3(1.01, 1.01, 1.01)));
+		glm::vec3(1.01, 1.01, 1.01));
 
 	_video->RegisterModel(_preview);
 }
@@ -263,8 +261,8 @@ FloorBlock::FloorBlock(
 	BaseGrid* grid) :
 	BaseBlock(x, y, grid)
 {
-	SetTexture({grid->Textures["Floor"]});
-	SetModels({grid->Models["Floor"]});
+	TextureParams.SetAll(grid->Textures["Floor"]);
+	ModelParams.Model = grid->Models["Floor"];
 }
 
 FloorCommBlock::FloorCommBlock(
@@ -277,8 +275,8 @@ FloorCommBlock::FloorCommBlock(
 	BaseBlock(x, y, grid)
 {
 	_video = video;
-	SetTexture({grid->Textures["FloorComm"]});
-	SetModels({grid->Models["FloorComm"]});
+	TextureParams.SetAll(grid->Textures["FloorComm"]);
+	ModelParams.Model = grid->Models["FloorComm"];
 	_delims.resize(4, nullptr);
 	_powerCables.resize(4, nullptr);
 	_dataCables.resize(4, nullptr);
@@ -295,22 +293,25 @@ FloorCommBlock::FloorCommBlock(
 
 	for (size_t i = 0; i < 4; ++i) {
 		_delims[i] = CreateDelim(i);
-		_delims[i]->SetDrawEnabled(true);
-		_delims[i]->SetTexture({grid->Textures["FloorCommDelim"]});
-		_delims[i]->SetModels({grid->Models["FloorCommDelim"]});
-		_delims[i]->SetModelExternalMatrix(extMat);
+		_delims[i]->DrawParams.Enabled = true;
+		_delims[i]->TextureParams.SetAll(
+			grid->Textures["FloorCommDelim"]);
+		_delims[i]->ModelParams.Model = grid->Models["FloorCommDelim"];
+		_delims[i]->ModelParams.ExternalMatrix = extMat;
 
 		_powerCables[i] = CreatePowerCable(i);
-		_powerCables[i]->SetDrawEnabled(false);
-		_powerCables[i]->SetTexture({grid->Textures["PowerCable"]});
-		_powerCables[i]->SetModels({grid->Models["PowerCable"]});
-		_powerCables[i]->SetModelExternalMatrix(extMat);
+		_powerCables[i]->DrawParams.Enabled = false;
+		_powerCables[i]->TextureParams.SetAll(
+			grid->Textures["PowerCable"]);
+		_powerCables[i]->ModelParams.Model = grid->Models["PowerCable"];
+		_powerCables[i]->ModelParams.ExternalMatrix = extMat;
 
 		_dataCables[i] = CreateDataCable(i);
-		_dataCables[i]->SetDrawEnabled(false);
-		_dataCables[i]->SetTexture({grid->Textures["DataCable"]});
-		_dataCables[i]->SetModels({grid->Models["DataCable"]});
-		_dataCables[i]->SetModelExternalMatrix(extMat);
+		_dataCables[i]->DrawParams.Enabled = false;
+		_dataCables[i]->TextureParams.SetAll(
+			grid->Textures["DataCable"]);
+		_dataCables[i]->ModelParams.Model = grid->Models["DataCable"];
+		_dataCables[i]->ModelParams.ExternalMatrix = extMat;
 
 		_video->RegisterModel(_delims[i]);
 		_video->RegisterModel(_powerCables[i]);
@@ -368,9 +369,9 @@ void FloorCommBlock::Update()
 			BaseBlock::Type::FloorComm;
 
 		if (!commBlock) {
-			_delims[i]->SetDrawEnabled(true);
-			_powerCables[i]->SetDrawEnabled(false);
-			_dataCables[i]->SetDrawEnabled(false);
+			_delims[i]->DrawParams.Enabled = true;
+			_powerCables[i]->DrawParams.Enabled = false;
+			_dataCables[i]->DrawParams.Enabled = false;
 		} else {
 			power = static_cast<FloorCommBlock*>(
 				_grid->GetBlock(x[i], y[i]))->GetPowerCable();
@@ -380,49 +381,49 @@ void FloorCommBlock::Update()
 			power = power && _hasPowerCable;
 			data = data && _hasDataCable;
 
-			_delims[i]->SetDrawEnabled(!(power || data));
-			_powerCables[i]->SetDrawEnabled(power);
-			_dataCables[i]->SetDrawEnabled(data);
+			_delims[i]->DrawParams.Enabled = !(power || data);
+			_powerCables[i]->DrawParams.Enabled = power;
+			_dataCables[i]->DrawParams.Enabled = data;
 		}
 	}
 
 	if (_hasPowerCable) {
 		if (
-			_powerCables[0]->GetDrawEnabled() &&
-			_powerCables[1]->GetDrawEnabled() &&
-			!_powerCables[2]->GetDrawEnabled() &&
-			!_powerCables[3]->GetDrawEnabled())
+			_powerCables[0]->DrawParams.Enabled &&
+			_powerCables[1]->DrawParams.Enabled &&
+			!_powerCables[2]->DrawParams.Enabled &&
+			!_powerCables[3]->DrawParams.Enabled)
 		{
-			_powerCableHub->SetDrawEnabled(false);
+			_powerCableHub->DrawParams.Enabled = false;
 		} else if (
-			!_powerCables[0]->GetDrawEnabled() &&
-			!_powerCables[1]->GetDrawEnabled() &&
-			_powerCables[2]->GetDrawEnabled() &&
-			_powerCables[3]->GetDrawEnabled())
+			!_powerCables[0]->DrawParams.Enabled &&
+			!_powerCables[1]->DrawParams.Enabled &&
+			_powerCables[2]->DrawParams.Enabled &&
+			_powerCables[3]->DrawParams.Enabled)
 		{
-			_powerCableHub->SetDrawEnabled(false);
+			_powerCableHub->DrawParams.Enabled = false;
 		} else {
-			_powerCableHub->SetDrawEnabled(true);
+			_powerCableHub->DrawParams.Enabled = true;
 		}
 	}
 
 	if (_hasDataCable) {
 		if (
-			_dataCables[0]->GetDrawEnabled() &&
-			_dataCables[1]->GetDrawEnabled() &&
-			!_dataCables[2]->GetDrawEnabled() &&
-			!_dataCables[3]->GetDrawEnabled())
+			_dataCables[0]->DrawParams.Enabled &&
+			_dataCables[1]->DrawParams.Enabled &&
+			!_dataCables[2]->DrawParams.Enabled &&
+			!_dataCables[3]->DrawParams.Enabled)
 		{
-			_dataCableHub->SetDrawEnabled(false);
+			_dataCableHub->DrawParams.Enabled = false;
 		} else if (
-			!_dataCables[0]->GetDrawEnabled() &&
-			!_dataCables[1]->GetDrawEnabled() &&
-			_dataCables[2]->GetDrawEnabled() &&
-			_dataCables[3]->GetDrawEnabled())
+			!_dataCables[0]->DrawParams.Enabled &&
+			!_dataCables[1]->DrawParams.Enabled &&
+			_dataCables[2]->DrawParams.Enabled &&
+			_dataCables[3]->DrawParams.Enabled)
 		{
-			_dataCableHub->SetDrawEnabled(false);
+			_dataCableHub->DrawParams.Enabled = false;
 		} else {
-			_dataCableHub->SetDrawEnabled(true);
+			_dataCableHub->DrawParams.Enabled = true;
 		}
 	}
 }
@@ -439,21 +440,21 @@ void FloorCommBlock::SetPowerCable(bool value)
 	if (value && !_powerCableHub) {
 		_powerCableHub = new Model;
 
-		_powerCableHub->SetModels({_grid->Models["PowerCableHub"]});
-		_powerCableHub->SetTexture({_grid->Textures["PowerCableHub"]});
-		_powerCableHub->SetColorMultiplier({1, 0.8, 0.8, 1});
+		_powerCableHub->ModelParams.Model =
+			_grid->Models["PowerCableHub"];
+		_powerCableHub->TextureParams.SetAll(
+			_grid->Textures["PowerCableHub"]);
+		_powerCableHub->DrawParams.ColorMultiplier = {1, 0.8, 0.8, 1};
 
-		glm::mat4 matrix = GetModelMatrix();
+		glm::mat4 matrix = ModelParams.Matrix;
 
 		matrix = glm::translate(
 			matrix,
 			glm::vec3(0, 0, 0.8));
 
-		_powerCableHub->SetDrawEnabled(true);
-		_powerCableHub->SetModelMatrix(matrix);
-		_powerCableHub->SetModelExternalMatrix(_extMat);
-
-		_powerCableHub->SetModelInnerMatrix(glm::mat4(1.0));
+		_powerCableHub->DrawParams.Enabled = true;
+		_powerCableHub->ModelParams.Matrix = matrix;
+		_powerCableHub->ModelParams.ExternalMatrix = _extMat;
 
 		_video->RegisterModel(_powerCableHub);
 
@@ -521,21 +522,21 @@ void FloorCommBlock::SetDataCable(bool value)
 	if (value && !_dataCableHub) {
 		_dataCableHub = new Model;
 
-		_dataCableHub->SetModels({_grid->Models["DataCableHub"]});
-		_dataCableHub->SetTexture({_grid->Textures["DataCableHub"]});
-		_dataCableHub->SetColorMultiplier({0.8, 0.8, 1, 1});
+		_dataCableHub->ModelParams.Model =
+			_grid->Models["DataCableHub"];
+		_dataCableHub->TextureParams.SetAll(
+			_grid->Textures["DataCableHub"]);
+		_dataCableHub->DrawParams.ColorMultiplier = {0.8, 0.8, 1, 1};
 
-		glm::mat4 matrix = GetModelMatrix();
+		glm::mat4 matrix = ModelParams.Matrix;
 
 		matrix = glm::translate(
 			matrix,
 			glm::vec3(0, 0, 0.8));
 
-		_dataCableHub->SetDrawEnabled(true);
-		_dataCableHub->SetModelMatrix(matrix);
-		_dataCableHub->SetModelExternalMatrix(_extMat);
-
-		_dataCableHub->SetModelInnerMatrix(glm::mat4(1.0));
+		_dataCableHub->DrawParams.Enabled = true;
+		_dataCableHub->ModelParams.Matrix = matrix;
+		_dataCableHub->ModelParams.ExternalMatrix = _extMat;
 
 		_video->RegisterModel(_dataCableHub);
 
@@ -624,9 +625,7 @@ Model* FloorCommBlock::CreateDelim(size_t i)
 		matrix,
 		glm::vec3(0.4, 0, 0));
 
-	delim->SetModelMatrix(matrix);
-
-	delim->SetModelInnerMatrix(glm::mat4(1.0));
+	delim->ModelParams.Matrix = matrix;
 
 	return delim;
 }
@@ -635,7 +634,7 @@ Model* FloorCommBlock::CreatePowerCable(size_t i)
 {
 	Model* cable = new Model;
 
-	cable->SetColorMultiplier({1, 0.8, 0.8, 1});
+	cable->DrawParams.ColorMultiplier = {1, 0.8, 0.8, 1};
 
 	glm::mat4 matrix = glm::translate(
 		glm::mat4(1.0),
@@ -670,9 +669,7 @@ Model* FloorCommBlock::CreatePowerCable(size_t i)
 		glm::radians(90.0f),
 		glm::vec3(0, 0, 1));
 
-	cable->SetModelMatrix(matrix);
-
-	cable->SetModelInnerMatrix(glm::mat4(1.0));
+	cable->ModelParams.Matrix = matrix;
 
 	return cable;
 }
@@ -681,7 +678,7 @@ Model* FloorCommBlock::CreateDataCable(size_t i)
 {
 	Model* cable = new Model;
 
-	cable->SetColorMultiplier({0.8, 0.8, 1, 1});
+	cable->DrawParams.ColorMultiplier = {0.8, 0.8, 1, 1};
 
 	glm::mat4 matrix = glm::translate(
 		glm::mat4(1.0),
@@ -714,9 +711,7 @@ Model* FloorCommBlock::CreateDataCable(size_t i)
 
 	matrix = glm::scale(matrix, glm::vec3(1, 0.4, 1)),
 
-	cable->SetModelMatrix(matrix);
-
-	cable->SetModelInnerMatrix(glm::mat4(1.0));
+	cable->ModelParams.Matrix = matrix;
 
 	return cable;
 }
