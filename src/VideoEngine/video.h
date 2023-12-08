@@ -86,15 +86,37 @@ public:
 			value - _dataBridge.StagedScene.CameraPosition;
 	}
 
-	InputControl* GetInputControl()
+	void Subscribe(InputHandler* handler)
 	{
-		return _dataBridge.inputControl;
+		_dataBridge.inputControl->Subscribe(handler);
 	}
 
-	uint32_t CreateSkyboxTexture(
+	void Unsubscribe(InputHandler* handler)
+	{
+		_dataBridge.inputControl->Unsubscribe(handler);
+	}
+
+	void ToggleRawMouseInput()
+	{
+		_dataBridge.inputControl->ToggleRawMouseInput();
+	}
+
+	uint32_t AddTexture(
+		const Loader::Image& image,
+		bool repeat = true,
+		bool async = false)
+	{
+		return _dataBridge.Textures->AddTexture(image, repeat, async);
+	}
+
+	void RemoveTexture(uint32_t index)
+	{
+		_dataBridge.Textures->RemoveTexture(index);
+	}
+
+	uint32_t AddSkyboxTexture(
 		const Loader::Image& image,
 		bool async = false);
-	void DestroySkyboxTexture(uint32_t texture);
 
 	void SetSkyboxNumber(uint32_t count)
 	{
@@ -134,11 +156,6 @@ public:
 	float GetScreenRatio()
 	{
 		return _swapchain->GetScreenRatio();
-	}
-
-	TextureHandler* GetTextures()
-	{
-		return _dataBridge.Textures;
 	}
 
 private:

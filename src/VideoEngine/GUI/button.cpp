@@ -9,12 +9,12 @@ Button::Button(Video* video, TextHandler* textHandler) :
 
 	_activated = false;
 
-	_video->GetInputControl()->Subscribe(this);
+	_video->Subscribe(this);
 }
 
 Button::~Button()
 {
-	_video->GetInputControl()->Unsubscribe(this);
+	_video->Unsubscribe(this);
 }
 
 void Button::Activate()

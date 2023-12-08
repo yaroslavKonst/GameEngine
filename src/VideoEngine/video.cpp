@@ -473,7 +473,7 @@ void Video::RemoveRectangle(Rectangle* rectangle)
 	_dataBridge.ExtModMutex.unlock();
 }
 
-uint32_t Video::CreateSkyboxTexture(
+uint32_t Video::AddSkyboxTexture(
 	const Loader::Image& image,
 	bool async)
 {
@@ -562,11 +562,6 @@ uint32_t Video::CreateSkyboxTexture(
 		TextureHandler::TextureType::TCube,
 		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 		layerCount);
-}
-
-void Video::DestroySkyboxTexture(uint32_t texture)
-{
-	_dataBridge.Textures->RemoveTexture(texture);
 }
 
 void Video::CreateDescriptorSetLayout()

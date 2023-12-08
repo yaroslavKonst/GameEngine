@@ -23,7 +23,7 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 	SetInputLayer(1);
 	InputArea = {-1, -1, 1, 1};
 
-	_video->GetInputControl()->Subscribe(this);
+	_video->Subscribe(this);
 
 	_flightMode = false;
 	_buildMode = false;
@@ -54,7 +54,7 @@ Ship::Ship(Video* video, CollisionEngine* collisionEngine)
 
 Ship::~Ship()
 {
-	_video->GetInputControl()->Unsubscribe(this);
+	_video->Unsubscribe(this);
 
 	delete _mainGrid;
 	delete _baseGrid;

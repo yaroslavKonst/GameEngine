@@ -801,7 +801,7 @@ Planet::Planet(
 	Logger::Verbose() << "Planet: Clusterization end.";
 
 	auto td = Loader::LoadImage("Images/White.png");
-	_blockTexture = _video->GetTextures()->AddTexture(td);
+	_blockTexture = _video->AddTexture(td);
 
 	Logger::Verbose() << "Planet: Texture loaded.";
 
@@ -932,7 +932,7 @@ Planet::~Planet()
 		_video->UnloadModel(model);
 	}
 
-	_video->GetTextures()->RemoveTexture(_blockTexture);
+	_video->RemoveTexture(_blockTexture);
 }
 
 void Planet::Update(glm::vec3 playerCoord)

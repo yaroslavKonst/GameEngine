@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "TextureHandler.h"
+#include "video.h"
 #include "../Utils/Text.h"
 
 class TextHandler
@@ -16,10 +16,8 @@ class TextHandler
 	};
 
 public:
-	TextHandler(TextureHandler* textureHandler);
+	TextHandler(Video* video, const Text::GlyphCollection& collection);
 	~TextHandler();
-
-	void LoadFont(const Text::GlyphCollection& collection);
 
 	Glyph GetGlyph(uint32_t code)
 	{
@@ -33,9 +31,11 @@ public:
 
 private:
 	std::map<uint32_t, Glyph> _glyphs;
-	TextureHandler* _textureHandler;
+	Video* _video;
 
 	uint32_t _medianHeight;
+
+	void LoadFont(const Text::GlyphCollection& collection);
 };
 
 #endif

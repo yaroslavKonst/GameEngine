@@ -18,7 +18,7 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 	SetInputLayer(1);
 	InputArea = {-1, -1, 1, 1};
 
-	_common.video->GetInputControl()->Subscribe(this);
+	_common.video->Subscribe(this);
 
 	_flightMode = false;
 	_grounded = false;
@@ -198,38 +198,33 @@ Shuttle::~Shuttle()
 	}
 
 	UnloadAssets();
-	_common.video->GetInputControl()->Unsubscribe(this);
+	_common.video->Unsubscribe(this);
 }
 
 void Shuttle::LoadAssets()
 {
 	auto td = Loader::LoadImage("Models/Shuttle/Base.png");
-	_textures["Base"] =
-		_common.video->GetTextures()->AddTexture(td);
+	_textures["Base"] = _common.video->AddTexture(td);
 	auto model = Loader::LoadModel("Models/Shuttle/Base.obj");
 	_models["Base"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/Roof.png");
-	_textures["Roof"] =
-		_common.video->GetTextures()->AddTexture(td);
+	_textures["Roof"] = _common.video->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/Roof.obj");
 	_models["Roof"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/Thruster.png");
-	_textures["Thruster"] =
-		_common.video->GetTextures()->AddTexture(td);
+	_textures["Thruster"] = _common.video->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/Thruster.obj");
 	_models["Thruster"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/ThrusterExh.png");
-	_textures["ThrusterExh"] =
-		_common.video->GetTextures()->AddTexture(td);
+	_textures["ThrusterExh"] = _common.video->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/ThrusterExh.obj");
 	_models["ThrusterExh"] = _common.video->LoadModel(model);
 
 	td = Loader::LoadImage("Models/Shuttle/Wing.png");
-	_textures["Wing"] =
-		_common.video->GetTextures()->AddTexture(td);
+	_textures["Wing"] = _common.video->AddTexture(td);
 	model = Loader::LoadModel("Models/Shuttle/Wing.obj");
 	_models["Wing"] = _common.video->LoadModel(model);
 
@@ -245,7 +240,7 @@ void Shuttle::LoadAssets()
 void Shuttle::UnloadAssets()
 {
 	for (auto& texture : _textures) {
-		_common.video->GetTextures()->RemoveTexture(texture.second);
+		_common.video->RemoveTexture(texture.second);
 	}
 
 	for (auto& model : _models) {

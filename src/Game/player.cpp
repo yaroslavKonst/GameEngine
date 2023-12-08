@@ -52,7 +52,7 @@ Player::Player(
 	_light.AngleFade = 10;
 
 	_common.video->RegisterLight(&_light);
-	_common.video->GetInputControl()->Subscribe(this);
+	_common.video->Subscribe(this);
 
 	_centerTextBox = new TextBox(_common.video, _common.textHandler);
 	_centerTextBox->SetPosition(0.03, 0.03);
@@ -72,7 +72,7 @@ Player::Player(
 	_cornerTextBox->SetDepth(0);
 
 	auto td = Loader::LoadImage("Images/Cross.png");
-	_crossTexture = _common.video->GetTextures()->AddTexture(td);
+	_crossTexture = _common.video->AddTexture(td);
 
 	_cross.RectangleParams.Position = {-0.02, -0.02, 0.02, 0.02};
 	_cross.RectangleParams.TexCoords = {0, 0, 1, 1};
@@ -92,9 +92,9 @@ Player::~Player()
 	_cornerTextBox->Deactivate();
 	delete _cornerTextBox;
 
-	_common.video->GetInputControl()->Unsubscribe(this);
+	_common.video->Unsubscribe(this);
 	_common.video->RemoveLight(&_light);
-	_common.video->GetTextures()->RemoveTexture(_crossTexture);
+	_common.video->RemoveTexture(_crossTexture);
 }
 
 void Player::Key(
@@ -116,8 +116,7 @@ void Player::Key(
 
 	if (key == GLFW_KEY_C) {
 		if (action == GLFW_PRESS) {
-			_common.video->GetInputControl()->
-				ToggleRawMouseInput();
+			_common.video->ToggleRawMouseInput();
 		}
 	} else if (key == GLFW_KEY_SPACE) {
 		if (action == GLFW_PRESS) {

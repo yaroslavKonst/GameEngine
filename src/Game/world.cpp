@@ -31,12 +31,12 @@ World::World()
 	_common.video->SetSkyboxNumber(2);
 
 	auto skyboxData = Loader::LoadImage("Skybox/skybox.png");
-	_skyboxDay = _common.video->CreateSkyboxTexture(skyboxData);
+	_skyboxDay = _common.video->AddSkyboxTexture(skyboxData);
 	_common.video->SetSkyboxEnabled(true);
 	_common.video->SetSkyboxTexture(_skyboxDay);
 
 	skyboxData = Loader::LoadImage("Skybox/skybox_night.png");
-	_skyboxNight = _common.video->CreateSkyboxTexture(skyboxData);
+	_skyboxNight = _common.video->AddSkyboxTexture(skyboxData);
 	_common.video->SetSkyboxEnabled(true, 1);
 	_common.video->SetSkyboxTexture(_skyboxNight, 1);
 
@@ -45,20 +45,19 @@ World::World()
 
 	_common.localizer = new Localizer("Locale/en");
 
-	_common.textHandler = new TextHandler(_common.video->GetTextures());
 	auto glyphs = Text::LoadFont(
 		"Fonts/DroidSans.ttf",
 		_common.localizer->GetCharSet());
 
-	_common.textHandler->LoadFont(glyphs);
+	_common.textHandler = new TextHandler(_common.video, glyphs);
 
 	_skyboxTime = 0;
 }
 
 World::~World()
 {
-	_common.video->DestroySkyboxTexture(_skyboxDay);
-	_common.video->DestroySkyboxTexture(_skyboxNight);
+	_common.video->RemoveTexture(_skyboxDay);
+	_common.video->RemoveTexture(_skyboxNight);
 
 	delete _common.textHandler;
 	delete _common.localizer;
@@ -78,7 +77,7 @@ void World::Run()
 	GravityField gf;
 
 	auto td = Loader::LoadImage("Images/transparent.png");
-	uint32_t testTexture = _common.video->GetTextures()->AddTexture(td);
+	uint32_t testTexture = _common.video->AddTexture(td);
 
 	Planet planet(
 		20000,

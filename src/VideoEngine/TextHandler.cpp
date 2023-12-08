@@ -4,16 +4,19 @@
 
 #include "../Logger/logger.h"
 
-TextHandler::TextHandler(TextureHandler* textureHandler)
+TextHandler::TextHandler(
+	Video* video,
+	const Text::GlyphCollection& collection)
 {
-	_textureHandler = textureHandler;
+	_video = video;
+	LoadFont(collection);
 }
 
 TextHandler::~TextHandler()
 {
 	for (auto& glyph : _glyphs) {
 		if (glyph.second.HasTexture) {
-			_textureHandler->RemoveTexture(glyph.second.Texture);
+			_video->RemoveTexture(glyph.second.Texture);
 		}
 	}
 }
@@ -43,7 +46,7 @@ void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 		heights.insert(glyph.Data.Height);
 
 		if (glyph.Data.Width > 0 && glyph.Data.Height > 0) {
-			uint32_t texId = _textureHandler->AddTexture(
+			uint32_t texId = _video->AddTexture(
 				glyphImage,
 				false);
 
