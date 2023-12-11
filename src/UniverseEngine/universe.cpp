@@ -32,18 +32,18 @@ void Universe::RemoveActor(Actor* actor)
 	_actorMutex.unlock();
 }
 
-void Universe::RegisterCollisionEngine(CollisionEngine* engine)
+void Universe::RegisterPhysicalEngine(PhysicalEngineBase* engine)
 {
-	_collisionMutex.lock();
-	_collisionEngines.insert(engine);
-	_collisionMutex.unlock();
+	_engineMutex.lock();
+	_physicalEngines.insert(engine);
+	_engineMutex.unlock();
 }
 
-void Universe::RemoveCollisionEngine(CollisionEngine* engine)
+void Universe::RemovePhysicalEngine(PhysicalEngineBase* engine)
 {
-	_collisionMutex.lock();
-	_collisionEngines.erase(engine);
-	_collisionMutex.unlock();
+	_engineMutex.lock();
+	_physicalEngines.erase(engine);
+	_engineMutex.unlock();
 }
 
 void Universe::MainLoop()
@@ -65,12 +65,12 @@ void Universe::MainLoop()
 
 		_threadPool->WaitAll();
 
-		_collisionMutex.lock();
-		for (CollisionEngine* engine : _collisionEngines) {
-			engine->Run(_threadPool);
+		_engineMutex.lock();
+		for (PhysicalEngineBase* engine : _physicalEngines) {
+			engine->Run(_threadPool, (double)_tickDelayMS / 1000.0);
 		}
 
-		_collisionMutex.unlock();
+		_engineMutex.unlock();
 
 		for (Actor* actor : actors) {
 			_threadPool->Enqueue(

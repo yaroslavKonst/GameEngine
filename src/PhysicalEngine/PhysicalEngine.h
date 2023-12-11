@@ -2,11 +2,14 @@
 #define _PHYSICAL_ENGINE_H
 
 #include <set>
+#include <map>
 
+#include "PhysicalEngineBase.h"
 #include "PhysicalObject.h"
+#include "SoftObject.h"
 #include "../Utils/ThreadPool.h"
 
-class PhysicalEngine
+class PhysicalEngine : public PhysicalEngineBase
 {
 public:
 	struct RayCastResult
@@ -18,10 +21,12 @@ public:
 	PhysicalEngine();
 	~PhysicalEngine();
 
-	void Run(ThreadPool* threadPool);
+	void Run(ThreadPool* threadPool, float timeStep) override;
 
 	void RegisterObject(PhysicalObject* object);
 	void RemoveObject(PhysicalObject* object);
+	void RegisterObject(SoftObject* object);
+	void RemoveObject(SoftObject* object);
 
 	RayCastResult RayCast(
 		const glm::vec3& point,
@@ -35,15 +40,38 @@ private:
 	{
 		std::vector<glm::vec3> Vertices;
 		std::vector<glm::vec3> Normals;
+		glm::vec3 Center;
+		float Radius;
+	};
+
+	struct Contact
+	{
+		glm::vec3 Normal;
+		float Distance;
+
+		size_t VertexIndex;
 	};
 
 	std::set<PhysicalObject*> _objects;
 	std::map<PhysicalObject*, ObjectDescriptor*> _objectDescriptors;
+	std::set<SoftObject*> _softObjects;
 
 	std::mutex _mutex;
 
+	std::map<SoftObject*, std::vector<Contact>> _contacts;
+	std::mutex _effectMutex;
+
 	void InitializeObject(PhysicalObject* object);
 	void DeinitializeObject(PhysicalObject* object);
+	void UpdateObjectDescriptor(
+		PhysicalObject* object,
+		ObjectDescriptor& desc);
+
+	void CalculateCollision(
+		PhysicalObject* object,
+		SoftObject* SoftObject,
+		float timeStep);
+	void ApplyEffect(SoftObject* object, float timeStep);
 };
 
 #endif

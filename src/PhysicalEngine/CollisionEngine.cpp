@@ -32,7 +32,7 @@ void CollisionEngine::RemoveObject(Object* object)
 	_mutex.unlock();
 }
 
-void CollisionEngine::Run(ThreadPool* threadPool)
+void CollisionEngine::Run(ThreadPool* threadPool, float timeStep)
 {
 	_mutex.lock();
 	std::vector<Object*> objects(_objects.size());

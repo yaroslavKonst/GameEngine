@@ -2,6 +2,7 @@
 #define _GLOBAL_H
 
 #include "../UniverseEngine/universe.h"
+#include "../PhysicalEngine/CollisionEngine.h"
 #include "../AudioEngine/audio.h"
 #include "../VideoEngine/TextHandler.h"
 #include "../Assets/localizer.h"

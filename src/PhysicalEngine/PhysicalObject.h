@@ -22,50 +22,30 @@ public:
 		std::vector<glm::vec3> Normals;
 		std::vector<uint32_t> Indices;
 		glm::mat4 Matrix;
-		glm::mat4* ExternMatrix;
+		glm::mat4* ExternalMatrix;
 
 		bool Dynamic;
-		uint32_t Domain;
 
-		float Mass;
-		glm::vec3 Speed;
-		glm::vec3 ImpulseMoment;
 		float Mu;
-		bool ModifyExternalMatrix;
+		float Bounciness;
 	};
 
-	PhysicalValues PhysicsParams;
+	PhysicalValues PhysicalParams;
 
 	PhysicalObject()
 	{
-		PhysicsParams.Enabled = false;
-		_initialized = false;
-		PhysicsParams.Dynamic = false;
-		PhysicsParams.Domain = 0;
-		PhysicsParams.ExternMatrix = nullptr;
-		PhysicsParams.ModifyExternalMatrix = false;
+		PhysicalParams.Enabled = false;
+		PhysicalParams.Dynamic = false;
+		PhysicalParams.ExternalMatrix = nullptr;
 	}
 
 	virtual ~PhysicalObject()
 	{ }
 
-	float _GetObjectDiameter()
-	{
-		return _diameter;
-	}
-
-	void _SetObjectDiameter(float value)
-	{
-		_diameter = value;
-	}
-
 	virtual uint32_t RayCastCallback(void* userPointer)
 	{
 		return 0;
 	}
-
-private:
-	float _diameter;
 };
 
 #endif

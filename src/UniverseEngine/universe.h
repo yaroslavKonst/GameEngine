@@ -9,7 +9,7 @@
 #include "../Utils/ThreadPool.h"
 #include "../VideoEngine/video.h"
 #include "actor.h"
-#include "../PhysicalEngine/CollisionEngine.h"
+#include "../PhysicalEngine/PhysicalEngineBase.h"
 
 class Universe
 {
@@ -20,8 +20,8 @@ public:
 	void RegisterActor(Actor* actor);
 	void RemoveActor(Actor* actor);
 
-	void RegisterCollisionEngine(CollisionEngine* engine);
-	void RemoveCollisionEngine(CollisionEngine* engine);
+	void RegisterPhysicalEngine(PhysicalEngineBase* engine);
+	void RemovePhysicalEngine(PhysicalEngineBase* engine);
 
 	void MainLoop();
 	void Stop();
@@ -34,8 +34,8 @@ private:
 	std::set<Actor*> _actors;
 	std::mutex _actorMutex;
 
-	std::set<CollisionEngine*> _collisionEngines;
-	std::mutex _collisionMutex;
+	std::set<PhysicalEngineBase*> _physicalEngines;
+	std::mutex _engineMutex;
 
 	bool _work;
 

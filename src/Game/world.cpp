@@ -26,7 +26,7 @@ World::World()
 	_common.universe->RegisterActor(this);
 
 	_common.collisionEngine = new CollisionEngine();
-	_common.universe->RegisterCollisionEngine(_common.collisionEngine);
+	_common.universe->RegisterPhysicalEngine(_common.collisionEngine);
 
 	_common.video->SetSkyboxNumber(2);
 
@@ -62,7 +62,7 @@ World::~World()
 	delete _common.textHandler;
 	delete _common.localizer;
 
-	_common.universe->RemoveCollisionEngine(_common.collisionEngine);
+	_common.universe->RemovePhysicalEngine(_common.collisionEngine);
 	delete _common.collisionEngine;
 
 	_common.universe->RemoveActor(this);

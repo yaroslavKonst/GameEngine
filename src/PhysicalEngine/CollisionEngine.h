@@ -3,10 +3,11 @@
 
 #include <set>
 
+#include "PhysicalEngineBase.h"
 #include "object.h"
 #include "../Utils/ThreadPool.h"
 
-class CollisionEngine
+class CollisionEngine : public PhysicalEngineBase
 {
 public:
 	struct RayCastResult
@@ -18,7 +19,7 @@ public:
 	CollisionEngine();
 	~CollisionEngine();
 
-	void Run(ThreadPool* threadPool);
+	void Run(ThreadPool* threadPool, float timeStep) override;
 
 	void RegisterObject(Object* object);
 	void RemoveObject(Object* object);
