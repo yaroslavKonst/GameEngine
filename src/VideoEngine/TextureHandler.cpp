@@ -39,19 +39,31 @@ void TextureHandler::PollTextureMessages()
 	while (!_loadMessages.IsEmpty()) {
 		auto msg = _loadMessages.Get();
 
-		_textures[msg.Index] = msg.Descriptor;
+		if (
+			_descriptorsToDeleteOnReceive.find(msg.Index) !=
+			_descriptorsToDeleteOnReceive.end())
+		{
+			DestroyTextureDescriptor(msg.Descriptor);
+			_descriptorsToDeleteOnReceive.erase(msg.Index);
+		} else {
+			_textures[msg.Index] = msg.Descriptor;
+		}
 	}
 
 	while (!_removeMessages.IsEmpty()) {
 		auto msg = _removeMessages.Get();
 
-		DestroyTextureDescriptor(_textures[msg.Index]);
-		_textures.erase(msg.Index);
+		if (_textures.find(msg.Index) == _textures.end()) {
+			_descriptorsToDeleteOnReceive.insert(msg.Index);
+		} else {
+			DestroyTextureDescriptor(_textures[msg.Index]);
+			_textures.erase(msg.Index);
+		}
 	}
 }
 
 uint32_t TextureHandler::AddTexture(
-	Loader::Image image,
+	const Loader::Image& image,
 	bool repeat,
 	bool async,
 	TextureType type,
@@ -69,11 +81,14 @@ uint32_t TextureHandler::AddTexture(
 	_usedDescriptors.insert(index);
 	_texAddMutex.unlock();
 
+	Loader::Image* imageData = new Loader::Image();
+	*imageData = image;
+
 	uint32_t id = _threadPool->Enqueue(
 		[this,
 		index,
 		type,
-		image,
+		imageData,
 		repeat,
 		flags,
 		layerCount]() -> void
@@ -82,10 +97,11 @@ uint32_t TextureHandler::AddTexture(
 				index,
 				CreateTextureDescriptor(
 					type,
-					image,
+					*imageData,
 					repeat,
 					flags,
 					layerCount)});
+			delete imageData;
 		},
 		!async);
 

@@ -42,7 +42,7 @@ public:
 	~TextureHandler();
 
 	uint32_t AddTexture(
-		Loader::Image image,
+		const Loader::Image& image,
 		bool repeat = true,
 		bool async = false,
 		TextureType type = TextureType::T2D,
@@ -81,6 +81,8 @@ private:
 	std::map<uint32_t, TextureDescriptor> _textures;
 	std::set<uint32_t> _usedDescriptors;
 	uint32_t _lastIndex;
+
+	std::set<uint32_t> _descriptorsToDeleteOnReceive;
 
 	VkDevice _device;
 	PhysicalDeviceSupport* _deviceSupport;

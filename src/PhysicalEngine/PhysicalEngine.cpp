@@ -291,7 +291,7 @@ void PhysicalEngine::CalculateCollision(
 {
 	size_t vertexIndex = 0;
 	for (auto& vertex : softObject->SoftPhysicsParams.Vertices) {
-		float distance = 1.0f;
+		float distance = 1.01f;
 		glm::vec3 normal;
 
 		ObjectDescriptor& desc = *_objectDescriptors[object];
@@ -318,6 +318,8 @@ void PhysicalEngine::CalculateCollision(
 			contact.Normal = normal;
 			contact.Distance = distance;
 			contact.VertexIndex = vertexIndex;
+			contact.Mu = object->PhysicalParams.Mu;
+			contact.Bounciness = object->PhysicalParams.Bounciness;
 
 			_effectMutex.lock();
 
@@ -370,7 +372,7 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 		forces[link.Index2] += force;
 	}
 
-	float minDist = 0.0001;
+	float minDist = 0.001;
 
 	for (auto& contact : _contacts[object]) {
 		size_t vertexIndex = contact.VertexIndex;
@@ -397,13 +399,17 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 			vertex.Position += contact.Normal * distToReduce;
 		}
 
-		glm::vec3 targetSpeed = -normalSpeed * vertex.Bounciness;
+		glm::vec3 targetSpeed = -normalSpeed *
+			(vertex.Bounciness + contact.Bounciness) / 2.0f;
 
 		glm::vec3 normalResponse =
-			(targetSpeed - normalSpeed) / timeStep - normalForce;
+			(targetSpeed - normalSpeed) / timeStep -
+			normalForce;
+
+		float mu = std::min(vertex.Mu, contact.Mu);
 
 		glm::vec3 tangentResponse;
-		float frictionLimit = vertex.Mu * glm::length(normalResponse);
+		float frictionLimit = mu * glm::length(normalResponse);
 
 		if (glm::length(tangentSpeed) > 0.00001) {
 			tangentResponse =

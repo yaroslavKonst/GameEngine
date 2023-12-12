@@ -48,6 +48,8 @@ private:
 	{
 		glm::vec3 Normal;
 		float Distance;
+		float Mu;
+		float Bounciness;
 
 		size_t VertexIndex;
 	};

@@ -716,6 +716,7 @@ Planet::Planet(
 	}
 
 	bool mergedCluster = true;
+	bool clustersChanged = false;
 
 	while (mergedCluster) {
 		mergedCluster = false;
@@ -728,8 +729,7 @@ Planet::Planet(
 		{
 			if (it->size() < clusterSizeLimit * 0.1) {
 				mergedCluster = true;
-
-				Logger::Verbose() << "Found small cluster";
+				clustersChanged = true;
 
 				auto nearestCluster = clusters.begin();
 				auto nearestNormal = normals.begin();
@@ -741,9 +741,6 @@ Planet::Planet(
 
 				auto nCluster = clusters.begin();
 				auto nNormal = normals.begin();
-
-				Logger::Verbose() <<
-					"Looking for nearest cluster";
 
 				while (nCluster != clusters.end()) {
 					if (nNormal == normIt) {
@@ -767,8 +764,6 @@ Planet::Planet(
 					++nCluster;
 					++nNormal;
 				}
-
-				Logger::Verbose() << "Merging clusters";
 
 				for (auto& t : *it) {
 					nearestCluster->push_back(t);
@@ -796,6 +791,35 @@ Planet::Planet(
 
 		Logger::Verbose() << "Clusters remaining: " <<
 			clusters.size();
+	}
+
+	if (clustersChanged) {
+		std::fstream clusterFile(
+			"../cluster_dump.bin",
+			std::ios::out | std::ios::binary | std::ios::trunc);
+
+		size_t clusterCount = clusters.size();
+
+		clusterFile.write((char*)&clusterCount, sizeof(clusterCount));
+
+		for (auto& cluster : clusters) {
+			size_t clusterSize = cluster.size();
+			clusterFile.write(
+				(char*)&clusterSize,
+				sizeof(clusterSize));
+
+			for (auto& t : cluster) {
+				Vec3 p1 = t->P1;
+				Vec3 p2 = t->P2;
+				Vec3 p3 = t->P3;
+
+				clusterFile.write((char*)&p1, sizeof(p1));
+				clusterFile.write((char*)&p2, sizeof(p2));
+				clusterFile.write((char*)&p3, sizeof(p3));
+			}
+		}
+
+		clusterFile.close();
 	}
 
 	Logger::Verbose() << "Planet: Clusterization end.";

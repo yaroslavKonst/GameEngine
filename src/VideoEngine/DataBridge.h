@@ -63,6 +63,8 @@ struct DataBridge
 	std::set<uint32_t> UsedModelDescriptors;
 	uint32_t LastModelIndex;
 
+	std::set<uint32_t> DescriptorsToDeleteOnReceive;
+
 	RingBuffer<LoadModelMessage> LoadModelMessages;
 	RingBuffer<RemoveModelMessage> RemoveModelMessages;
 
@@ -159,15 +161,31 @@ struct DataBridge
 		while (!LoadModelMessages.IsEmpty()) {
 			auto msg = LoadModelMessages.Get();
 
-			ModelDescriptors[msg.Index] = msg.Descriptor;
+			if (
+				DescriptorsToDeleteOnReceive.find(msg.Index) !=
+				DescriptorsToDeleteOnReceive.end())
+			{
+				DeletedModelDescriptors.push_back(
+					msg.Descriptor);
+				DescriptorsToDeleteOnReceive.erase(msg.Index);
+			} else {
+				ModelDescriptors[msg.Index] = msg.Descriptor;
+			}
 		}
 
 		while (!RemoveModelMessages.IsEmpty()) {
 			auto msg = RemoveModelMessages.Get();
 
-			DeletedModelDescriptors.push_back(
-				ModelDescriptors[msg.Index]);
-			ModelDescriptors.erase(msg.Index);
+			if (
+				ModelDescriptors.find(msg.Index) ==
+				ModelDescriptors.end())
+			{
+				DescriptorsToDeleteOnReceive.insert(msg.Index);
+			} else {
+				DeletedModelDescriptors.push_back(
+					ModelDescriptors[msg.Index]);
+				ModelDescriptors.erase(msg.Index);
+			}
 		}
 
 		Textures->PollTextureMessages();

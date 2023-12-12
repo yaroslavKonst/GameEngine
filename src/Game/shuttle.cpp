@@ -23,7 +23,7 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 	_flightMode = false;
 	_grounded = false;
 
-	_position = {0, 10, 5};
+	_position = {0, 20, 5};
 	_linearSpeed = {0, 0, 0};
 	_rotation = glm::mat4(1.0);
 	_angularSpeed = {0, 0, 0};

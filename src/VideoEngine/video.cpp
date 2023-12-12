@@ -384,7 +384,7 @@ void Video::UnloadModel(uint32_t model)
 	_modelLoadMutex.unlock();
 }
 
-uint32_t Video::LoadModel(Loader::VertexData model, bool async)
+uint32_t Video::LoadModel(const Loader::VertexData& model, bool async)
 {
 	_modelLoadMutex.lock();
 	uint32_t index = _dataBridge.LastModelIndex + 1;
@@ -399,17 +399,21 @@ uint32_t Video::LoadModel(Loader::VertexData model, bool async)
 	_dataBridge.UsedModelDescriptors.insert(index);
 	_modelLoadMutex.unlock();
 
+	Loader::VertexData* vertexData = new Loader::VertexData();
+	*vertexData = model;
+
 	uint32_t id = _loaderThreadPool->Enqueue(
-		[this, model, index]() -> void
+		[this, vertexData, index]() -> void
 		{
 			auto descriptor =
 				ModelDescriptor::CreateModelDescriptor(
-					&model,
+					vertexData,
 					_device,
 					_memorySystem,
 					&_deviceSupport,
 					&_graphicsQueue,
 					_transferCommandPool);
+				delete vertexData;
 			_dataBridge.LoadModelMessages.Insert(
 				{index, descriptor});
 		},

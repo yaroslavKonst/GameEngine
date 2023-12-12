@@ -8,6 +8,7 @@
 #include "../Logger/logger.h"
 #include "board.h"
 #include "GravityField.h"
+#include "PhysTest.h"
 
 static void UniverseThread(Universe* universe)
 {
@@ -27,6 +28,9 @@ World::World()
 
 	_common.collisionEngine = new CollisionEngine();
 	_common.universe->RegisterPhysicalEngine(_common.collisionEngine);
+
+	_common.physicalEngine = new PhysicalEngine();
+	_common.universe->RegisterPhysicalEngine(_common.physicalEngine);
 
 	_common.video->SetSkyboxNumber(2);
 
@@ -64,6 +68,9 @@ World::~World()
 
 	_common.universe->RemovePhysicalEngine(_common.collisionEngine);
 	delete _common.collisionEngine;
+
+	_common.universe->RemovePhysicalEngine(_common.physicalEngine);
+	delete _common.physicalEngine;
 
 	_common.universe->RemoveActor(this);
 
@@ -134,6 +141,8 @@ void World::Run()
 	_common.universe->RegisterActor(&player);
 	_common.universe->RegisterActor(&ship);
 	_common.collisionEngine->RegisterObject(&player);
+
+	PhysTest::PhysTest physTest(_common);
 
 	_universeThread = new std::thread(UniverseThread, _common.universe);
 

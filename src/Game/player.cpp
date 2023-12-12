@@ -13,7 +13,7 @@ Player::Player(
 	_planet = planet;
 
 	_gf = gf;
-	_pos = glm::vec3(0.0, 0.0, 2.0);
+	_pos = glm::vec3(0.0, -3.0, 0.1);
 	_dirUp = {0, 0, 1};
 	_dirF = {0, 1, 0};
 	_dirR = {1, 0, 0};
