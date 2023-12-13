@@ -1177,7 +1177,7 @@ void Swapchain::RecordCommandBuffer(
 
 	_dataBridge->LoadToDrawn();
 
-	float screenRatio = (float)_extent.width / (float)_extent.height;
+	const float screenRatio = (float)_extent.width / (float)_extent.height;
 
 	// MVP.
 	MVP mvp;
@@ -1215,7 +1215,7 @@ void Swapchain::RecordCommandBuffer(
 	shaderData.Direction = _dataBridge->DrawnScene.CameraDirection;
 	shaderData.Up = _dataBridge->DrawnScene.CameraUp;
 	shaderData.FOV = glm::radians((float)_dataBridge->DrawnScene.FOV);
-	shaderData.Ratio = (float)_extent.width / (float)_extent.height;
+	shaderData.Ratio = screenRatio;
 
 	for (Skybox& skybox : _dataBridge->DrawnScene.skybox) {
 		bool validSkybox =
@@ -1257,61 +1257,6 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdEndRenderPass(commandBuffer);
 
 	// Object pipeline.
-	// Instance buffers update.
-	for (auto& buffer : _stagingBuffers) {
-		BufferHelper::DestroyBuffer(
-			_device,
-			buffer,
-			_memorySystem);
-	}
-
-	_stagingBuffers.clear();
-
-	/*for (auto& model : _dataBridge->Models) {
-		if (!model->_IsDrawEnabled()) {
-			continue;
-		}
-
-		// TODO
-		if (!model.first->_GetModelInstancesUpdated()) {
-			BufferHelper::DestroyBuffer(
-				_device,
-				model.second.InstanceBuffer,
-				_memorySystem);
-
-			auto& instances = model.first->GetModelInstances();
-
-			model.second.InstanceBuffer =
-				BufferHelper::CreateBuffer(
-					_device,
-					instances.size() * sizeof(glm::mat4),
-					VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-					VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-					_memorySystem,
-					_deviceSupport);
-
-			BufferHelper::Buffer stagingBuffer;
-
-			BufferHelper::LoadDataToBuffer(
-				_device,
-				model.second.InstanceBuffer,
-				instances.data(),
-				instances.size() * sizeof(glm::mat4),
-				_memorySystem,
-				_deviceSupport,
-				nullptr,
-				VK_NULL_HANDLE,
-				&stagingBuffer,
-				commandBuffer);
-
-			model.second.InstanceCount = instances.size();
-
-			_stagingBuffers.push_back(stagingBuffer);
-			model.first->_SetModelInstancesUpdated();
-		}
-	}*/
-
 	// Light transforms.
 	std::multimap<float, Light*> orderedLights;
 
@@ -1687,7 +1632,6 @@ void Swapchain::RecordCommandBuffer(
 
 		RecordObjectCommandBuffer(
 			commandBuffer,
-			imageIndex,
 			currentFrame,
 			&model,
 			mvp,
@@ -1704,7 +1648,6 @@ void Swapchain::RecordCommandBuffer(
 	for (auto& model : holedModels) {
 		RecordObjectCommandBuffer(
 			commandBuffer,
-			imageIndex,
 			currentFrame,
 			model,
 			mvp,
@@ -1725,7 +1668,6 @@ void Swapchain::RecordCommandBuffer(
 	{
 		RecordObjectCommandBuffer(
 			commandBuffer,
-			imageIndex,
 			currentFrame,
 			it->second,
 			mvp,
@@ -1973,7 +1915,6 @@ void Swapchain::RecordCommandBuffer(
 
 void Swapchain::RecordObjectCommandBuffer(
 	VkCommandBuffer commandBuffer,
-	uint32_t imageIndex,
 	uint32_t currentFrame,
 	Model* model,
 	MVP mvp,

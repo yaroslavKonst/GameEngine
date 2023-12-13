@@ -137,9 +137,9 @@ private:
 		VkCommandBuffer commandBuffer,
 		uint32_t imageIndex,
 		uint32_t currentFrame);
+
 	void RecordObjectCommandBuffer(
 		VkCommandBuffer commandBuffer,
-		uint32_t imageIndex,
 		uint32_t currentFrame,
 		Model* model,
 		MVP mvp,
@@ -155,8 +155,6 @@ private:
 	std::vector<VkFence> _inFlightFences;
 	void CreateSyncObjects();
 	void DestroySyncObjects();
-
-	std::list<BufferHelper::Buffer> _stagingBuffers;
 };
 
 #endif
