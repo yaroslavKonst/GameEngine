@@ -11,6 +11,9 @@ class Segment : public Model, public Object
 {
 public:
 	glm::vec3 Normal;
+	Loader::VertexData Geometry;
+	bool Loaded;
+	bool Activated;
 };
 
 class Planet
@@ -38,11 +41,13 @@ private:
 	Video* _video;
 	CollisionEngine* _collisionEngine;
 
-	std::list<uint32_t> _blockModel;
 	uint32_t _blockTexture;
 
 	void ActivateSegment(Segment* segment);
 	void DeactivateSegment(Segment* segment);
+
+	void LoadSegment(Segment* segment);
+	void UnloadSegment(Segment* segment);
 };
 
 #endif

@@ -21,10 +21,23 @@ CommandPool::CommandPool(
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create command pool.");
 	}
+
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+	res = vkCreateFence(_device, &fenceInfo, nullptr, &_fence);
+
+	if (res != VK_SUCCESS) {
+		vkDestroyCommandPool(_device, _commandPool, nullptr);
+
+		throw std::runtime_error(
+			"Failed to create command pool fence.");
+	}
 }
 
 CommandPool::~CommandPool()
 {
+	vkDestroyFence(_device, _fence, nullptr);
 	vkDestroyCommandPool(_device, _commandPool, nullptr);
 }
 
@@ -79,11 +92,13 @@ void CommandPool::EndOneTimeBuffer(
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
+	vkResetFences(_device, 1, &_fence);
+
 	graphicsQueue->Mutex.lock();
-	vkQueueSubmit(graphicsQueue->Queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueSubmit(graphicsQueue->Queue, 1, &submitInfo, _fence);
 	graphicsQueue->Mutex.unlock();
 
-	vkQueueWaitIdle(graphicsQueue->Queue);
+	vkWaitForFences(_device, 1, &_fence, VK_TRUE, UINT64_MAX);
 
 	DestroyCommandBuffer(commandBuffer);
 }

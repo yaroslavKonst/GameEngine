@@ -26,6 +26,8 @@ public:
 private:
 	VkDevice _device;
 	VkCommandPool _commandPool;
+
+	VkFence _fence;
 };
 
 #endif

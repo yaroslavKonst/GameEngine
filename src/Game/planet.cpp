@@ -832,63 +832,77 @@ Planet::Planet(
 	glm::vec4 colorMul(0, 0, 0, 1);
 
 	for (auto& cluster : clusters) {
-		Loader::VertexData modelData;
+		Segment* segment = new Segment;
 
 		uint32_t nextIndex = 0;
 		std::map<Vec3, uint32_t> uniqueVertices;
 
 		for (auto t : cluster) {
-			if (uniqueVertices.find(t->P1) == uniqueVertices.end()) {
+			if (
+				uniqueVertices.find(t->P1) ==
+				uniqueVertices.end())
+			{
 				uniqueVertices[t->P1] = nextIndex;
 				++nextIndex;
-				modelData.Vertices.push_back(t->P1);
-				modelData.Normals.push_back(
+				segment->Geometry.Vertices.push_back(t->P1);
+				segment->Geometry.Normals.push_back(
 					glm::normalize((glm::vec3)t->P1));
-				modelData.TexCoords.push_back({0.0, 0.0});
+				segment->Geometry.TexCoords.push_back(
+					{0.0, 0.0});
 			}
 
-			if (uniqueVertices.find(t->P2) == uniqueVertices.end()) {
+			if (
+				uniqueVertices.find(t->P2) ==
+				uniqueVertices.end())
+			{
 				uniqueVertices[t->P2] = nextIndex;
 				++nextIndex;
-				modelData.Vertices.push_back(t->P2);
-				modelData.Normals.push_back(
+				segment->Geometry.Vertices.push_back(t->P2);
+				segment->Geometry.Normals.push_back(
 					glm::normalize((glm::vec3)t->P2));
-				modelData.TexCoords.push_back({0.0, 100.0});
+				segment->Geometry.TexCoords.push_back(
+					{0.0, 100.0});
 			}
 
-			if (uniqueVertices.find(t->P3) == uniqueVertices.end()) {
+			if (
+				uniqueVertices.find(t->P3) ==
+				uniqueVertices.end())
+			{
 				uniqueVertices[t->P3] = nextIndex;
 				++nextIndex;
-				modelData.Vertices.push_back(t->P3);
-				modelData.Normals.push_back(
+				segment->Geometry.Vertices.push_back(t->P3);
+				segment->Geometry.Normals.push_back(
 					glm::normalize((glm::vec3)t->P3));
-				modelData.TexCoords.push_back({100.0, 500.0});
+				segment->Geometry.TexCoords.push_back(
+					{100.0, 500.0});
 			}
 
-			modelData.Indices.push_back(uniqueVertices[t->P1]);
-			modelData.Indices.push_back(uniqueVertices[t->P2]);
-			modelData.Indices.push_back(uniqueVertices[t->P3]);
+			segment->Geometry.Indices.push_back(
+				uniqueVertices[t->P1]);
+			segment->Geometry.Indices.push_back(
+				uniqueVertices[t->P2]);
+			segment->Geometry.Indices.push_back(
+				uniqueVertices[t->P3]);
 		}
 
-		modelData.Instances = {glm::mat4(1.0)};
+		segment->Geometry.Instances = {glm::mat4(1.0)};
 
 		glm::vec3 normal(0, 0, 0);
 
-		for (size_t i = 0; i < modelData.Normals.size(); ++i) {
-			normal += modelData.Normals[i];
+		for (size_t i = 0; i < segment->Geometry.Normals.size(); ++i) {
+			normal += segment->Geometry.Normals[i];
 		}
 
-		normal /= (float)modelData.Normals.size();
+		normal /= (float)segment->Geometry.Normals.size();
 
-		_blockModel.push_back(_video->LoadModel(modelData));
-
-		Segment* segment = new Segment;
+		segment->Loaded = false;
+		segment->Activated = false;
 
 		segment->Normal = glm::normalize(normal);
 
-		segment->SetObjectVertices(modelData.Vertices);
-		segment->SetObjectNormals(modelData.Normals);
-		segment->SetObjectIndices(modelData.Indices);
+		segment->SetObjectVertices(segment->Geometry.Vertices);
+		segment->SetObjectNormals(segment->Geometry.Normals);
+		segment->SetObjectIndices(segment->Geometry.Indices);
 		segment->SetObjectExternalMatrix(&_matrix);
 		segment->SetObjectMatrix(glm::mat4(1.0));
 
@@ -896,7 +910,6 @@ Planet::Planet(
 		segment->ModelParams.Matrix = glm::mat4(1.0);
 
 		segment->TextureParams.SetAll(_blockTexture);
-		segment->ModelParams.Model = _blockModel.back();
 		segment->TextureParams.IsLight = true;
 
 		segment->DrawParams.ColorMultiplier = colorMul;
@@ -934,7 +947,7 @@ Planet::Planet(
 
 			float angleCos = glm::dot(segment->Normal, seg->Normal);
 
-			if (angleCos > 0.97) {
+			if (angleCos > 0.99) {
 				neighbours.insert(seg);
 			}
 		}
@@ -949,11 +962,8 @@ Planet::~Planet()
 	for (Segment* segment : _segments) {
 		_video->RemoveModel(segment);
 		_collisionEngine->RemoveObject(segment);
+		UnloadSegment(segment);
 		delete segment;
-	}
-
-	for (auto model : _blockModel) {
-		_video->UnloadModel(model);
 	}
 
 	_video->RemoveTexture(_blockTexture);
@@ -987,6 +997,7 @@ void Planet::Update(glm::vec3 playerCoord)
 
 	for (Segment* segment : segToRemove) {
 		_subActiveSegments.erase(segment);
+		UnloadSegment(segment);
 	}
 
 	for (Segment* segment : segToActivate) {
@@ -1021,14 +1032,47 @@ void Planet::Update(glm::vec3 playerCoord)
 
 void Planet::ActivateSegment(Segment* segment)
 {
+	if (segment->Activated) {
+		return;
+	}
+
+	LoadSegment(segment);
 	segment->DrawParams.Enabled = true;
 	_video->RegisterModel(segment);
 	_collisionEngine->RegisterObject(segment);
+	segment->Activated = true;
 }
 
 void Planet::DeactivateSegment(Segment* segment)
 {
+	if (!segment->Activated) {
+		return;
+	}
+
 	segment->DrawParams.Enabled = false;
 	_video->RemoveModel(segment);
 	_collisionEngine->RemoveObject(segment);
+	segment->Activated = false;
+}
+
+void Planet::LoadSegment(Segment* segment)
+{
+	if (segment->Loaded) {
+		return;
+	}
+
+	segment->ModelParams.Model = _video->LoadModel(segment->Geometry, true);
+	segment->Loaded = true;
+}
+
+void Planet::UnloadSegment(Segment* segment)
+{
+	if (!segment->Loaded) {
+		return;
+	}
+
+	DeactivateSegment(segment);
+
+	_video->UnloadModel(segment->ModelParams.Model);
+	segment->Loaded = false;
 }
