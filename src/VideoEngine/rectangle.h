@@ -13,11 +13,12 @@
 
 #include "texturable.h"
 
-class Rectangle : public Texturable
+class Rectangle : public Drawable
 {
 public:
 	struct RectangleValues
 	{
+		uint32_t Texture;
 		glm::vec4 Position;
 		glm::vec4 TexCoords;
 		float Depth;

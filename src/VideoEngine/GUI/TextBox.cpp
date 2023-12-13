@@ -93,7 +93,7 @@ void TextBox::Place()
 			if (!_textUpdated) {
 				_line[i]->RectangleParams.TexCoords =
 					{0, 0, 1, 1};
-				_line[i]->TextureParams.Diffuse =
+				_line[i]->RectangleParams.Texture =
 					glyph.Texture;
 
 				_video->RegisterRectangle(_line[i]);

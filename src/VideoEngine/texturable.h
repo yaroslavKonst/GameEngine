@@ -10,6 +10,7 @@ public:
 	{
 		uint32_t Diffuse;
 		uint32_t Specular;
+		bool IsLight;
 
 		void SetAll(uint32_t texture)
 		{
@@ -19,6 +20,11 @@ public:
 	};
 
 	TexturableValues TextureParams;
+
+	Texturable()
+	{
+		TextureParams.IsLight = false;
+	}
 };
 
 #endif

@@ -1451,7 +1451,7 @@ void Swapchain::RecordCommandBuffer(
 				continue;
 			}
 
-			if (model.DrawParams.IsLight) {
+			if (model.TextureParams.IsLight) {
 				continue;
 			}
 
@@ -1798,7 +1798,7 @@ void Swapchain::RecordCommandBuffer(
 			sizeof(glm::vec3),
 			&_dataBridge->DrawnScene.CameraPosition);
 
-		uint32_t isLight = sprite.second->DrawParams.IsLight ? 1 : 0;
+		uint32_t isLight = sprite.second->TextureParams.IsLight ? 1 : 0;
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1871,7 +1871,7 @@ void Swapchain::RecordCommandBuffer(
 		Rectangle* rectangle = rect.second;
 
 		if (!_dataBridge->Textures->CheckTexture(
-			rectangle->TextureParams.Diffuse))
+			rectangle->RectangleParams.Texture))
 		{
 			continue;
 		}
@@ -1902,7 +1902,7 @@ void Swapchain::RecordCommandBuffer(
 			&colorMultiplier);
 
 		auto& tex = _dataBridge->Textures->GetTexture(
-			rectangle->TextureParams.Diffuse);
+			rectangle->RectangleParams.Texture);
 
 		vkCmdBindDescriptorSets(
 			commandBuffer,
@@ -2043,7 +2043,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		sizeof(glm::vec3),
 		&_dataBridge->DrawnScene.CameraPosition);
 
-	uint32_t isLight = model->DrawParams.IsLight ? 1 : 0;
+	uint32_t isLight = model->TextureParams.IsLight ? 1 : 0;
 
 	vkCmdPushConstants(
 		commandBuffer,

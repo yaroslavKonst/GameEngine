@@ -42,7 +42,7 @@ public:
 
 	void SetImage(uint32_t texture)
 	{
-		_image.TextureParams.Diffuse = texture;
+		_image.RectangleParams.Texture = texture;
 	}
 
 	void SetImageColor(const glm::vec4& value)

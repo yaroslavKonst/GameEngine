@@ -897,7 +897,7 @@ Planet::Planet(
 
 		segment->TextureParams.SetAll(_blockTexture);
 		segment->ModelParams.Model = _blockModel.back();
-		segment->DrawParams.IsLight = true;
+		segment->TextureParams.IsLight = true;
 
 		segment->DrawParams.ColorMultiplier = colorMul;
 

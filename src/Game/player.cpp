@@ -77,7 +77,7 @@ Player::Player(
 	_cross.RectangleParams.Position = {-0.02, -0.02, 0.02, 0.02};
 	_cross.RectangleParams.TexCoords = {0, 0, 1, 1};
 	_cross.RectangleParams.Depth = 0;
-	_cross.TextureParams.SetAll(_crossTexture);
+	_cross.RectangleParams.Texture = _crossTexture;
 	_cross.DrawParams.Enabled = true;
 
 	_common.video->RegisterRectangle(&_cross);

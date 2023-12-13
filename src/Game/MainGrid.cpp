@@ -207,7 +207,7 @@ void MainGrid::PreviewBlock(
 	}
 
 	_preview->DrawParams.Enabled = true;
-	_preview->DrawParams.IsLight = true;
+	_preview->TextureParams.IsLight = true;
 	_preview->ModelParams.Matrix = matrix;
 	_preview->ModelParams.ExternalMatrix = _extMat;
 
@@ -419,7 +419,7 @@ DynamicThruster::DynamicThruster(
 	_thruster->DrawParams.ColorMultiplier = colorMultiplier;
 
 	if (colorMultiplier.a < 1) {
-		_thruster->DrawParams.IsLight = true;
+		_thruster->TextureParams.IsLight = true;
 	}
 
 	_video->RegisterModel(_thruster);

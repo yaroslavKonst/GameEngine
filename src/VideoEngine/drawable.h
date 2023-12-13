@@ -15,7 +15,6 @@ public:
 	struct DrawableValues
 	{
 		bool Enabled;
-		bool IsLight;
 		glm::vec4 ColorMultiplier;
 	};
 
@@ -24,7 +23,6 @@ public:
 	Drawable()
 	{
 		DrawParams.Enabled = false;
-		DrawParams.IsLight = false;
 		DrawParams.ColorMultiplier = glm::vec4(1.0f);
 	}
 };

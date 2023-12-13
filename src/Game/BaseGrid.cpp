@@ -189,7 +189,7 @@ void BaseGrid::PreviewBlock(int32_t x, int32_t y, BaseBlock::Type type)
 		_blocks.find({x, y + 1}) != _blocks.end());
 
 	_preview->DrawParams.Enabled = true;
-	_preview->DrawParams.IsLight = true;
+	_preview->TextureParams.IsLight = true;
 
 	if (available) {
 		_preview->DrawParams.ColorMultiplier = {0.5, 1, 0.5, 0.4};

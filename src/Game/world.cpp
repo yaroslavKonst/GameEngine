@@ -131,7 +131,7 @@ void World::Run()
 	sprite2.DrawParams.Enabled = true;
 	sprite2.TextureParams.SetAll(testTexture);
 	sprite2.DrawParams.ColorMultiplier = {40, 40, 40, 1};
-	sprite2.DrawParams.IsLight = true;
+	sprite2.TextureParams.IsLight = true;
 
 	_common.video->RegisterSprite(&sprite2);
 
