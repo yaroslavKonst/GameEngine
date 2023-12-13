@@ -181,7 +181,7 @@ void Swapchain::Create()
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	std::vector<uint32_t> queueFamilyIndices = {
+	std::array<uint32_t, 2> queueFamilyIndices = {
 		indices.graphicsFamily.value(),
 		indices.presentFamily.value()
 	};
@@ -495,7 +495,7 @@ void Swapchain::CreateHDRResources()
 	hdrBufferLayoutBinding.pImmutableSamplers = nullptr;
 	hdrBufferLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::vector<VkDescriptorSetLayoutBinding> bindings = {
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
 		hdrSamplerLayoutBinding,
 		hdrBufferLayoutBinding
 	};
@@ -524,7 +524,7 @@ void Swapchain::CreateHDRResources()
 	bufferPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	bufferPoolSize.descriptorCount = 1;
 
-	std::vector<VkDescriptorPoolSize> poolSizes = {
+	std::array<VkDescriptorPoolSize, 2> poolSizes = {
 		poolSize,
 		bufferPoolSize
 	};
@@ -991,7 +991,7 @@ void Swapchain::CreateLightBuffers()
 	lightSamplerLayoutBinding.pImmutableSamplers = nullptr;
 	lightSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::vector<VkDescriptorSetLayoutBinding> bindings = {
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
 		lightBufferLayoutBinding,
 		lightSamplerLayoutBinding,
 	};
@@ -1023,7 +1023,7 @@ void Swapchain::CreateLightBuffers()
 	samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerPoolSize.descriptorCount = _maxFramesInFlight * _maxLightCount;
 
-	std::vector<VkDescriptorPoolSize> poolSizes = {
+	std::array<VkDescriptorPoolSize, 2> poolSizes = {
 		poolSize,
 		samplerPoolSize
 	};
@@ -1463,7 +1463,7 @@ void Swapchain::RecordCommandBuffer(
 				sizeof(uint32_t),
 				&lightIndex);
 
-			std::vector<VkDescriptorSet> descriptorSets = {
+			std::array<VkDescriptorSet, 1> descriptorSets = {
 				_lightDescriptorSets[currentFrame]
 			};
 
@@ -1574,7 +1574,7 @@ void Swapchain::RecordCommandBuffer(
 			auto& texDiff = _dataBridge->Textures->GetTexture(
 				model->TextureParams.Diffuse);
 
-			std::vector<VkDescriptorSet> descriptorSets = {
+			std::array<VkDescriptorSet, 2> descriptorSets = {
 				_lightDescriptorSets[currentFrame],
 				texDiff.DescriptorSet
 			};
@@ -1767,7 +1767,7 @@ void Swapchain::RecordCommandBuffer(
 		auto& texSpec = _dataBridge->Textures->GetTexture(
 			sprite.second->TextureParams.Specular);
 
-		std::vector<VkDescriptorSet> descriptorSets = {
+		std::array<VkDescriptorSet, 3> descriptorSets = {
 			texDiff.DescriptorSet,
 			texSpec.DescriptorSet,
 			_lightDescriptorSets[currentFrame]
@@ -1794,7 +1794,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::vector<glm::vec4> rectData(2);
+	std::array<glm::vec4, 2> rectData;
 
 	std::multimap<float, Rectangle*> orderedRectangles;
 
@@ -2008,7 +2008,7 @@ void Swapchain::RecordObjectCommandBuffer(
 	auto& texDiff = _dataBridge->Textures->GetTexture(diffTexIndex);
 	auto& texSpec = _dataBridge->Textures->GetTexture(specTexIndex);
 
-	std::vector<VkDescriptorSet> descriptorSets = {
+	std::array<VkDescriptorSet, 3> descriptorSets = {
 		texDiff.DescriptorSet,
 		texSpec.DescriptorSet,
 		_lightDescriptorSets[currentFrame]
