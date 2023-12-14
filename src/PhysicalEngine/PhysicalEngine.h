@@ -47,7 +47,7 @@ private:
 	struct Contact
 	{
 		glm::vec3 Normal;
-		float Distance;
+		float NormalDistance;
 		float Mu;
 		float Bounciness;
 

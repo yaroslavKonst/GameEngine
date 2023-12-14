@@ -48,6 +48,8 @@ Video::Video(
 
 Video::~Video()
 {
+	delete _loaderThreadPool;
+
 	DestroySwapchain();
 
 	RemoveAllModels();
@@ -60,8 +62,6 @@ Video::~Video()
 	DestroySurface();
 
 	VkInstanceHandler::DecRef();
-
-	delete _loaderThreadPool;
 }
 
 void Video::CreateSurface()

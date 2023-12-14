@@ -52,7 +52,7 @@ namespace PhysTest
 		_cubeTexture = _common.video->AddTexture(Loader::LoadImage(
 			"Images/White.png"));
 
-		for (size_t idx = 0; idx < 2; ++idx) {
+		for (size_t idx = 0; idx < 4; ++idx) {
 			Model* cube = new Model;
 			cube->ModelParams.Model = _cubeModel;
 			cube->TextureParams.SetAll(_cubeTexture);
@@ -66,10 +66,14 @@ namespace PhysTest
 			_cubes.push_back(cube);
 
 			SoftPhysicsValues::Vertex vertex;
-			vertex.Mass = 1;
+			vertex.Mass = 2;
 			vertex.Mu = 0.3;
 			vertex.Bounciness = 0.1;
-			vertex.Position = {(float)idx / 4, 0, 3};
+			vertex.Position = {
+				(float)idx / 4,
+				0.01 * idx * idx,
+				(float)idx / 2.0f + 1.5f
+			};
 
 			vertex.Force = {0, 0, -1};
 
@@ -81,10 +85,30 @@ namespace PhysTest
 		link.Index2 = 1;
 
 		link.Length = 0.5;
-		link.Friction = 0.1;
-		link.K = 100;
+		link.Friction = 5;
+		link.K = 1000;
 
-		//SoftPhysicsParams.Links.push_back(link);
+		SoftPhysicsParams.Links.push_back(link);
+
+		link.Index1 = 1;
+		link.Index2 = 2;
+		SoftPhysicsParams.Links.push_back(link);
+
+		link.Index1 = 0;
+		link.Index2 = 2;
+		SoftPhysicsParams.Links.push_back(link);
+
+		link.Index1 = 0;
+		link.Index2 = 3;
+		SoftPhysicsParams.Links.push_back(link);
+
+		link.Index1 = 1;
+		link.Index2 = 3;
+		SoftPhysicsParams.Links.push_back(link);
+
+		link.Index1 = 2;
+		link.Index2 = 3;
+		SoftPhysicsParams.Links.push_back(link);
 	}
 
 	DynamicObject::~DynamicObject()

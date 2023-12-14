@@ -1,10 +1,6 @@
 #include "PhysicalEngine.h"
 
-#include "PlaneHelper.h"
-
 #include "../Logger/logger.h"
-
-using namespace PlaneHelper;
 
 PhysicalEngine::PhysicalEngine()
 {
@@ -184,6 +180,20 @@ void PhysicalEngine::Run(ThreadPool* threadPool, float timeStep)
 	_mutex.unlock();
 }
 
+static inline float determinant3(
+	const glm::vec3& c0,
+	const glm::vec3& c1,
+	const glm::vec3& c2)
+{
+	return
+		c0[0] * c1[1] * c2[2] -
+		c0[0] * c1[2] * c2[1] -
+		c0[1] * c1[0] * c2[2] +
+		c0[1] * c1[2] * c2[0] +
+		c0[2] * c1[0] * c2[1] -
+		c0[2] * c1[1] * c2[0];
+}
+
 static bool FindTriangleIntersection(
 	const glm::vec3& source,
 	const glm::vec3& direction,
@@ -194,50 +204,39 @@ static bool FindTriangleIntersection(
 {
 	const float EPSILON = 0.0000001;
 
-	glm::vec3 edge1;
-	glm::vec3 edge2;
-	glm::vec3 rayVecXe2;
-	glm::vec3 s;
-	glm::vec3 sXe1;
+	glm::vec3 edge1 = v2 - v1;
+	glm::vec3 edge2 = v3 - v1;
 
-	float det;
-	float invDet;
-	float u;
-	float v;
+	// u * edge1 + v * edge2 + v1 = source + t * direction
+	// u * edge1 + v * edge2 - t * direction = source - v1
 
-	edge1 = v2 - v1;
-	edge2 = v3 - v1;
+	// b = source - v1
+	// u * edge1 + v * edge2 - t * direction = b
 
-	rayVecXe2 = glm::cross(direction, edge2);
-	det = glm::dot(edge1, rayVecXe2);
-
+	float det = determinant3(edge1, edge2, -direction);
 	if (det > -EPSILON && det < EPSILON) {
-		return false;    // This ray is parallel to this triangle.
-	}
-
-	invDet = 1.0 / det;
-	s = source - v1;
-	u = invDet * glm::dot(s, rayVecXe2);
-
-	if (u < 0.0 || u > 1.0) {
 		return false;
 	}
 
-	sXe1 = glm::cross(s, edge1);
-	v = invDet * glm::dot(direction, sXe1);
+	glm::vec3 b = source - v1;
 
-	if (v < 0.0 || u + v > 1.0) {
+	float u = determinant3(b, edge2, -direction) / det;
+	if (u < 0 || u > 1) {
 		return false;
 	}
 
-	float t = invDet * glm::dot(edge2, sXe1);
-
-	if (t > 0.0) {
-		distance = t;
-		return true;
+	float v = determinant3(edge1, b, -direction) / det;
+	if (v < 0 || u + v > 1) {
+		return false;
 	}
 
-	return false;
+	float t = determinant3(edge1, edge2, b) / det;
+	if (t < 0 || t > distance) {
+		return false;
+	}
+
+	distance = t;
+	return true;
 }
 
 static bool FindMeshIntersection(
@@ -252,12 +251,16 @@ static bool FindMeshIntersection(
 	bool intersection = false;
 
 	for (size_t index = 0; index < indices.size(); index += 3) {
-		float dist;
+		float dist = distance;
+
+		uint32_t index1 = indices[index];
+		uint32_t index2 = indices[index + 1];
+		uint32_t index3 = indices[index + 2];
 
 		glm::vec3 normal =
-			normals[index] +
-			normals[index + 1] +
-			normals[index + 2];
+			normals[index1] +
+			normals[index2] +
+			normals[index3];
 
 		normal = glm::normalize(normal);
 
@@ -269,9 +272,9 @@ static bool FindMeshIntersection(
 		bool intersect = FindTriangleIntersection(
 			source,
 			direction,
-			vertices[index],
-			vertices[index + 1],
-			vertices[index + 2],
+			vertices[index1],
+			vertices[index2],
+			vertices[index3],
 			dist);
 
 		if (intersect && dist < distance) {
@@ -291,9 +294,6 @@ void PhysicalEngine::CalculateCollision(
 {
 	size_t vertexIndex = 0;
 	for (auto& vertex : softObject->SoftPhysicsParams.Vertices) {
-		float distance = 1.01f;
-		glm::vec3 normal;
-
 		ObjectDescriptor& desc = *_objectDescriptors[object];
 
 		bool possibleCollision =
@@ -304,9 +304,18 @@ void PhysicalEngine::CalculateCollision(
 			continue;
 		}
 
+		float distance = glm::length(vertex.Speed) *
+			timeStep * 1.01f;
+
+		if (distance < 0.01) {
+			distance = 0.01;
+		}
+
+		glm::vec3 normal;
+
 		bool intersect = FindMeshIntersection(
 			vertex.Position,
-			vertex.Speed * timeStep,
+			glm::normalize(vertex.Speed),
 			desc.Vertices,
 			desc.Normals,
 			object->PhysicalParams.Indices,
@@ -316,15 +325,23 @@ void PhysicalEngine::CalculateCollision(
 		if (intersect) {
 			Contact contact;
 			contact.Normal = normal;
-			contact.Distance = distance;
+			contact.NormalDistance = distance *
+				fabs(glm::dot(
+					normal,
+					glm::normalize(vertex.Speed)));
 			contact.VertexIndex = vertexIndex;
 			contact.Mu = object->PhysicalParams.Mu;
-			contact.Bounciness = object->PhysicalParams.Bounciness;
+			contact.Bounciness =
+				object->PhysicalParams.Bounciness;
 
 			_effectMutex.lock();
 
-			if (_contacts.find(softObject) == _contacts.end()) {
-				_contacts[softObject] = std::vector<Contact>();
+			if (
+				_contacts.find(softObject) ==
+				_contacts.end())
+			{
+				_contacts[softObject] =
+					std::vector<Contact>();
 			}
 
 			_contacts[softObject].push_back(contact);
@@ -339,10 +356,10 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 {
 	auto& vertices = object->SoftPhysicsParams.Vertices;
 	auto& links = object->SoftPhysicsParams.Links;
-	std::vector<glm::vec3> forces(vertices.size(), {0, 0, 0});
+	std::vector<glm::vec3> forces(vertices.size());
 
 	for (size_t vertex = 0; vertex < vertices.size(); ++vertex) {
-		forces[vertex] += vertices[vertex].Force +
+		forces[vertex] = vertices[vertex].Force +
 			object->SoftPhysicsParams.Force;
 	}
 
@@ -351,28 +368,32 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 			vertices[link.Index1].Position -
 			vertices[link.Index2].Position;
 
+		glm::vec3 normDelta = glm::normalize(delta);
+
 		float deltaL = glm::length(delta) - link.Length;
-		glm::vec3 force = glm::normalize(delta) * link.K * deltaL;
+		glm::vec3 force = normDelta * link.K * deltaL;
 
 		glm::vec3 deltaV =
 			vertices[link.Index1].Speed -
 			vertices[link.Index2].Speed;
 
-		deltaV = delta * glm::dot(delta, deltaV);
+		deltaV = normDelta * glm::dot(normDelta, deltaV);
 
 		if (glm::dot(deltaV, delta) > 0) {
 			// Link length increasing.
-			force += glm::length(deltaV) * link.Friction;
+			force += normDelta *
+				glm::length(deltaV) * link.Friction;
 		} else if (glm::dot(deltaV, delta) < 0) {
 			// Link length decreasing.
-			force -= glm::length(deltaV) * link.Friction;
+			force -= normDelta *
+				glm::length(deltaV) * link.Friction;
 		}
 
 		forces[link.Index1] -= force;
 		forces[link.Index2] += force;
 	}
 
-	float minDist = 0.001;
+	float minDist = 0.005;
 
 	for (auto& contact : _contacts[object]) {
 		size_t vertexIndex = contact.VertexIndex;
@@ -388,22 +409,19 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 			glm::dot(contact.Normal, force);
 		glm::vec3 tangentForce = force - normalForce;
 
-		float normalMoveDist = glm::length(normalSpeed) * timeStep;
-		float normalSurfaceDist = glm::length(normalSpeed) * timeStep *
-			contact.Distance;
+		float normalSurfaceDist = contact.NormalDistance;
 
-		float distToReduce = normalMoveDist -
-			normalSurfaceDist + minDist;
-
-		if (distToReduce > 0) {
-			vertex.Position += contact.Normal * distToReduce;
+		if (normalSurfaceDist < minDist) {
+			vertex.Position += contact.Normal *
+				(minDist - normalSurfaceDist);
 		}
 
-		glm::vec3 targetSpeed = -normalSpeed *
+		glm::vec3 targetSpeed = contact.Normal *
+			glm::length(normalSpeed) *
 			(vertex.Bounciness + contact.Bounciness) / 2.0f;
 
 		glm::vec3 normalResponse =
-			(targetSpeed - normalSpeed) / timeStep -
+			(targetSpeed - normalSpeed) * vertex.Mass / timeStep -
 			normalForce;
 
 		float mu = std::min(vertex.Mu, contact.Mu);
@@ -429,8 +447,8 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 
 	size_t vertexIndex = 0;
 	for (auto& vertex : vertices) {
+		vertex.Speed += forces[vertexIndex] / vertex.Mass * timeStep;
 		vertex.Position += vertex.Speed * timeStep;
-		vertex.Speed += forces[vertexIndex] * timeStep;
 
 		++vertexIndex;
 	}
