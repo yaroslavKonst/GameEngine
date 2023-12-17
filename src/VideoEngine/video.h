@@ -101,7 +101,7 @@ public:
 		_dataBridge.inputControl->ToggleRawMouseInput();
 	}
 
-	uint32_t AddTexture(
+	uint32_t LoadTexture(
 		const Loader::Image& image,
 		bool repeat = true,
 		bool async = false)
@@ -109,12 +109,12 @@ public:
 		return _dataBridge.Textures->AddTexture(image, repeat, async);
 	}
 
-	void RemoveTexture(uint32_t index)
+	void UnloadTexture(uint32_t index)
 	{
 		_dataBridge.Textures->RemoveTexture(index);
 	}
 
-	uint32_t AddSkyboxTexture(
+	uint32_t LoadSkyboxTexture(
 		const Loader::Image& image,
 		bool async = false);
 

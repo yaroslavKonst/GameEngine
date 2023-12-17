@@ -73,7 +73,8 @@ private:
 		PhysicalObject* object,
 		SoftObject* SoftObject,
 		float timeStep);
-	void ApplyEffect(SoftObject* object, float timeStep);
+	void ApplyForces(SoftObject* object, float timeStep);
+	void ApplyCollision(SoftObject* object, float timeStep);
 };
 
 #endif

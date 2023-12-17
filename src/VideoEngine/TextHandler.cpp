@@ -16,7 +16,7 @@ TextHandler::~TextHandler()
 {
 	for (auto& glyph : _glyphs) {
 		if (glyph.second.HasTexture) {
-			_video->RemoveTexture(glyph.second.Texture);
+			_video->UnloadTexture(glyph.second.Texture);
 		}
 	}
 }
@@ -46,7 +46,7 @@ void TextHandler::LoadFont(const Text::GlyphCollection& collection)
 		heights.insert(glyph.Data.Height);
 
 		if (glyph.Data.Width > 0 && glyph.Data.Height > 0) {
-			uint32_t texId = _video->AddTexture(
+			uint32_t texId = _video->LoadTexture(
 				glyphImage,
 				false);
 

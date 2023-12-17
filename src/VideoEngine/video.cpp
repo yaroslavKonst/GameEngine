@@ -477,7 +477,7 @@ void Video::RemoveRectangle(Rectangle* rectangle)
 	_dataBridge.ExtModMutex.unlock();
 }
 
-uint32_t Video::AddSkyboxTexture(
+uint32_t Video::LoadSkyboxTexture(
 	const Loader::Image& image,
 	bool async)
 {

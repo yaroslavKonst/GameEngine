@@ -131,6 +131,10 @@ void PhysicalEngine::Run(ThreadPool* threadPool, float timeStep)
 	_mutex.lock();
 
 	for (PhysicalObject* object : _objects) {
+		if (!object->PhysicalParams.Enabled) {
+			continue;
+		}
+
 		if (object->PhysicalParams.Dynamic) {
 			UpdateObjectDescriptor(
 				object,
@@ -145,12 +149,18 @@ void PhysicalEngine::Run(ThreadPool* threadPool, float timeStep)
 	{
 		SoftObject* softObject = *sObj;
 
+		ApplyForces(softObject, timeStep);
+
 		for (
 			auto obj = _objects.begin();
 			obj != _objects.end();
 			++obj)
 		{
 			PhysicalObject* object = *obj;
+
+			if (!object->PhysicalParams.Enabled) {
+				continue;
+			}
 
 			threadPool->Enqueue(
 				[this, object, softObject, timeStep]() -> void
@@ -169,7 +179,7 @@ void PhysicalEngine::Run(ThreadPool* threadPool, float timeStep)
 		threadPool->Enqueue(
 			[this, object, timeStep]() -> void
 			{
-				ApplyEffect(object, timeStep);
+				ApplyCollision(object, timeStep);
 			});
 	}
 
@@ -352,14 +362,14 @@ void PhysicalEngine::CalculateCollision(
 	}
 }
 
-void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
+void PhysicalEngine::ApplyForces(SoftObject* object, float timeStep)
 {
 	auto& vertices = object->SoftPhysicsParams.Vertices;
 	auto& links = object->SoftPhysicsParams.Links;
 	std::vector<glm::vec3> forces(vertices.size());
 
-	for (size_t vertex = 0; vertex < vertices.size(); ++vertex) {
-		forces[vertex] = vertices[vertex].Force +
+	for (size_t idx = 0; idx < vertices.size(); ++idx) {
+		forces[idx] = vertices[idx].Force +
 			object->SoftPhysicsParams.Force;
 	}
 
@@ -393,21 +403,31 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 		forces[link.Index2] += force;
 	}
 
+	size_t vertexIndex = 0;
+	for (auto& vertex : vertices) {
+		vertex.Speed += forces[vertexIndex] / vertex.Mass * timeStep;
+		++vertexIndex;
+	}
+}
+
+void PhysicalEngine::ApplyCollision(SoftObject* object, float timeStep)
+{
+	auto& vertices = object->SoftPhysicsParams.Vertices;
+	std::vector<glm::vec3> forces(vertices.size());
+
+	for (size_t idx = 0; idx < vertices.size(); ++idx) {
+		forces[idx] = glm::vec3(0, 0, 0);
+	}
+
 	float minDist = 0.005;
 
 	for (auto& contact : _contacts[object]) {
 		size_t vertexIndex = contact.VertexIndex;
 		auto& vertex = vertices[vertexIndex];
 
-		glm::vec3 force = forces[vertexIndex];
-
 		glm::vec3 normalSpeed = contact.Normal *
 			glm::dot(contact.Normal, vertex.Speed);
 		glm::vec3 tangentSpeed = vertex.Speed - normalSpeed;
-
-		glm::vec3 normalForce = contact.Normal *
-			glm::dot(contact.Normal, force);
-		glm::vec3 tangentForce = force - normalForce;
 
 		float normalSurfaceDist = contact.NormalDistance;
 
@@ -421,24 +441,24 @@ void PhysicalEngine::ApplyEffect(SoftObject* object, float timeStep)
 			(vertex.Bounciness + contact.Bounciness) / 2.0f;
 
 		glm::vec3 normalResponse =
-			(targetSpeed - normalSpeed) * vertex.Mass / timeStep -
-			normalForce;
+			(targetSpeed - normalSpeed) * vertex.Mass / timeStep;
 
 		float mu = std::min(vertex.Mu, contact.Mu);
 
-		glm::vec3 tangentResponse;
+		glm::vec3 tangentResponse(0, 0, 0);
 		float frictionLimit = mu * glm::length(normalResponse);
 
 		if (glm::length(tangentSpeed) > 0.00001) {
+			float maxTangentForce = glm::length(tangentSpeed) *
+				vertex.Mass / timeStep;
+
 			tangentResponse =
 				-frictionLimit * glm::normalize(tangentSpeed);
-		} else {
-			tangentResponse = -tangentForce;
 
-			if (glm::length(tangentResponse) > frictionLimit) {
+			if (glm::length(tangentResponse) > maxTangentForce) {
 				tangentResponse =
 					glm::normalize(tangentResponse) *
-					frictionLimit;
+					maxTangentForce;
 			}
 		}
 
@@ -507,6 +527,8 @@ PhysicalEngine::RayCastResult PhysicalEngine::RayCast(
 
 	if (closestObject) {
 		res.Code = closestObject->RayCastCallback(userPointer);
+	} else {
+		res.Code = 0;
 	}
 
 	return res;
