@@ -13,6 +13,7 @@ int main(int argc, char** argv)
 {
 	std::string packageKey("package");
 	std::string verboseArg("verbose");
+	std::string coloredLogArg("colored_log");
 
 	Logger::SetLevel(Logger::Level::Warning);
 
@@ -23,6 +24,10 @@ int main(int argc, char** argv)
 
 	if (args.Args.find(verboseArg) != args.Args.end()) {
 		Logger::SetLevel(Logger::Level::Verbose);
+	}
+
+	if (args.Args.find(coloredLogArg) != args.Args.end()) {
+		Logger::SetColored(true);
 	}
 
 	Package::LoadPackage(args.Keys[packageKey]);

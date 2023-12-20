@@ -1,7 +1,6 @@
 .PHONY: all
 
 all: \
-	../../build/CollisionEngine.o \
 	../../build/PhysicalEngine.o
 
 ../../build/%.o: %.cpp %.h

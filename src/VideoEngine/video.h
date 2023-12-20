@@ -65,22 +65,22 @@ public:
 		_dataBridge.StagedScene.FOV = fov;
 	}
 
-	void SetCameraPosition(const glm::vec3& value)
+	void SetCameraPosition(const Math::Vec<3>& value)
 	{
 		_dataBridge.StagedScene.CameraPosition = value;
 	}
 
-	void SetCameraDirection(const glm::vec3& value)
+	void SetCameraDirection(const Math::Vec<3>& value)
 	{
 		_dataBridge.StagedScene.CameraDirection = value;
 	}
 
-	void SetCameraUp(const glm::vec3& value)
+	void SetCameraUp(const Math::Vec<3>& value)
 	{
 		_dataBridge.StagedScene.CameraUp = value;
 	}
 
-	void SetCameraTarget(const glm::vec3& value)
+	void SetCameraTarget(const Math::Vec<3>& value)
 	{
 		_dataBridge.StagedScene.CameraDirection =
 			value - _dataBridge.StagedScene.CameraPosition;

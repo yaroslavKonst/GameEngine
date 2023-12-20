@@ -10,60 +10,64 @@ class Thruster : public Model
 {
 public:
 	Thruster(
-		const glm::vec3& position,
+		const Math::Vec<3>& position,
 		Video* video,
-		glm::mat4* extMat,
+		Math::Mat<4>* extMat,
 		Library* textures,
 		Library* models);
 	~Thruster();
 
-	glm::vec3 SetDirection(const glm::vec3& value, const glm::vec3& speed);
-	void SetAngle(float value)
+	Math::Vec<3> SetDirection(
+		const Math::Vec<3>& value,
+		const Math::Vec<3>& speed);
+	void SetAngle(double value)
 	{
-		_targetAngle = std::clamp(value, 0.0f, 120.0f);
+		_targetAngle = std::clamp(value, 0.0, 120.0);
 	}
 
-	float GetFAngle()
+	double GetFAngle()
 	{
 		return _angleF;
 	}
 
 private:
-	glm::vec3 _position;
+	Math::Vec<3> _position;
 
-	float _angle;
-	float _targetAngle;
+	double _angle;
+	double _targetAngle;
 
-	float _angleF;
-	float _angleR;
+	double _angleF;
+	double _angleR;
 
 	Video* _video;
 	Model* _exhaust;
 
-	void AdjustFAngle(const glm::vec3& value, const glm::vec3& speed);
-	void AdjustRAngle(const glm::vec3& value, const glm::vec3& speed);
+	void AdjustFAngle(const Math::Vec<3>& value, const Math::Vec<3>& speed);
+	void AdjustRAngle(const Math::Vec<3>& value, const Math::Vec<3>& speed);
 };
 
 class Wing : public Model
 {
 public:
 	Wing(
-		const glm::vec3& position,
+		const Math::Vec<3>& position,
 		Video* video,
-		glm::mat4* extMat,
+		Math::Mat<4>* extMat,
 		Library* textures,
 		Library* models,
 		bool inverted = false);
 	~Wing();
 
-	glm::vec3 SetSpeed(const glm::vec3& value, const glm::vec3& force);
-	void SetAngle(float value)
+	Math::Vec<3> SetSpeed(
+		const Math::Vec<3>& value,
+		const Math::Vec<3>& force);
+	void SetAngle(double value)
 	{
-		_targetAngle = std::clamp(value, 0.0f, 30.0f);
+		_targetAngle = std::clamp(value, 0.0, 30.0);
 	}
 
-	void IncFlap(float value);
-	float GetFlap()
+	void IncFlap(double value);
+	double GetFlap()
 	{
 		return _flap;
 	}
@@ -79,23 +83,23 @@ public:
 	}
 
 private:
-	glm::vec3 _position;
+	Math::Vec<3> _position;
 
-	float _angle;
-	float _targetAngle;
+	double _angle;
+	double _targetAngle;
 
-	float _angleUp;
-	float _targetAngleUp;
+	double _angleUp;
+	double _targetAngleUp;
 
-	float _flap;
-	float _targetFlap;
+	double _flap;
+	double _targetFlap;
 
 	Video* _video;
 
 	bool _inverted;
 };
 
-class Shuttle : public InputHandler, public Actor
+class Shuttle : public InputHandler, public Actor, public SoftObject
 {
 public:
 	Shuttle(Common common, GravityField* gf);
@@ -118,7 +122,7 @@ public:
 		_cornerTextBox->Activate();
 	}
 
-	const glm::mat4& GetMatrix()
+	const Math::Mat<4>& GetMatrix()
 	{
 		return _shipMatrix;
 	}
@@ -132,40 +136,30 @@ private:
 	Model* _base;
 	Model* _roof;
 
-	float _mass;
-
 	std::vector<Thruster*> _thrusters;
 	std::vector<Wing*> _wings;
 
-	std::vector<Object*> _gear;
-	std::vector<glm::vec3> _gearPos;
+	std::vector<Math::Vec<3>> _gearPos;
+	std::vector<Math::Vec<3>> _thrusterPos;
+	std::vector<Sprite*> _sprites;
 
 	GravityField* _gf;
 
 	bool _flightMode;
 
-	glm::vec3 _position;
-	glm::mat4 _rotation;
-	glm::vec3 _linearSpeed;
-	glm::vec3 _angularSpeed;
-	glm::mat4 _shipMatrix;
+	Math::Mat<4> _shipMatrix;
 
-	glm::vec3 _forceMoment;
-
-	glm::vec3 _targetSpeed;
 	bool _grounded;
 
-	glm::vec3 _centerOfGravity;
+	double _controlF;
+	double _controlR;
+	double _controlU;
 
-	float _controlF;
-	float _controlR;
-	float _controlU;
+	double _controlYaw;
+	double _controlPitch;
+	double _controlRoll;
 
-	float _controlYaw;
-	float _controlPitch;
-	float _controlRoll;
-
-	float _cameraDist;
+	double _cameraDist;
 
 	TextBox* _cornerTextBox;
 
@@ -177,11 +171,18 @@ private:
 	void UnloadAssets();
 	void Flight(int key, int scancode, int action, int mods);
 
-	glm::vec3 GetThrusterForce(
-		const glm::vec3& force,
-		const glm::vec3& speed,
-		float& powerCoeff);
-	glm::vec3 GetWingForce(const glm::vec3& speed, const glm::vec3& force);
+	void SetThrusterForce(
+		const Math::Vec<3>& force,
+		const Math::Vec<3>& speed,
+		const Math::Vec<3>& dirF,
+		const Math::Vec<3>& dirR,
+		const Math::Vec<3>& dirU);
+	Math::Vec<3> GetWingForce(
+		const Math::Vec<3>& speed,
+		const Math::Vec<3>& force);
+
+	void BuildPhysicalFrame();
+	void RemovePhysicalFrame();
 };
 
 #endif

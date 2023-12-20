@@ -34,7 +34,7 @@ namespace PhysTest
 			};
 
 			Geometry.Indices = {0, 2, 1, 1, 2, 3};
-			Geometry.Instances = {glm::mat4(1.0f)};
+			Geometry.Instances = {Math::Mat<4>(1.0)};
 		}
 	private:
 	};

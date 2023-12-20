@@ -164,10 +164,11 @@ void Package::BuildPackage(
 
 		std::cout << fileNames[entryIndex] << ": ";
 
-		if (compressedEntryData.size() > entryData.size()) {
+		if (compressedEntryData[0] == 0) {
 			std::cout << "stored";
 		} else {
-			std::cout << "compressed (" <<
+			std::cout << "compressed, layers: " <<
+				(int)compressedEntryData[0] << " (" <<
 				(float)compressedEntryData.size() /
 				entryData.size() << ")";
 		}

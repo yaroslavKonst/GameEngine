@@ -1,6 +1,6 @@
 #include "CollisionEngine.h"
 
-#include "PlaneHelper.h"
+#include "../Math/PlaneHelper.h"
 
 #include "../Logger/logger.h"
 
@@ -32,7 +32,7 @@ void CollisionEngine::RemoveObject(Object* object)
 	_mutex.unlock();
 }
 
-void CollisionEngine::Run(ThreadPool* threadPool, float timeStep)
+void CollisionEngine::Run(ThreadPool* threadPool, double timeStep)
 {
 	_mutex.lock();
 	std::vector<Object*> objects(_objects.size());

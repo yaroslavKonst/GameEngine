@@ -21,7 +21,7 @@ public:
 	PhysicalEngine();
 	~PhysicalEngine();
 
-	void Run(ThreadPool* threadPool, float timeStep) override;
+	void Run(ThreadPool* threadPool, double timeStep) override;
 
 	void RegisterObject(PhysicalObject* object);
 	void RemoveObject(PhysicalObject* object);
@@ -29,27 +29,27 @@ public:
 	void RemoveObject(SoftObject* object);
 
 	RayCastResult RayCast(
-		const glm::vec3& point,
-		const glm::vec3& direction,
-		float distance,
+		const Math::Vec<3>& point,
+		const Math::Vec<3>& direction,
+		double distance,
 		void* userPointer,
 		std::set<PhysicalObject*> ignore = {});
 
 private:
 	struct ObjectDescriptor
 	{
-		std::vector<glm::vec3> Vertices;
-		std::vector<glm::vec3> Normals;
-		glm::vec3 Center;
-		float Radius;
+		std::vector<Math::Vec<3>> Vertices;
+		std::vector<Math::Vec<3>> Normals;
+		Math::Vec<3> Center;
+		double Radius;
 	};
 
 	struct Contact
 	{
-		glm::vec3 Normal;
-		float NormalDistance;
-		float Mu;
-		float Bounciness;
+		Math::Vec<3> Normal;
+		double NormalDistance;
+		double Mu;
+		double Bounciness;
 
 		size_t VertexIndex;
 	};
@@ -72,9 +72,9 @@ private:
 	void CalculateCollision(
 		PhysicalObject* object,
 		SoftObject* SoftObject,
-		float timeStep);
-	void ApplyForces(SoftObject* object, float timeStep);
-	void ApplyCollision(SoftObject* object, float timeStep);
+		double timeStep);
+	void ApplyForces(SoftObject* object, double timeStep);
+	void ApplyCollision(SoftObject* object, double timeStep);
 };
 
 #endif

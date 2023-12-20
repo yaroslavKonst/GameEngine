@@ -19,7 +19,7 @@ public:
 	CollisionEngine();
 	~CollisionEngine();
 
-	void Run(ThreadPool* threadPool, float timeStep) override;
+	void Run(ThreadPool* threadPool, double timeStep) override;
 
 	void RegisterObject(Object* object);
 	void RemoveObject(Object* object);

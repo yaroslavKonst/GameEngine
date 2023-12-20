@@ -2,7 +2,6 @@
 #define _GLOBAL_H
 
 #include "../UniverseEngine/universe.h"
-#include "../PhysicalEngine/CollisionEngine.h"
 #include "../PhysicalEngine/PhysicalEngine.h"
 #include "../AudioEngine/audio.h"
 #include "../VideoEngine/TextHandler.h"
@@ -13,7 +12,6 @@ struct Common
 	Video* video;
 	Audio* audio;
 	Universe* universe;
-	CollisionEngine* collisionEngine;
 	PhysicalEngine* physicalEngine;
 	TextHandler* textHandler;
 	Localizer* localizer;

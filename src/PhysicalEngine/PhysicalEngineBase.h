@@ -9,7 +9,7 @@ public:
 	virtual ~PhysicalEngineBase()
 	{ }
 
-	virtual void Run(ThreadPool* threadPool, float timeStep) = 0;
+	virtual void Run(ThreadPool* threadPool, double timeStep) = 0;
 };
 
 #endif

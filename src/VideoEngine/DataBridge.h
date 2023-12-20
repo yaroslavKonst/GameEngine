@@ -26,9 +26,9 @@ struct Scene
 	std::vector<Skybox> skybox;
 
 	double FOV;
-	glm::vec3 CameraPosition;
-	glm::vec3 CameraDirection;
-	glm::vec3 CameraUp;
+	Math::Vec<3> CameraPosition;
+	Math::Vec<3> CameraDirection;
+	Math::Vec<3> CameraUp;
 };
 
 struct SceneContainer
@@ -41,9 +41,9 @@ struct SceneContainer
 	std::vector<Skybox> skybox;
 
 	double FOV;
-	glm::vec3 CameraPosition;
-	glm::vec3 CameraDirection;
-	glm::vec3 CameraUp;
+	Math::Vec<3> CameraPosition;
+	Math::Vec<3> CameraDirection;
+	Math::Vec<3> CameraUp;
 };
 
 struct LoadModelMessage
@@ -103,7 +103,7 @@ struct DataBridge
 		for (auto model : StagedScene.Models) {
 			SubmittedScene.Models[idx] = *model;
 
-			const glm::mat4* extMat =
+			const Math::Mat<4>* extMat =
 				SubmittedScene.Models[idx].ModelParams.ExternalMatrix;
 
 			if (extMat) {

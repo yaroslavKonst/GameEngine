@@ -33,6 +33,7 @@ namespace Logger
 	};
 
 	void SetLevel(Level level);
+	void SetColored(bool value);
 
 	Logger Error();
 	Logger Warning();

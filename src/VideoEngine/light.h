@@ -1,6 +1,8 @@
 #ifndef _LIGHT_H
 #define _LIGHT_H
 
+#include "../Math/vec.h"
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -15,13 +17,12 @@ public:
 	enum class Type
 	{
 		Point = 0,
-		Spot = 1,
-		Direct = 2
+		Spot = 1
 	};
 
-	glm::vec3 Position;
+	Math::Vec<3> Position;
+	Math::Vec<3> Direction;
 	glm::vec3 Color;
-	glm::vec3 Direction;
 	Type Type;
 	float Angle;
 	float AngleFade;

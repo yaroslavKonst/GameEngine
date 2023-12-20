@@ -5,12 +5,12 @@
 #include <set>
 
 #include "../VideoEngine/video.h"
-#include "../PhysicalEngine/CollisionEngine.h"
+#include "../PhysicalEngine/PhysicalEngine.h"
 
-class Segment : public Model, public Object
+class Segment : public Model, public PhysicalObject
 {
 public:
-	glm::vec3 Normal;
+	Math::Vec<3> Normal;
 	Loader::VertexData Geometry;
 	bool Loaded;
 	bool Activated;
@@ -20,13 +20,13 @@ class Planet
 {
 public:
 	Planet(
-		float radius,
-		glm::vec3 position,
+		double radius,
+		Math::Vec<3> position,
 		Video* video,
-		CollisionEngine* collisionEngine);
+		PhysicalEngine* physicalEngine);
 	~Planet();
 
-	void Update(glm::vec3 playerCoord);
+	void Update(const Math::Vec<3>& playerCoord);
 
 private:
 	std::list<Segment*> _segments;
@@ -35,11 +35,11 @@ private:
 	std::set<Segment*> _activeSegments;
 	std::set<Segment*> _subActiveSegments;
 
-	glm::mat4 _matrix;
-	glm::vec3 _position;
+	Math::Mat<4> _matrix;
+	Math::Vec<3> _position;
 
 	Video* _video;
-	CollisionEngine* _collisionEngine;
+	PhysicalEngine* _physicalEngine;
 
 	uint32_t _blockTexture;
 

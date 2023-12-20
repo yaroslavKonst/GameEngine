@@ -18,35 +18,35 @@ MainGrid::MainGrid(
 	_preview = nullptr;
 
 	auto td = Loader::LoadImage("Models/Ship/MainBlocks/Wall.png");
-	Textures["Wall"] = _video->AddTexture(td);
+	Textures["Wall"] = _video->LoadTexture(td);
 
 	auto model = Loader::LoadModel("Models/Ship/MainBlocks/Wall.obj");
 	Models["Wall"] = _video->LoadModel(model);
 
 	td = Loader::LoadImage(
 		"Models/Ship/MainBlocks/FlightControl.png");
-	Textures["FlightControl"] = _video->AddTexture(td);
+	Textures["FlightControl"] = _video->LoadTexture(td);
 
 	model = Loader::LoadModel("Models/Ship/MainBlocks/FlightControl.obj");
 	Models["FlightControl"] = _video->LoadModel(model);
 
 	td = Loader::LoadImage(
 		"Models/Ship/MainBlocks/StaticThruster.png");
-	Textures["StaticThruster"] = _video->AddTexture(td);
+	Textures["StaticThruster"] = _video->LoadTexture(td);
 
 	model = Loader::LoadModel("Models/Ship/MainBlocks/StaticThruster.obj");
 	Models["StaticThruster"] = _video->LoadModel(model);
 
 	td = Loader::LoadImage(
 		"Models/Ship/MainBlocks/DynamicThruster.png");
-	Textures["DynamicThruster"] = _video->AddTexture(td);
+	Textures["DynamicThruster"] = _video->LoadTexture(td);
 
 	model = Loader::LoadModel("Models/Ship/MainBlocks/DynamicThruster.obj");
 	Models["DynamicThruster"] = _video->LoadModel(model);
 
 	td = Loader::LoadImage(
 		"Models/Ship/MainBlocks/DynamicThrusterBase.png");
-	Textures["DynamicThrusterBase"] = _video->AddTexture(td);
+	Textures["DynamicThrusterBase"] = _video->LoadTexture(td);
 
 	model = Loader::LoadModel(
 		"Models/Ship/MainBlocks/DynamicThrusterBase.obj");
@@ -64,7 +64,7 @@ MainGrid::~MainGrid()
 	StopPreview();
 
 	for (auto& texture : Textures) {
-		_video->RemoveTexture(texture.second);
+		_video->UnloadTexture(texture.second);
 	}
 
 	for (auto& model : Models) {

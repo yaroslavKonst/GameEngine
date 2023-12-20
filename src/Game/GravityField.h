@@ -4,12 +4,12 @@
 class GravityField
 {
 public:
-	static constexpr float G_CONST = 6.67430e-11;
+	static constexpr double G_CONST = 6.67430e-11;
 
 	struct Object
 	{
-		float Mass;
-		glm::vec3 Position;
+		double Mass;
+		Math::Vec<3> Position;
 	};
 
 	GravityField()
@@ -25,15 +25,15 @@ public:
 		_objects.push_back(object);
 	}
 
-	glm::vec3 operator()(const glm::vec3& pos)
+	Math::Vec<3> operator()(const Math::Vec<3>& pos)
 	{
-		glm::vec3 res = {0, 0, 0};
+		Math::Vec<3> res(0.0);
 
 		for (auto& object : _objects) {
-			glm::vec3 delta = object.Position - pos;
+			Math::Vec<3> delta = object.Position - pos;
 
-			res += glm::normalize(delta) * object.Mass /
-				powf(glm::length(delta), 2);
+			res += delta.Normalize() * object.Mass /
+				pow(delta.Length(), 2.0);
 		}
 
 		return res;

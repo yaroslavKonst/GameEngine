@@ -14,7 +14,7 @@
 #include "GravityField.h"
 #include "planet.h"
 
-class Player : public Actor, public Object, public InputHandler
+class Player : public Actor, public SoftObject, public InputHandler
 {
 public:
 	Player(
@@ -44,15 +44,15 @@ private:
 	GravityField* _gf;
 	Planet* _planet;
 
-	glm::vec3 _pos;
-	glm::vec3 _dirUp;
-	glm::vec3 _dirF;
-	glm::vec3 _dirR;
-	glm::mat4 _matrix;
+	Math::Vec<3> _pos;
+	Math::Vec<3> _dirUp;
+	Math::Vec<3> _dirF;
+	Math::Vec<3> _dirR;
+	Math::Mat<4> _matrix;
 
-	float _angleH;
-	float _angleV;
-	glm::vec3 _speed;
+	double _angleH;
+	double _angleV;
+	//glm::vec3 _speed;
 
 	int _go;
 	int _strafe;

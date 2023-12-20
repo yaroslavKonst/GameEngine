@@ -26,21 +26,18 @@ World::World()
 
 	_common.universe->RegisterActor(this);
 
-	_common.collisionEngine = new CollisionEngine();
-	_common.universe->RegisterPhysicalEngine(_common.collisionEngine);
-
 	_common.physicalEngine = new PhysicalEngine();
 	_common.universe->RegisterPhysicalEngine(_common.physicalEngine);
 
 	_common.video->SetSkyboxNumber(2);
 
 	auto skyboxData = Loader::LoadImage("Skybox/skybox.png");
-	_skyboxDay = _common.video->AddSkyboxTexture(skyboxData);
+	_skyboxDay = _common.video->LoadSkyboxTexture(skyboxData);
 	_common.video->SetSkyboxEnabled(true);
 	_common.video->SetSkyboxTexture(_skyboxDay);
 
 	skyboxData = Loader::LoadImage("Skybox/skybox_night.png");
-	_skyboxNight = _common.video->AddSkyboxTexture(skyboxData);
+	_skyboxNight = _common.video->LoadSkyboxTexture(skyboxData);
 	_common.video->SetSkyboxEnabled(true, 1);
 	_common.video->SetSkyboxTexture(_skyboxNight, 1);
 
@@ -60,14 +57,11 @@ World::World()
 
 World::~World()
 {
-	_common.video->RemoveTexture(_skyboxDay);
-	_common.video->RemoveTexture(_skyboxNight);
+	_common.video->UnloadTexture(_skyboxDay);
+	_common.video->UnloadTexture(_skyboxNight);
 
 	delete _common.textHandler;
 	delete _common.localizer;
-
-	_common.universe->RemovePhysicalEngine(_common.collisionEngine);
-	delete _common.collisionEngine;
 
 	_common.universe->RemovePhysicalEngine(_common.physicalEngine);
 	delete _common.physicalEngine;
@@ -84,14 +78,14 @@ void World::Run()
 	GravityField gf;
 
 	auto td = Loader::LoadImage("Images/transparent.png");
-	uint32_t testTexture = _common.video->AddTexture(td);
+	uint32_t testTexture = _common.video->LoadTexture(td);
 
 	Planet planet(
 		20000,
 		{0, 0, -20000},
 		_common.video,
-		_common.collisionEngine);
-	gf.AddObject({1000000000.0f, {0, 0, -20000}});
+		_common.physicalEngine);
+	gf.AddObject({1000000000.0, {0, 0, -20000}});
 
 	Board board(_common.video);
 	board.TextureParams.SetAll(testTexture);
@@ -140,7 +134,7 @@ void World::Run()
 	Player player(_common, &ship, &gf, &planet);
 	_common.universe->RegisterActor(&player);
 	_common.universe->RegisterActor(&ship);
-	_common.collisionEngine->RegisterObject(&player);
+	_common.physicalEngine->RegisterObject(&player);
 
 	PhysTest::PhysTest physTest(_common);
 
@@ -152,7 +146,7 @@ void World::Run()
 	_universeThread->join();
 	delete _universeThread;
 
-	_common.collisionEngine->RemoveObject(&player);
+	_common.physicalEngine->RemoveObject(&player);
 	_common.universe->RemoveActor(&player);
 	_common.universe->RemoveActor(&ship);
 

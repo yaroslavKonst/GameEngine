@@ -4,6 +4,19 @@
 
 #include "../Logger/logger.h"
 
+static glm::mat4 MatToGlm(const Math::Mat<4>& mat)
+{
+	glm::mat4 res;
+
+	for (int row = 0; row < 4; ++row) {
+		for (int col = 0; col < 4; ++col) {
+			res[row][col] = mat[col][row];
+		}
+	}
+
+	return res;
+}
+
 std::vector<VkVertexInputBindingDescription>
 ModelDescriptor::GetVertexBindingDescription()
 {
@@ -103,10 +116,15 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 		memorySystem,
 		deviceSupport);
 
-	for (size_t i = 0; i < vertices.size(); ++i) {
-		vertexData[i].Pos = vertices[i];
-		vertexData[i].TexCoord = texCoords[i];
-		vertexData[i].Normal = normals[i];
+	for (size_t idx = 0; idx < vertices.size(); ++idx) {
+		for (int i = 0; i < 3; ++i) {
+			vertexData[idx].Pos[i] = vertices[idx][i];
+			vertexData[idx].Normal[i] = normals[idx][i];
+		}
+
+		for (int i = 0; i < 2; ++i) {
+			vertexData[idx].TexCoord[i] = texCoords[idx][i];
+		}
 	}
 
 	BufferHelper::LoadDataToBuffer(
@@ -147,6 +165,11 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 
 	// Instance buffer.
 	auto& instances = model->Instances;
+	std::vector<glm::mat4> glmInstances(instances.size());
+
+	for (size_t i = 0; i < instances.size(); ++i) {
+		glmInstances[i] = MatToGlm(instances[i]);
+	}
 
 	descriptor.InstanceBuffer = BufferHelper::CreateBuffer(
 		device,
@@ -160,8 +183,8 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 	BufferHelper::LoadDataToBuffer(
 		device,
 		descriptor.InstanceBuffer,
-		instances.data(),
-		instances.size() * sizeof(glm::mat4),
+		glmInstances.data(),
+		glmInstances.size() * sizeof(glm::mat4),
 		memorySystem,
 		deviceSupport,
 		commandPool,

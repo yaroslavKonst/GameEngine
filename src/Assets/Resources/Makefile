@@ -5,6 +5,7 @@ ENTRIES=\
 	Images/Cross.png \
 	Images/Grass.png \
 	Images/White.png \
+	Images/Circle.png \
 	Skybox/skybox.png \
 	Skybox/skybox_night.png \
 	Models/Archive/field.obj \

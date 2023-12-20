@@ -48,9 +48,9 @@ namespace Loader
 	{
 		struct Vertex
 		{
-			glm::vec3 Pos;
-			glm::vec2 Tex;
-			glm::vec3 Normal;
+			Math::Vec<3> Pos;
+			Math::Vec<2> Tex;
+			Math::Vec<3> Normal;
 
 			bool operator<(const Vertex& vertex) const
 			{
@@ -85,27 +85,27 @@ namespace Loader
 
 		std::vector<Vertex> vertices;
 
-		std::vector<glm::vec3> vertPositions;
-		std::vector<glm::vec3> normals;
-		std::vector<glm::vec2> texCoords;
+		std::vector<Math::Vec<3>> vertPositions;
+		std::vector<Math::Vec<3>> normals;
+		std::vector<Math::Vec<2>> texCoords;
 
 		for (auto line : modelFile) {
 			if (line[0] == "v") {
-				glm::vec3 vertex;
-				vertex[0] = std::stof(line[1]);
-				vertex[1] = std::stof(line[2]);
-				vertex[2] = std::stof(line[3]);
+				Math::Vec<3> vertex;
+				vertex[0] = std::stod(line[1]);
+				vertex[1] = std::stod(line[2]);
+				vertex[2] = std::stod(line[3]);
 				vertPositions.push_back(vertex);
 			} else if (line[0] == "vt") {
-				glm::vec2 texCoord;
-				texCoord[0] = std::stof(line[1]);
-				texCoord[1] = 1.0 - std::stof(line[2]);
+				Math::Vec<2> texCoord;
+				texCoord[0] = std::stod(line[1]);
+				texCoord[1] = 1.0 - std::stod(line[2]);
 				texCoords.push_back(texCoord);
 			} else if (line[0] == "vn") {
-				glm::vec3 normal;
-				normal[0] = std::stof(line[1]);
-				normal[1] = std::stof(line[2]);
-				normal[2] = std::stof(line[3]);
+				Math::Vec<3> normal;
+				normal[0] = std::stod(line[1]);
+				normal[1] = std::stod(line[2]);
+				normal[2] = std::stod(line[3]);
 				normals.push_back(normal);
 			} else if (line[0] == "f") {
 				Vertex vertex;
@@ -147,7 +147,7 @@ namespace Loader
 			data.Indices.push_back(indexedVertices[vertex]);
 		}
 
-		data.Instances = {glm::mat4(1.0)};
+		data.Instances = {Math::Mat<4>(1.0)};
 
 		return data;
 	}

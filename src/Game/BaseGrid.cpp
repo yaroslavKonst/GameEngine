@@ -14,25 +14,25 @@ BaseGrid::BaseGrid(
 	_extMat = extMat;
 
 	auto td = Loader::LoadImage("Models/Ship/ShipFloor.png");
-	Textures["Floor"] = _video->AddTexture(td);
+	Textures["Floor"] = _video->LoadTexture(td);
 
 	td = Loader::LoadImage("Models/Ship/ShipFloorComm.png");
-	Textures["FloorComm"] = _video->AddTexture(td);
+	Textures["FloorComm"] = _video->LoadTexture(td);
 
 	td = Loader::LoadImage("Models/Ship/ShipFloorCommDelim.png");
-	Textures["FloorCommDelim"] = _video->AddTexture(td);
+	Textures["FloorCommDelim"] = _video->LoadTexture(td);
 
 	td = Loader::LoadImage("Models/Ship/ShipPowerCableHub.png");
-	Textures["PowerCableHub"] = _video->AddTexture(td);
+	Textures["PowerCableHub"] = _video->LoadTexture(td);
 
 	td = Loader::LoadImage("Models/Ship/ShipPowerCable.png");
-	Textures["PowerCable"] = _video->AddTexture(td);
+	Textures["PowerCable"] = _video->LoadTexture(td);
 
 	td = Loader::LoadImage("Models/Ship/ShipDataCable.png");
-	Textures["DataCable"] = _video->AddTexture(td);
+	Textures["DataCable"] = _video->LoadTexture(td);
 
 	td = Loader::LoadImage("Models/Ship/ShipDataCableHub.png");
-	Textures["DataCableHub"] = _video->AddTexture(td);
+	Textures["DataCableHub"] = _video->LoadTexture(td);
 
 	_preview = nullptr;
 
@@ -68,7 +68,7 @@ BaseGrid::~BaseGrid()
 	StopPreview();
 
 	for (auto& texture : Textures) {
-		_video->RemoveTexture(texture.second);
+		_video->UnloadTexture(texture.second);
 	}
 
 	for (auto& model : Models) {

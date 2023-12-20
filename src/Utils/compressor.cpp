@@ -68,7 +68,9 @@ GetSymbolCodes(const std::vector<uint8_t>& data)
 	return symbolCodes;
 }
 
-std::vector<uint8_t> Compressor::Compress(const std::vector<uint8_t>& data)
+static std::vector<uint8_t> Decode(const std::vector<uint8_t>& data);
+
+static std::vector<uint8_t> Encode(const std::vector<uint8_t>& data)
 {
 	std::map<uint8_t, std::pair<size_t, std::vector<uint8_t>>> symbolCodes =
 		GetSymbolCodes(data);
@@ -107,22 +109,15 @@ std::vector<uint8_t> Compressor::Compress(const std::vector<uint8_t>& data)
 
 	std::vector<uint8_t> encodedData;
 
-	if (header.size() + dataSegment.size() < data.size()) {
-		encodedData.resize(header.size() + dataSegment.size() + 1);
-		encodedData[0] = 1;
-		memcpy(encodedData.data() + 1, header.data(), header.size());
-		memcpy(
-			encodedData.data() + 1 + header.size(),
-			dataSegment.data(),
-			dataSegment.size());
-	} else {
-		encodedData.resize(data.size() + 1);
-		encodedData[0] = 0;
-		memcpy(encodedData.data() + 1, data.data(), data.size());
-	}
+	encodedData.resize(header.size() + dataSegment.size());
+	memcpy(encodedData.data(), header.data(), header.size());
+	memcpy(
+		encodedData.data() + header.size(),
+		dataSegment.data(),
+		dataSegment.size());
 
 #ifdef TEST
-	std::vector<uint8_t> test = Decompress(encodedData);
+	std::vector<uint8_t> test = Decode(encodedData);
 
 	if (test.size() != data.size()) {
 		throw std::runtime_error("Decompress test failed.");
@@ -138,15 +133,9 @@ std::vector<uint8_t> Compressor::Compress(const std::vector<uint8_t>& data)
 	return encodedData;
 }
 
-std::vector<uint8_t> Compressor::Decompress(const std::vector<uint8_t>& data)
+static std::vector<uint8_t> Decode(const std::vector<uint8_t>& data)
 {
-	if (data[0] == 0) {
-		std::vector<uint8_t> decodedData(data.size() - 1);
-		memcpy(decodedData.data(), data.data() + 1, decodedData.size());
-		return decodedData;
-	}
-
-	size_t dataIndex = 1;
+	size_t dataIndex = 0;
 	std::map<uint8_t, std::pair<size_t, std::vector<uint8_t>>> symbolCodes;
 
 	size_t symbolCount = BytesToInt<uint16_t>(data.data() + dataIndex);
@@ -199,4 +188,54 @@ std::vector<uint8_t> Compressor::Decompress(const std::vector<uint8_t>& data)
 	}
 
 	return decodedData;
+}
+
+std::vector<uint8_t> Compressor::Compress(const std::vector<uint8_t>& data)
+{
+	uint8_t layers = 0;
+
+	std::vector<uint8_t>* dataSegment = new std::vector<uint8_t>();
+	std::vector<uint8_t>* nextDataSegment = new std::vector<uint8_t>();
+
+	*dataSegment = data;
+
+	bool limitReached = false;
+
+	do {
+		*nextDataSegment = Encode(*dataSegment);
+
+		if (nextDataSegment->size() < dataSegment->size()) {
+			std::vector<uint8_t>* tmp = nextDataSegment;
+			nextDataSegment = dataSegment;
+			dataSegment = tmp;
+			++layers;
+		} else {
+			limitReached = true;
+		}
+	} while (!limitReached);
+
+	delete nextDataSegment;
+
+	std::vector<uint8_t> result(dataSegment->size() + 1);
+	result[0] = layers;
+	memcpy(result.data() + 1, dataSegment->data(), dataSegment->size());
+
+	delete dataSegment;
+
+	return result;
+}
+
+std::vector<uint8_t> Compressor::Decompress(const std::vector<uint8_t>& data)
+{
+	uint8_t layers = data[0];
+
+	std::vector<uint8_t> dataSegment(data.size() - 1);
+	memcpy(dataSegment.data(), data.data() + 1, dataSegment.size());
+
+	while (layers) {
+		--layers;
+		dataSegment = Decode(dataSegment);
+	}
+
+	return dataSegment;
 }

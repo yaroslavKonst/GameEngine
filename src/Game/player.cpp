@@ -2,6 +2,24 @@
 
 #include "../Logger/logger.h"
 
+static glm::dvec3 VecToGlm(const Math::Vec<3>& vec)
+{
+	return glm::dvec3(vec[0], vec[1], vec[2]);
+}
+
+static Math::Mat<4> GlmToMat(const glm::dmat4& mat)
+{
+	Math::Mat<4> res;
+
+	for (int row = 0; row < 4; ++row) {
+		for (int col = 0; col < 4; ++col) {
+			res[row][col] = mat[col][row];
+		}
+	}
+
+	return res;
+}
+
 Player::Player(
 	Common common,
 	Shuttle* ship,
@@ -13,17 +31,17 @@ Player::Player(
 	_planet = planet;
 
 	_gf = gf;
-	_pos = glm::vec3(0.0, -3.0, 0.1);
+	_pos = {0.0, -3.0, 0.1};
 	_dirUp = {0, 0, 1};
 	_dirF = {0, 1, 0};
 	_dirR = {1, 0, 0};
-	_matrix = glm::mat4(1.0);
+	_matrix = Math::Mat<4>(1.0);
 	_angleH = 0;
 	_angleV = 0;
 	_go = 0;
 	_strafe = 0;
 	_jump = false;
-	_speed = {0, 0, 0};
+	//_speed = {0, 0, 0};
 	_lightActive = false;
 	_ship = ship;
 	_buildMode = false;
@@ -34,15 +52,13 @@ Player::Player(
 	_actionFRequested = false;
 	_activeFlightControl = nullptr;
 
-	auto collision = Loader::LoadModel("Models/Player/Collision.obj");
-	SetObjectVertices(collision.Vertices);
-	SetObjectIndices(collision.Indices);
-	SetObjectNormals(collision.Normals);
-	SetObjectCenter();
-	SetObjectMatrix(glm::mat4(1.0));
-	SetObjectDynamic(true);
-	SetObjectSphereCenter({0, 0, 0.45});
-	SetObjectSphereRadius(0.45);
+	SoftPhysicsValues::Vertex phVertex;
+	phVertex.Mass = 80;
+	phVertex.Mu = 0.3;
+	phVertex.Bounciness = 0.2;
+	phVertex.Position = {0, 0, 1};
+
+	SoftPhysicsParams.Vertices = {phVertex};
 
 	SetInputEnabled(true);
 
@@ -70,9 +86,10 @@ Player::Player(
 [T] Change type\n[R] Next layer\n[F] Previous layer\n[Scroll] Rotate block");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
 	_cornerTextBox->SetDepth(0);
+	_cornerTextBox->Activate();
 
 	auto td = Loader::LoadImage("Images/Cross.png");
-	_crossTexture = _common.video->AddTexture(td);
+	_crossTexture = _common.video->LoadTexture(td);
 
 	_cross.RectangleParams.Position = {-0.02, -0.02, 0.02, 0.02};
 	_cross.RectangleParams.TexCoords = {0, 0, 1, 1};
@@ -94,7 +111,7 @@ Player::~Player()
 
 	_common.video->Unsubscribe(this);
 	_common.video->RemoveLight(&_light);
-	_common.video->RemoveTexture(_crossTexture);
+	_common.video->UnloadTexture(_crossTexture);
 }
 
 void Player::Key(
@@ -107,7 +124,6 @@ void Player::Key(
 		if (key == GLFW_KEY_F) {
 			if (action == GLFW_PRESS) {
 				_flightMode = false;
-				SetObjectDomain(0);
 			}
 		}
 
@@ -188,27 +204,27 @@ bool Player::MouseMoveRaw(
 	_angleH -= xoffset * 0.1;
 	_angleV -= yoffset * 0.1;
 
-	_angleV = std::clamp(_angleV, -85.0f, 85.0f);
+	_angleV = std::clamp(_angleV, -85.0, 85.0);
 
 	return true;
 }
 
 void Player::TickEarly()
 {
-	glm::vec3 gravityF = (*_gf)(_pos);
+	Math::Vec<3> gravityF = (*_gf)(_pos);
 	gravityF *= 80.0f;
 
-	glm::vec3 tDirUp = -glm::normalize(gravityF);
+	SoftPhysicsParams.Force = gravityF;
 
-	float angleCos = glm::dot(
-		glm::normalize(tDirUp),
-		glm::normalize(_dirUp));
+	Math::Vec<3> tDirUp = -gravityF.Normalize();
 
-	if (fabs(angleCos) < 0.999999) {
-		glm::vec3 rotAxis = glm::cross(tDirUp, _dirUp);
+	double angleCos = tDirUp.Dot(_dirUp.Normalize());
 
-		float angle = acos(angleCos);
-		float angleLim = M_PI / 1000.0;
+	if (abs(angleCos) < 0.999999) {
+		Math::Vec<3> rotAxis = tDirUp.Cross(_dirUp);
+
+		double angle = acos(angleCos);
+		double angleLim = M_PI / 1000.0;
 
 		angleLim = angle / 100.0 + M_PI / 10000.0;
 		angleLim = std::clamp<float>(
@@ -220,137 +236,107 @@ void Player::TickEarly()
 			angle = angleLim;
 		}
 
-		glm::mat4 rotMat = glm::rotate(
-			glm::mat4(1.0),
+		Math::Mat<4> rotMat = GlmToMat(glm::rotate(
+			glm::dmat4(1.0),
 			angle,
-			-glm::normalize(rotAxis));
+			VecToGlm(-rotAxis.Normalize())));
 
 		_matrix = rotMat * _matrix;
 
-		_dirUp = rotMat * glm::vec4(_dirUp, 0.0f);
-		_dirF = rotMat * glm::vec4(_dirF, 0.0f);
-		_dirR = rotMat * glm::vec4(_dirR, 0.0f);
+		_dirUp = rotMat * Math::Vec<4>(_dirUp, 0.0);
+		_dirF = rotMat * Math::Vec<4>(_dirF, 0.0);
+		_dirR = rotMat * Math::Vec<4>(_dirR, 0.0);
 	}
 
 	if (_angleH != 0) {
-		glm::mat4 rotMat = glm::rotate(
-			glm::mat4(1.0),
+		Math::Mat<4> rotMat = GlmToMat(glm::rotate(
+			glm::dmat4(1.0),
 			glm::radians(_angleH),
-			glm::normalize(_dirUp));
+			VecToGlm(_dirUp.Normalize())));
 
 		_matrix = rotMat * _matrix;
 
-		_dirUp = rotMat * glm::vec4(_dirUp, 0.0f);
-		_dirF = rotMat * glm::vec4(_dirF, 0.0f);
-		_dirR = rotMat * glm::vec4(_dirR, 0.0f);
+		_dirUp = rotMat * Math::Vec<4>(_dirUp, 0.0);
+		_dirF = rotMat * Math::Vec<4>(_dirF, 0.0);
+		_dirR = rotMat * Math::Vec<4>(_dirR, 0.0);
 
 		_angleH = 0;
 	}
 
-	if (!_flightMode) {
-		_speed += gravityF / 100.0f / 80.0f;
-
-		_pos += _speed / 100.0f;
-
-		SetObjectMatrix(_matrix * glm::translate(glm::mat4(1.0), _pos));
-	}
+	SoftPhysicsParams.Vertices[0].Position = _pos;
 }
 
 void Player::Tick()
 {
-	glm::vec3 effect = GetObjectEffect();
+	_pos = SoftPhysicsParams.Vertices[0].Position;
 
-	_pos += effect;
+	_cornerTextBox->SetText(
+		"Player: \nSpeed: " +
+		std::to_string(
+			SoftPhysicsParams.Vertices[0].Speed.Length()));
+	_cornerTextBox->Activate();
 
 	_planet->Update(_pos);
 
-	if (glm::dot(effect, _dirUp) > 0) {
-		glm::vec3 hspeed = _dirF * (float)_go +
-			_dirR * (float)_strafe;
+	Math::Vec<3> hspeed = _dirF * (double)_go +
+		_dirR * (double)_strafe;
 
-		_speed = hspeed * 6.0f;
+	SoftPhysicsParams.Vertices[0].Force = hspeed * 600.0;
 
-		if (_jump) {
-			_speed += _dirUp * 6.0f;
-		}
+	if (_jump) {
+		SoftPhysicsParams.Vertices[0].Force += _dirUp * 1000.0;
 	}
 
 	if (_flightMode) {
-		glm::mat4 matrix = _ship->GetMatrix();
+		Math::Mat<4> matrix = _ship->GetMatrix();
 
-		glm::vec3 offset = matrix * glm::vec4(0, -1, -1, 0);
+		Math::Vec<3> offset = matrix * Math::Vec<4>({0, -1, -1, 0});
 
-		offset = glm::normalize(offset) * 0.5f;
+		offset = offset.Normalize() * 0.5;
 
-		_pos = glm::vec3(matrix * glm::vec4(
-			0, 0, 5, 1.0f)) +
+		_pos = Math::Vec<3>(matrix * Math::Vec<4>({0, 0, 5, 1.0})) +
 			offset;
 
-		SetObjectMatrix(_matrix * glm::translate(glm::mat4(1.0), _pos));
+		SoftPhysicsParams.Vertices[0].Position = _pos;
+		SoftPhysicsParams.Vertices[0].Speed = 0.0;
 	}
 
 	if (!_flightMode) {
-		glm::mat4 cameraDirectionRotMat = glm::rotate(
-			glm::mat4(1.0),
+		Math::Mat<4> cameraDirectionRotMat = GlmToMat(glm::rotate(
+			glm::dmat4(1.0),
 			glm::radians(_angleV),
-			_dirR);
+			VecToGlm(_dirR)));
 
-		glm::vec3 cameraPosition = _pos + _dirUp * 1.85f;
-		glm::vec3 cameraDirection =
-			cameraDirectionRotMat * glm::vec4(_dirF, 0.0f);
+		Math::Vec<3> cameraPosition = _pos + _dirUp * 1.85;
+		Math::Vec<3> cameraDirection =
+			cameraDirectionRotMat * Math::Vec<4>(_dirF, 0.0);
 
 		_common.video->SetCameraPosition(cameraPosition);
 		_common.video->SetCameraDirection(cameraDirection);
 		_common.video->SetCameraUp(_dirUp);
 	}
 
-	_light.Position = _pos + _dirUp * 1.2f + _dirR * -0.3f;
+	_light.Position = _pos + _dirUp * 1.2 + _dirR * -0.3;
 	_light.Direction = _dirF;
 
-	CollisionEngine::RayCastResult object =
-		_common.collisionEngine->RayCast(
-			_pos + _dirUp * 1.85f,
+	PhysicalEngine::RayCastResult object =
+		_common.physicalEngine->RayCast(
+			_pos + _dirUp * 1.85,
 			_dirF,
 			3,
 			nullptr,
-			{this});
+			{});
 
 	if (object.Code == 1) {
 		_centerTextBox->SetText(
 			"Communications\n[E] Power\n[R] Data");
 		_centerTextBox->Activate();
 		_cross.DrawParams.ColorMultiplier = {0.3, 1.0, 0.3, 1.0};
-
-		if (_actionERequested) {
-			FloorCommBlock* block = static_cast<FloorCommBlock*>(
-				object.object);
-
-			block->SetPowerCable(!block->GetPowerCable());
-		}
-
-		if (_actionRRequested) {
-			FloorCommBlock* block = static_cast<FloorCommBlock*>(
-				object.object);
-
-			block->SetDataCable(!block->GetDataCable());
-		}
 	} else if (object.Code == 2 && !_flightMode) {
 		_centerTextBox->SetText(
 			"FlightControl\n[E] Use");
 		_centerTextBox->Activate();
 		_cross.DrawParams.ColorMultiplier = {0.3, 1.0, 0.3, 1.0};
-
-		if (_actionERequested) {
-			FlightControl* block = static_cast<FlightControl*>(
-				object.object);
-
-			_activeFlightControl = block;
-
-			_ship->ActivateFlight();
-			_flightMode = true;
-			_ship->SetInputEnabled(true);
-			SetObjectDomain(1);
-		}
 	} else {
 		_centerTextBox->Deactivate();
 		_cross.DrawParams.ColorMultiplier = {1.0, 1.0, 1.0, 1.0};

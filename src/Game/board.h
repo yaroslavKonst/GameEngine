@@ -50,10 +50,10 @@ public:
 			4, 6, 5, 6, 7, 5
 		};
 
-		glm::mat4 instance1 = glm::mat4(1.0f);
-		glm::mat4 instance2 = glm::translate(
-			glm::mat4(1.0f),
-			glm::vec3(0, 0.2, 0));
+		Math::Mat<4> instance1(1.0);
+		Math::Mat<4> instance2 = GlmToMat(glm::translate(
+			glm::dmat4(1.0),
+			glm::dvec3(0, 0.2, 0)));
 
 		model.Instances = {instance1, instance2};
 
@@ -61,7 +61,7 @@ public:
 
 		ModelParams.Model = _model;
 
-		ModelParams.Matrix = glm::mat4(1.0f);
+		ModelParams.Matrix = Math::Mat<4>(1.0);
 		DrawParams.Enabled = true;
 	}
 
@@ -73,6 +73,19 @@ public:
 private:
 	Video* _video;
 	uint32_t _model;
+
+	Math::Mat<4> GlmToMat(const glm::dmat4& mat)
+	{
+		Math::Mat<4> res;
+
+		for (int row = 0; row < 4; ++row) {
+			for (int col = 0; col < 4; ++col) {
+				res[row][col] = mat[col][row];
+			}
+		}
+
+		return res;
+	}
 };
 
 #endif

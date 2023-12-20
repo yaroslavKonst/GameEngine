@@ -6,13 +6,8 @@
 #include <vector>
 #include <cstdint>
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/hash.hpp>
+#include "../Math/vec.h"
+#include "../Math/mat.h"
 
 namespace Loader
 {
@@ -27,12 +22,12 @@ namespace Loader
 
 	struct VertexData
 	{
-		std::vector<glm::vec3> Vertices;
-		std::vector<glm::vec3> Normals;
-		std::vector<glm::vec2> TexCoords;
+		std::vector<Math::Vec<3>> Vertices;
+		std::vector<Math::Vec<3>> Normals;
+		std::vector<Math::Vec<2>> TexCoords;
 		std::vector<uint32_t> Indices;
 
-		std::vector<glm::mat4> Instances;
+		std::vector<Math::Mat<4>> Instances;
 	};
 
 	VertexData LoadModel(std::string name);

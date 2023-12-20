@@ -6,11 +6,29 @@
 
 #include "../Logger/logger.h"
 
+static glm::dvec3 VecToGlm(const Math::Vec<3>& vec)
+{
+	return glm::dvec3(vec[0], vec[1], vec[2]);
+}
+
+static Math::Mat<4> GlmToMat(const glm::dmat4& mat)
+{
+	Math::Mat<4> res;
+
+	for (int row = 0; row < 4; ++row) {
+		for (int col = 0; col < 4; ++col) {
+			res[row][col] = mat[col][row];
+		}
+	}
+
+	return res;
+}
+
 struct Vec3
 {
-	float x;
-	float y;
-	float z;
+	double x;
+	double y;
+	double z;
 
 	Vec3()
 	{
@@ -24,6 +42,20 @@ struct Vec3
 		x = vec.x;
 		y = vec.y;
 		z = vec.z;
+	}
+
+	Vec3(const glm::dvec3& vec)
+	{
+		x = vec.x;
+		y = vec.y;
+		z = vec.z;
+	}
+
+	Vec3(const Math::Vec<3>& vec)
+	{
+		x = vec[0];
+		y = vec[1];
+		z = vec[2];
 	}
 
 	bool operator<(const Vec3& v) const
@@ -69,6 +101,16 @@ struct Vec3
 	{
 		return glm::vec3(x, y, z);
 	}
+
+	operator glm::dvec3() const
+	{
+		return glm::dvec3(x, y, z);
+	}
+
+	operator Math::Vec<3>() const
+	{
+		return Math::Vec<3>({x, y, z});
+	}
 };
 
 struct Triangle
@@ -78,7 +120,7 @@ struct Triangle
 	Vec3 P3;
 
 	Vec3 Center;
-	float Radius;
+	double Radius;
 
 	bool operator<(const Triangle& t) const
 	{
@@ -127,27 +169,27 @@ struct Triangle
 
 	void SetParams()
 	{
-		Center = ((glm::vec3)P1 + (glm::vec3)P2 + (glm::vec3)P3) / 3.0f;
-		Radius = std::max(
-			std::max(
-				glm::length((glm::vec3)Center - (glm::vec3)P1),
-				glm::length((glm::vec3)Center - (glm::vec3)P2)),
-			glm::length((glm::vec3)Center - (glm::vec3)P3));
+		Center = ((glm::dvec3)P1 + (glm::dvec3)P2 + (glm::dvec3)P3) /
+			3.0;
+		Radius = std::max<double>(std::max<double>(
+			glm::length((glm::dvec3)Center - (glm::dvec3)P1),
+			glm::length((glm::dvec3)Center - (glm::dvec3)P2)),
+			glm::length((glm::dvec3)Center - (glm::dvec3)P3));
 	}
 };
 
-static glm::vec3 AngleToPoint(
-	float lat,
-	float lon,
-	std::map<float, std::map<float, float>>& radius)
+static Math::Vec<3> AngleToPoint(
+	double lat,
+	double lon,
+	std::map<double, std::map<double, double>>& radius)
 {
-	float latRad = glm::radians(lat);
-	float lonRad = glm::radians(lon);
+	double latRad = glm::radians(lat);
+	double lonRad = glm::radians(lon);
 
-	glm::vec3 dir = {
-		sinf(lonRad) * cosf(latRad),
-		cosf(lonRad) * cosf(latRad),
-		sinf(latRad)
+	Math::Vec<3> dir = {
+		sin(lonRad) * cos(latRad),
+		cos(lonRad) * cos(latRad),
+		sin(latRad)
 	};
 
 	dir *= radius[lat][lon];
@@ -157,7 +199,8 @@ static glm::vec3 AngleToPoint(
 
 static bool Neighbours(const Triangle& t1, const Triangle& t2)
 {
-	float dist = glm::length((glm::vec3)t1.Center - (glm::vec3)t2.Center);
+	double dist =
+		glm::length((glm::dvec3)t1.Center - (glm::dvec3)t2.Center);
 
 	if (dist > t1.Radius + t2.Radius) {
 		return false;
@@ -177,16 +220,16 @@ static bool Neighbours(const Triangle& t1, const Triangle& t2)
 }
 
 Planet::Planet(
-	float radius,
-	glm::vec3 position,
+	double radius,
+	Math::Vec<3> position,
 	Video* video,
-	CollisionEngine* collisionEngine)
+	PhysicalEngine* physicalEngine)
 {
 	_video = video;
-	_collisionEngine = collisionEngine;
+	_physicalEngine = physicalEngine;
 
 	_position = position;
-	_matrix = glm::translate(glm::mat4(1.0), position);
+	_matrix = GlmToMat(glm::translate(glm::dmat4(1.0), VecToGlm(position)));
 
 	size_t clusterSizeLimit = 1000;
 
@@ -260,31 +303,31 @@ Planet::Planet(
 	}
 
 	if (triangles.empty()) {
-		std::map<float, std::vector<float>> angles;
-		std::map<float, std::map<float, float>> radiuses;
+		std::map<double, std::vector<double>> angles;
+		std::map<double, std::map<double, double>> radiuses;
 
 		Logger::Verbose() << "Planet: Building surface.";
 
-		float latStep = 0.05;
+		double latStep = 0.05;
 
 		for (
-			float angleLat = -90.0 + latStep / 2.0;
+			double angleLat = -90.0 + latStep / 2.0;
 			angleLat <= 90.0 - latStep / 2.0;
 			angleLat += latStep)
 		{
 			int lonAngleCount = ceilf(360.0 / latStep *
 				fabs(cosf(glm::radians(angleLat))));
 
-			float lonStep = 360.0 / lonAngleCount;
+			double lonStep = 360.0 / lonAngleCount;
 
 			Logger::Verbose() << "Planet: Lat: " << angleLat <<
 				", point count: " << lonAngleCount;
 
-			std::vector<float> dirs;
-			std::map<float, float> rad;
+			std::vector<double> dirs;
+			std::map<double, double> rad;
 
 			for (
-				float angleLon = 0;
+				double angleLon = 0;
 				angleLon < 360;
 				angleLon += lonStep)
 			{
@@ -300,25 +343,25 @@ Planet::Planet(
 
 		size_t maxRowSize = 0;
 
-		float lonBase = angles.begin()->second.front();
-		float latBase = angles.begin()->first;
+		double lonBase = angles.begin()->second.front();
+		double latBase = angles.begin()->first;
 
 		for (
 			auto lonIt = angles.begin()->second.begin() + 1;
 			lonIt != angles.begin()->second.end() - 1;
 			++lonIt)
 		{
-			glm::vec3 p1 = AngleToPoint(
+			Math::Vec<3> p1 = AngleToPoint(
 				latBase,
 				lonBase,
 				radiuses);
 
-			glm::vec3 p2 = AngleToPoint(
+			Math::Vec<3> p2 = AngleToPoint(
 				latBase,
 				*lonIt,
 				radiuses);
 
-			glm::vec3 p3 = AngleToPoint(
+			Math::Vec<3> p3 = AngleToPoint(
 				latBase,
 				*(lonIt + 1),
 				radiuses);
@@ -342,8 +385,8 @@ Planet::Planet(
 			auto lonIt1 = latIt1->second.begin();
 			auto lonIt2 = latIt2->second.begin();
 
-			float lon1 = *lonIt1;
-			float lon2 = *lonIt2;
+			double lon1 = *lonIt1;
+			double lon2 = *lonIt2;
 
 			++lonIt1;
 			++lonIt2;
@@ -367,20 +410,20 @@ Planet::Planet(
 				}
 
 				if (advL1) {
-					float prevL = *lonIt1;
+					double prevL = *lonIt1;
 					++lonIt1;
 
-					glm::vec3 p1 = AngleToPoint(
+					Math::Vec<3> p1 = AngleToPoint(
 						latIt1->first,
 						prevL,
 						radiuses);
 
-					glm::vec3 p2 = AngleToPoint(
+					Math::Vec<3> p2 = AngleToPoint(
 						latIt2->first,
 						lon2,
 						radiuses);
 
-					glm::vec3 p3 = AngleToPoint(
+					Math::Vec<3> p3 = AngleToPoint(
 						latIt1->first,
 						lon1,
 						radiuses);
@@ -398,20 +441,20 @@ Planet::Planet(
 						rowSize += 1;
 					}
 				} else {
-					float prevL = *lonIt2;
+					double prevL = *lonIt2;
 					++lonIt2;
 
-					glm::vec3 p1 = AngleToPoint(
+					Math::Vec<3> p1 = AngleToPoint(
 						latIt1->first,
 						lon1,
 						radiuses);
 
-					glm::vec3 p2 = AngleToPoint(
+					Math::Vec<3> p2 = AngleToPoint(
 						latIt2->first,
 						prevL,
 						radiuses);
 
-					glm::vec3 p3 = AngleToPoint(
+					Math::Vec<3> p3 = AngleToPoint(
 						latIt2->first,
 						lon2,
 						radiuses);
@@ -431,17 +474,17 @@ Planet::Planet(
 				}
 			}
 
-			glm::vec3 p1 = AngleToPoint(
+			Math::Vec<3> p1 = AngleToPoint(
 				latIt1->first,
 				lon1,
 				radiuses);
 
-			glm::vec3 p2 = AngleToPoint(
+			Math::Vec<3> p2 = AngleToPoint(
 				latIt2->first,
 				lon2,
 				radiuses);
 
-			glm::vec3 p3 = AngleToPoint(
+			Math::Vec<3> p3 = AngleToPoint(
 				latIt1->first,
 				latIt1->second.front(),
 				radiuses);
@@ -497,17 +540,17 @@ Planet::Planet(
 			lonIt != angles.rbegin()->second.end() - 1;
 			++lonIt)
 		{
-			glm::vec3 p1 = AngleToPoint(
+			Math::Vec<3> p1 = AngleToPoint(
 				latBase,
 				lonBase,
 				radiuses);
 
-			glm::vec3 p2 = AngleToPoint(
+			Math::Vec<3> p2 = AngleToPoint(
 				latBase,
 				*lonIt,
 				radiuses);
 
-			glm::vec3 p3 = AngleToPoint(
+			Math::Vec<3> p3 = AngleToPoint(
 				latBase,
 				*(lonIt + 1),
 				radiuses);
@@ -546,8 +589,8 @@ Planet::Planet(
 		{
 			size_t rowSize = 0;
 
-			float coeff =
-				sin((float)index / triangles.size() * M_PI) +
+			double coeff =
+				sin((double)index / triangles.size() * M_PI) +
 				0.2;
 
 			size_t rowSizeLim = maxRowSize;// * coeff;
@@ -615,24 +658,23 @@ Planet::Planet(
 			while (!clusterNeighbours.empty() &&
 				cluster.size() < clusterSizeLimit)
 			{
-				glm::vec3 clusterCenter = {0, 0, 0};
+				Math::Vec<3> clusterCenter(0.0);
 
 				for (auto vertex : cluster) {
-					clusterCenter +=
-						(glm::vec3)vertex->Center;
+					clusterCenter += vertex->Center;
 				}
 
-				clusterCenter /= (float)cluster.size();
+				clusterCenter /= (double)cluster.size();
 
-				float cDist = radius * 2;
+				double cDist = radius * 2.0;
 
 				auto cVert = clusterNeighbours.begin();
 
 				auto vert = clusterNeighbours.begin();
 				while (vert != clusterNeighbours.end()) {
-					float dist = glm::length(
-						clusterCenter -
-						(glm::vec3)(*vert)->Center);
+					double dist =
+						(clusterCenter -
+						(*vert)->Center).Length();
 
 					if (dist < cDist) {
 						cDist = dist;
@@ -700,18 +742,18 @@ Planet::Planet(
 		Logger::Verbose() << "Cluster dump file is written";
 	}
 
-	std::list<glm::vec3> normals;
+	std::list<Math::Vec<3>> normals;
 
 	for (auto& cluster : clusters) {
-		glm::vec3 normal(0, 0, 0);
+		Math::Vec<3> normal(0.0);
 
 		for (auto& triangle : cluster) {
-			normal += glm::normalize((glm::vec3)triangle->P1);
-			normal += glm::normalize((glm::vec3)triangle->P2);
-			normal += glm::normalize((glm::vec3)triangle->P3);
+			normal += ((Math::Vec<3>)triangle->P1).Normalize();
+			normal += ((Math::Vec<3>)triangle->P2).Normalize();
+			normal += ((Math::Vec<3>)triangle->P3).Normalize();
 		}
 
-		normal = glm::normalize(normal);
+		normal = normal.Normalize();
 		normals.push_back(normal);
 	}
 
@@ -749,11 +791,10 @@ Planet::Planet(
 						continue;
 					}
 
-					float angleCos =
-						glm::dot(*normIt, *nNormal);
+					double angleCos =
+						normIt->Dot(*nNormal);
 
-					float angleCosRef = glm::dot(
-						*normIt,
+					double angleCosRef = normIt->Dot(
 						*nearestNormal);
 
 					if (angleCos > angleCosRef) {
@@ -769,18 +810,21 @@ Planet::Planet(
 					nearestCluster->push_back(t);
 				}
 
-				glm::vec3 normal(0, 0, 0);
+				Math::Vec<3> normal(0.0);
 
 				for (auto& t : *nearestCluster) {
-					normal += glm::normalize(
-						(glm::vec3)t->P1);
-					normal += glm::normalize(
-						(glm::vec3)t->P2);
-					normal += glm::normalize(
-						(glm::vec3)t->P3);
+					normal +=
+						((Math::Vec<3>)t->P1)
+							.Normalize();
+					normal +=
+						((Math::Vec<3>)t->P2)
+							.Normalize();
+					normal +=
+						((Math::Vec<3>)t->P3)
+							.Normalize();
 				}
 
-				normal = glm::normalize(normal);
+				normal = normal.Normalize();
 				*nearestNormal = normal;
 
 				clusters.erase(it);
@@ -825,7 +869,7 @@ Planet::Planet(
 	Logger::Verbose() << "Planet: Clusterization end.";
 
 	auto td = Loader::LoadImage("Images/White.png");
-	_blockTexture = _video->AddTexture(td);
+	_blockTexture = _video->LoadTexture(td);
 
 	Logger::Verbose() << "Planet: Texture loaded.";
 
@@ -846,7 +890,7 @@ Planet::Planet(
 				++nextIndex;
 				segment->Geometry.Vertices.push_back(t->P1);
 				segment->Geometry.Normals.push_back(
-					glm::normalize((glm::vec3)t->P1));
+					((Math::Vec<3>)t->P1).Normalize());
 				segment->Geometry.TexCoords.push_back(
 					{0.0, 0.0});
 			}
@@ -859,7 +903,7 @@ Planet::Planet(
 				++nextIndex;
 				segment->Geometry.Vertices.push_back(t->P2);
 				segment->Geometry.Normals.push_back(
-					glm::normalize((glm::vec3)t->P2));
+					((Math::Vec<3>)t->P2).Normalize());
 				segment->Geometry.TexCoords.push_back(
 					{0.0, 100.0});
 			}
@@ -872,9 +916,9 @@ Planet::Planet(
 				++nextIndex;
 				segment->Geometry.Vertices.push_back(t->P3);
 				segment->Geometry.Normals.push_back(
-					glm::normalize((glm::vec3)t->P3));
+					((Math::Vec<3>)t->P3).Normalize());
 				segment->Geometry.TexCoords.push_back(
-					{100.0, 500.0});
+					{100.0, 100.0});
 			}
 
 			segment->Geometry.Indices.push_back(
@@ -885,29 +929,32 @@ Planet::Planet(
 				uniqueVertices[t->P3]);
 		}
 
-		segment->Geometry.Instances = {glm::mat4(1.0)};
+		segment->Geometry.Instances = {Math::Mat<4>(1.0)};
 
-		glm::vec3 normal(0, 0, 0);
+		Math::Vec<3> normal(0.0);
 
 		for (size_t i = 0; i < segment->Geometry.Normals.size(); ++i) {
 			normal += segment->Geometry.Normals[i];
 		}
 
-		normal /= (float)segment->Geometry.Normals.size();
+		normal /= (double)segment->Geometry.Normals.size();
 
 		segment->Loaded = false;
 		segment->Activated = false;
 
-		segment->Normal = glm::normalize(normal);
+		segment->Normal = normal.Normalize();
 
-		segment->SetObjectVertices(segment->Geometry.Vertices);
-		segment->SetObjectNormals(segment->Geometry.Normals);
-		segment->SetObjectIndices(segment->Geometry.Indices);
-		segment->SetObjectExternalMatrix(&_matrix);
-		segment->SetObjectMatrix(glm::mat4(1.0));
+		segment->PhysicalParams.Vertices = segment->Geometry.Vertices;
+		segment->PhysicalParams.Normals = segment->Geometry.Normals;
+		segment->PhysicalParams.Indices = segment->Geometry.Indices;
+		segment->PhysicalParams.ExternalMatrix = &_matrix;
+		segment->PhysicalParams.Matrix = Math::Mat<4>(1.0);
+		segment->PhysicalParams.Enabled = true;
+		segment->PhysicalParams.Mu = 0.3;
+		segment->PhysicalParams.Bounciness = 0.1;
 
 		segment->ModelParams.ExternalMatrix = &_matrix;
-		segment->ModelParams.Matrix = glm::mat4(1.0);
+		segment->ModelParams.Matrix = Math::Mat<4>(1.0);
 
 		segment->TextureParams.SetAll(_blockTexture);
 		segment->TextureParams.IsLight = true;
@@ -937,6 +984,7 @@ Planet::Planet(
 
 	Logger::Verbose() << "Planet: Models loaded.";
 
+	size_t segmentIndex = 0;
 	for (Segment* segment : _segments) {
 		std::set<Segment*> neighbours;
 
@@ -945,7 +993,7 @@ Planet::Planet(
 				continue;
 			}
 
-			float angleCos = glm::dot(segment->Normal, seg->Normal);
+			double angleCos = segment->Normal.Dot(seg->Normal);
 
 			if (angleCos > 0.99) {
 				neighbours.insert(seg);
@@ -954,31 +1002,37 @@ Planet::Planet(
 
 		_segmentNeighbours[segment] = neighbours;
 		_subActiveSegments.insert(segment);
+
+		Logger::Verbose() << "Segment " << segmentIndex << " / " <<
+			_segments.size();
+		++segmentIndex;
 	}
+
+	Logger::Verbose() << "Planet: planet built.";
 }
 
 Planet::~Planet()
 {
 	for (Segment* segment : _segments) {
 		_video->RemoveModel(segment);
-		_collisionEngine->RemoveObject(segment);
+		_physicalEngine->RemoveObject(segment);
 		UnloadSegment(segment);
 		delete segment;
 	}
 
-	_video->RemoveTexture(_blockTexture);
+	_video->UnloadTexture(_blockTexture);
 }
 
-void Planet::Update(glm::vec3 playerCoord)
+void Planet::Update(const Math::Vec<3>& playerCoord)
 {
-	glm::vec3 playerNorm = glm::normalize(playerCoord - _position);
+	Math::Vec<3> playerNorm = (playerCoord - _position).Normalize();
 
 	std::set<Segment*> segToDeactivate;
 	std::set<Segment*> segToActivate;
 	std::set<Segment*> segToRemove;
 
 	for (Segment* segment : _activeSegments) {
-		float angleCos = glm::dot(playerNorm, segment->Normal);
+		double angleCos = playerNorm.Dot(segment->Normal);
 
 		if (angleCos < 0.985) {
 			segToDeactivate.insert(segment);
@@ -986,7 +1040,7 @@ void Planet::Update(glm::vec3 playerCoord)
 	}
 
 	for (Segment* segment : _subActiveSegments) {
-		float angleCos = glm::dot(playerNorm, segment->Normal);
+		double angleCos = playerNorm.Dot(segment->Normal);
 
 		if (angleCos > 0.995) {
 			segToActivate.insert(segment);
@@ -1025,9 +1079,9 @@ void Planet::Update(glm::vec3 playerCoord)
 		_subActiveSegments.insert(segment);
 	}
 
-	Logger::Verbose() << "Active segments: " << _activeSegments.size();
-	Logger::Verbose() << "Tracked segments: " <<
-		_activeSegments.size() + _subActiveSegments.size();
+	//Logger::Verbose() << "Active segments: " << _activeSegments.size();
+	//Logger::Verbose() << "Tracked segments: " <<
+	//	_activeSegments.size() + _subActiveSegments.size();
 }
 
 void Planet::ActivateSegment(Segment* segment)
@@ -1039,7 +1093,7 @@ void Planet::ActivateSegment(Segment* segment)
 	LoadSegment(segment);
 	segment->DrawParams.Enabled = true;
 	_video->RegisterModel(segment);
-	_collisionEngine->RegisterObject(segment);
+	_physicalEngine->RegisterObject(segment);
 	segment->Activated = true;
 }
 
@@ -1051,7 +1105,7 @@ void Planet::DeactivateSegment(Segment* segment)
 
 	segment->DrawParams.Enabled = false;
 	_video->RemoveModel(segment);
-	_collisionEngine->RemoveObject(segment);
+	_physicalEngine->RemoveObject(segment);
 	segment->Activated = false;
 }
 

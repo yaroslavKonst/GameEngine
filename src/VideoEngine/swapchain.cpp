@@ -30,6 +30,29 @@
 #include "shaders/spir-v/SpriteShader_vert.spv"
 #include "shaders/spir-v/SpriteShader_frag.spv"
 
+static glm::vec3 VecToGlm(const Math::Vec<3>& vec)
+{
+	return glm::vec3(vec[0], vec[1], vec[2]);
+}
+
+static glm::vec2 VecToGlm(const Math::Vec<2>& vec)
+{
+	return glm::vec2(vec[0], vec[1]);
+}
+
+static glm::mat4 MatToGlm(const Math::Mat<4>& mat)
+{
+	glm::mat4 res;
+
+	for (int row = 0; row < 4; ++row) {
+		for (int col = 0; col < 4; ++col) {
+			res[row][col] = mat[col][row];
+		}
+	}
+
+	return res;
+}
+
 Swapchain::Swapchain(
 	VkDevice device,
 	VkSurfaceKHR surface,
@@ -1182,10 +1205,10 @@ void Swapchain::RecordCommandBuffer(
 	// MVP.
 	MVP mvp;
 	glm::mat4 view = glm::lookAt(
-		_dataBridge->DrawnScene.CameraPosition,
-		_dataBridge->DrawnScene.CameraPosition +
-		_dataBridge->DrawnScene.CameraDirection,
-		_dataBridge->DrawnScene.CameraUp);
+		VecToGlm(_dataBridge->DrawnScene.CameraPosition),
+		VecToGlm(_dataBridge->DrawnScene.CameraPosition +
+		_dataBridge->DrawnScene.CameraDirection),
+		VecToGlm(_dataBridge->DrawnScene.CameraUp));
 	mvp.ProjView = glm::perspective(
 		glm::radians((float)_dataBridge->DrawnScene.FOV),
 		screenRatio,
@@ -1212,8 +1235,9 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	Skybox::ShaderData shaderData;
-	shaderData.Direction = _dataBridge->DrawnScene.CameraDirection;
-	shaderData.Up = _dataBridge->DrawnScene.CameraUp;
+	shaderData.Direction = VecToGlm(
+		_dataBridge->DrawnScene.CameraDirection);
+	shaderData.Up = VecToGlm(_dataBridge->DrawnScene.CameraUp);
 	shaderData.FOV = glm::radians((float)_dataBridge->DrawnScene.FOV);
 	shaderData.Ratio = screenRatio;
 
@@ -1258,12 +1282,12 @@ void Swapchain::RecordCommandBuffer(
 
 	// Object pipeline.
 	// Light transforms.
-	std::multimap<float, Light*> orderedLights;
+	std::multimap<double, Light*> orderedLights;
 
 	for (auto& light : _dataBridge->DrawnScene.Lights) {
-		orderedLights.insert({glm::length(
-			light.Position -
-				_dataBridge->DrawnScene.CameraPosition),
+		orderedLights.insert({
+			(light.Position -
+			_dataBridge->DrawnScene.CameraPosition).Length(),
 			&light
 		});
 	}
@@ -1288,11 +1312,11 @@ void Swapchain::RecordCommandBuffer(
 		}
 
 		lightDescriptors[selectedLights].Position =
-			light.second->Position;
+			VecToGlm(light.second->Position);
 		lightDescriptors[selectedLights].Color =
 			light.second->Color;
 		lightDescriptors[selectedLights].Direction =
-			light.second->Direction;
+			VecToGlm(light.second->Direction);
 		lightDescriptors[selectedLights].Type =
 			(uint32_t)light.second->Type;
 		lightDescriptors[selectedLights].Angle =
@@ -1308,14 +1332,14 @@ void Swapchain::RecordCommandBuffer(
 			shadowProj *
 			glm::lookAt(
 				lightPos,
-				lightPos + glm::vec3( 1.0, 0.0, 0.0),
-				glm::vec3(0.0,-1.0, 0.0));
+				lightPos + glm::vec3(1.0, 0.0, 0.0),
+				glm::vec3(0.0, -1.0, 0.0));
 		shadowTransforms[selectedLights * 6 + 1] =
 			shadowProj *
 			glm::lookAt(
 				lightPos,
 				lightPos + glm::vec3(-1.0, 0.0, 0.0),
-				glm::vec3(0.0,-1.0, 0.0));
+				glm::vec3(0.0, -1.0, 0.0));
 		shadowTransforms[selectedLights * 6 + 2] =
 			shadowProj *
 			glm::lookAt(
@@ -1326,20 +1350,20 @@ void Swapchain::RecordCommandBuffer(
 			shadowProj *
 			glm::lookAt(
 				lightPos,
-				lightPos + glm::vec3( 0.0,-1.0, 0.0),
-				glm::vec3(0.0, 0.0,-1.0));
+				lightPos + glm::vec3(0.0, -1.0, 0.0),
+				glm::vec3(0.0, 0.0, -1.0));
 		shadowTransforms[selectedLights * 6 + 4] =
 			shadowProj *
 			glm::lookAt(
 				lightPos,
-				lightPos + glm::vec3( 0.0, 0.0, 1.0),
-				glm::vec3(0.0,-1.0, 0.0));
+				lightPos + glm::vec3(0.0, 0.0, 1.0),
+				glm::vec3(0.0, -1.0, 0.0));
 		shadowTransforms[selectedLights * 6 + 5] =
 			shadowProj *
 			glm::lookAt(
 				lightPos,
-				lightPos + glm::vec3( 0.0, 0.0,-1.0),
-				glm::vec3(0.0,-1.0, 0.0));
+				lightPos + glm::vec3(0.0, 0.0, -1.0),
+				glm::vec3(0.0, -1.0, 0.0));
 
 		++selectedLights;
 
@@ -1409,8 +1433,9 @@ void Swapchain::RecordCommandBuffer(
 				continue;
 			}
 
-			mvp.Model = model.ModelParams.Matrix;
-			mvp.InnerModel = model.ModelParams.InnerMatrix;
+			mvp.Model = MatToGlm(model.ModelParams.Matrix);
+			mvp.InnerModel = MatToGlm(
+				model.ModelParams.InnerMatrix);
 
 			if (_dataBridge->ModelDescriptors.find(
 				model.ModelParams.Model) ==
@@ -1511,8 +1536,9 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
 
 		for (auto& model : holedModels) {
-			mvp.Model = model->ModelParams.Matrix;
-			mvp.InnerModel = model->ModelParams.InnerMatrix;
+			mvp.Model = MatToGlm(model->ModelParams.Matrix);
+			mvp.InnerModel = MatToGlm(
+				model->ModelParams.InnerMatrix);
 
 			if (_dataBridge->ModelDescriptors.find(
 				model->ModelParams.Model) ==
@@ -1607,7 +1633,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::multimap<float, Model*> transparentModels;
+	std::multimap<double, Model*> transparentModels;
 	std::set<Model*> holedModels;
 
 	for (auto& model : _dataBridge->DrawnScene.Models) {
@@ -1616,9 +1642,9 @@ void Swapchain::RecordCommandBuffer(
 		}
 
 		if (model.DrawParams.ColorMultiplier.a < 1.0f) {
-			float distance = glm::length(
-				_dataBridge->DrawnScene.CameraPosition -
-				model.ModelParams.Center);
+			double distance =
+				(_dataBridge->DrawnScene.CameraPosition -
+				model.ModelParams.Center).Length();
 
 			transparentModels.insert({distance, &model});
 
@@ -1682,7 +1708,7 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::multimap<float, Sprite*> orderedSprites;
+	std::multimap<double, Sprite*> orderedSprites;
 
 	for (auto& sprite : _dataBridge->DrawnScene.Sprites) {
 		if (!sprite.DrawParams.Enabled) {
@@ -1690,8 +1716,8 @@ void Swapchain::RecordCommandBuffer(
 		}
 
 		orderedSprites.insert({
-			glm::length(sprite.SpriteParams.Position -
-				_dataBridge->DrawnScene.CameraPosition),
+			(sprite.SpriteParams.Position -
+			_dataBridge->DrawnScene.CameraPosition).Length(),
 			&sprite
 		});
 	}
@@ -1719,10 +1745,12 @@ void Swapchain::RecordCommandBuffer(
 
 		spriteDesc.ProjView = mvp.ProjView;
 		spriteDesc.TexCoords = sprite.second->SpriteParams.TexCoords;
-		spriteDesc.SpritePos = sprite.second->SpriteParams.Position;
-		spriteDesc.CameraPos = _dataBridge->DrawnScene.CameraPosition;
-		spriteDesc.SpriteUp = sprite.second->SpriteParams.Up;
-		spriteDesc.Size = sprite.second->SpriteParams.Size;
+		spriteDesc.SpritePos = VecToGlm(
+			sprite.second->SpriteParams.Position);
+		spriteDesc.CameraPos = VecToGlm(
+			_dataBridge->DrawnScene.CameraPosition);
+		spriteDesc.SpriteUp = VecToGlm(sprite.second->SpriteParams.Up);
+		spriteDesc.Size = VecToGlm(sprite.second->SpriteParams.Size);
 
 		vkCmdPushConstants(
 			commandBuffer,
@@ -1920,8 +1948,8 @@ void Swapchain::RecordObjectCommandBuffer(
 	MVP mvp,
 	Pipeline* pipeline)
 {
-	mvp.Model = model->ModelParams.Matrix;
-	mvp.InnerModel = model->ModelParams.InnerMatrix;
+	mvp.Model = MatToGlm(model->ModelParams.Matrix);
+	mvp.InnerModel = MatToGlm(model->ModelParams.InnerMatrix);
 
 	if (_dataBridge->ModelDescriptors.find(
 		model->ModelParams.Model) ==

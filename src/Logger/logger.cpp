@@ -8,18 +8,27 @@ namespace Logger
 	static Level _logLevel = Level::Silent;
 	static std::chrono::high_resolution_clock::time_point _programStart =
 		std::chrono::high_resolution_clock::now();
+	static bool _coloredLog = false;
 
 	const char* StrLevel(Level level)
 	{
+		const char* silent = "Silent";
+		const char* error = "Error";
+		const char* errorColored = "\e[31mError\e[0m";
+		const char* warning = "Warning";
+		const char* warningColored = "\e[93mWarning\e[0m";
+		const char* verbose = "Message";
+		const char* verboseColored = "\e[94mMessage\e[0m";
+
 		switch (level) {
 		case Level::Silent:
-			return "Silent";
+			return silent;
 		case Level::Error:
-			return "Error";
+			return _coloredLog ? errorColored : error;
 		case Level::Warning:
-			return "Warning";
+			return _coloredLog ? warningColored : warning;
 		case Level::Verbose:
-			return "Verbose";
+			return _coloredLog ? verboseColored : verbose;
 		}
 
 		return "";
@@ -158,6 +167,11 @@ namespace Logger
 	void SetLevel(Level level)
 	{
 		_logLevel = level;
+	}
+
+	void SetColored(bool value)
+	{
+		_coloredLog = value;
 	}
 
 	Logger Error()
