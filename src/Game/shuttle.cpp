@@ -130,7 +130,7 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 	_common.video->RegisterModel(_wings[1]);
 
 	_cornerTextBox = new TextBox(_common.video, _common.textHandler);
-	_cornerTextBox->SetPosition(-0.9, -0.9);
+	_cornerTextBox->SetPosition(-0.9, -0.8);
 	_cornerTextBox->SetTextSize(0.05);
 	_cornerTextBox->SetText("");
 	_cornerTextBox->SetTextColor({1, 1, 1, 1});
@@ -216,9 +216,9 @@ void Shuttle::UnloadAssets()
 void Shuttle::BuildPhysicalFrame()
 {
 	_gearPos = {
-		{0, 0, -2},
-		{5, 30, -2},
-		{-5, 30, -2}
+		{0, 10, -3},
+		{5, 30, -3},
+		{-5, 30, -3}
 	};
 
 	SoftPhysicsValues::Vertex vertex;
@@ -251,13 +251,13 @@ void Shuttle::BuildPhysicalFrame()
 	}
 
 	for (Math::Vec<3> position : positions) {
-		vertex.Position = position + Math::Vec<3>({0, 10, 6});
+		vertex.Position = position + Math::Vec<3>({0, 10, 7});
 		SoftPhysicsParams.Vertices.push_back(vertex);
 	}
 
 	SoftObject::SoftPhysicsValues::Link link;
 	link.K = 3000;
-	link.Friction = 5;
+	link.Friction = 50;
 
 	for (size_t index1 = 0; index1 < positions.size(); ++index1) {
 		for (
@@ -351,7 +351,7 @@ void Shuttle::TickEarly()
 
 	Math::Vec<3> force =
 		mg +
-		envForce +
+		//envForce +
 		wingForce;
 
 	SoftPhysicsParams.Force = force;
@@ -362,6 +362,24 @@ void Shuttle::TickEarly()
 		dirF,
 		dirR,
 		dirU);
+
+	SoftPhysicsParams.Vertices[5].Force += envForce / 2.0;
+	SoftPhysicsParams.Vertices[6].Force += envForce / 2.0;
+
+	Math::Vec<3> yawForce = dirR * _controlYaw *
+		currentSpeed.Length() * 0.05;
+	SoftPhysicsParams.Vertices[5].Force -= yawForce;
+	SoftPhysicsParams.Vertices[6].Force -= yawForce;
+
+	Math::Vec<3> pitchForce = dirU * _controlPitch *
+		currentSpeed.Length() * 0.05;
+	SoftPhysicsParams.Vertices[5].Force -= pitchForce;
+	SoftPhysicsParams.Vertices[6].Force -= pitchForce;
+
+	Math::Vec<3> rollForce = dirU * _controlRoll *
+		currentSpeed.Length() * 0.05;
+	SoftPhysicsParams.Vertices[5].Force += rollForce;
+	SoftPhysicsParams.Vertices[6].Force -= rollForce;
 
 	if (_flightMode) {
 		Math::Vec<3> cameraPosition = position +
