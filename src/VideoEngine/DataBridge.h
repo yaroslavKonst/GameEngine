@@ -41,9 +41,9 @@ struct SceneContainer
 	std::vector<Skybox> skybox;
 
 	double FOV;
-	Math::Vec<3> CameraPosition;
-	Math::Vec<3> CameraDirection;
-	Math::Vec<3> CameraUp;
+	glm::vec3 CameraPosition;
+	glm::vec3 CameraDirection;
+	glm::vec3 CameraUp;
 };
 
 struct LoadModelMessage
@@ -137,9 +137,23 @@ struct DataBridge
 		}
 
 		SubmittedScene.FOV = StagedScene.FOV;
-		SubmittedScene.CameraPosition = StagedScene.CameraPosition;
-		SubmittedScene.CameraDirection = StagedScene.CameraDirection;
-		SubmittedScene.CameraUp = StagedScene.CameraUp;
+		SubmittedScene.CameraPosition = {
+			StagedScene.CameraPosition[0],
+			StagedScene.CameraPosition[1],
+			StagedScene.CameraPosition[2]
+		};
+
+		SubmittedScene.CameraDirection = {
+			StagedScene.CameraDirection[0],
+			StagedScene.CameraDirection[1],
+			StagedScene.CameraDirection[2]
+		};
+
+		SubmittedScene.CameraUp = {
+			StagedScene.CameraUp[0],
+			StagedScene.CameraUp[1],
+			StagedScene.CameraUp[2]
+		};
 
 		SubmittedScene.skybox = StagedScene.skybox;
 

@@ -868,12 +868,12 @@ Planet::Planet(
 
 	Logger::Verbose() << "Planet: Clusterization end.";
 
-	auto td = Loader::LoadImage("Images/White.png");
+	auto td = Loader::LoadImage("Images/Grass.png");
 	_blockTexture = _video->LoadTexture(td);
 
 	Logger::Verbose() << "Planet: Texture loaded.";
 
-	glm::vec4 colorMul(0, 0, 0, 1);
+	//glm::vec4 colorMul(0, 0, 0, 1);
 
 	for (auto& cluster : clusters) {
 		Segment* segment = new Segment;
@@ -957,9 +957,9 @@ Planet::Planet(
 		segment->ModelParams.Matrix = Math::Mat<4>(1.0);
 
 		segment->TextureParams.SetAll(_blockTexture);
-		segment->TextureParams.IsLight = true;
+		//segment->TextureParams.IsLight = true;
 
-		segment->DrawParams.ColorMultiplier = colorMul;
+		/*segment->DrawParams.ColorMultiplier = colorMul;
 
 		if (colorMul.r < 1) {
 			colorMul.r += 0.2;
@@ -974,7 +974,7 @@ Planet::Planet(
 			colorMul.r = 0;
 			colorMul.g = 0;
 			colorMul.b = 0;
-		}
+		}*/
 		
 		_segments.push_back(segment);
 

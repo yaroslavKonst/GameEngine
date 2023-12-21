@@ -1205,10 +1205,10 @@ void Swapchain::RecordCommandBuffer(
 	// MVP.
 	MVP mvp;
 	glm::mat4 view = glm::lookAt(
-		VecToGlm(_dataBridge->DrawnScene.CameraPosition),
-		VecToGlm(_dataBridge->DrawnScene.CameraPosition +
-		_dataBridge->DrawnScene.CameraDirection),
-		VecToGlm(_dataBridge->DrawnScene.CameraUp));
+		_dataBridge->DrawnScene.CameraPosition,
+		_dataBridge->DrawnScene.CameraPosition +
+		_dataBridge->DrawnScene.CameraDirection,
+		_dataBridge->DrawnScene.CameraUp);
 	mvp.ProjView = glm::perspective(
 		glm::radians((float)_dataBridge->DrawnScene.FOV),
 		screenRatio,
@@ -1235,9 +1235,8 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	Skybox::ShaderData shaderData;
-	shaderData.Direction = VecToGlm(
-		_dataBridge->DrawnScene.CameraDirection);
-	shaderData.Up = VecToGlm(_dataBridge->DrawnScene.CameraUp);
+	shaderData.Direction = _dataBridge->DrawnScene.CameraDirection;
+	shaderData.Up = _dataBridge->DrawnScene.CameraUp;
 	shaderData.FOV = glm::radians((float)_dataBridge->DrawnScene.FOV);
 	shaderData.Ratio = screenRatio;
 
@@ -1286,8 +1285,8 @@ void Swapchain::RecordCommandBuffer(
 
 	for (auto& light : _dataBridge->DrawnScene.Lights) {
 		orderedLights.insert({
-			(light.Position -
-			_dataBridge->DrawnScene.CameraPosition).Length(),
+			glm::length(VecToGlm(light.Position) -
+			_dataBridge->DrawnScene.CameraPosition),
 			&light
 		});
 	}
@@ -1642,9 +1641,9 @@ void Swapchain::RecordCommandBuffer(
 		}
 
 		if (model.DrawParams.ColorMultiplier.a < 1.0f) {
-			double distance =
-				(_dataBridge->DrawnScene.CameraPosition -
-				model.ModelParams.Center).Length();
+			double distance = glm::length(
+				_dataBridge->DrawnScene.CameraPosition -
+				VecToGlm(model.ModelParams.Center));
 
 			transparentModels.insert({distance, &model});
 
@@ -1716,8 +1715,8 @@ void Swapchain::RecordCommandBuffer(
 		}
 
 		orderedSprites.insert({
-			(sprite.SpriteParams.Position -
-			_dataBridge->DrawnScene.CameraPosition).Length(),
+			glm::length(VecToGlm(sprite.SpriteParams.Position) -
+			_dataBridge->DrawnScene.CameraPosition),
 			&sprite
 		});
 	}
@@ -1747,8 +1746,7 @@ void Swapchain::RecordCommandBuffer(
 		spriteDesc.TexCoords = sprite.second->SpriteParams.TexCoords;
 		spriteDesc.SpritePos = VecToGlm(
 			sprite.second->SpriteParams.Position);
-		spriteDesc.CameraPos = VecToGlm(
-			_dataBridge->DrawnScene.CameraPosition);
+		spriteDesc.CameraPos = _dataBridge->DrawnScene.CameraPosition;
 		spriteDesc.SpriteUp = VecToGlm(sprite.second->SpriteParams.Up);
 		spriteDesc.Size = VecToGlm(sprite.second->SpriteParams.Size);
 
