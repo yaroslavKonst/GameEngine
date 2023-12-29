@@ -51,6 +51,7 @@ namespace Loader
 			Math::Vec<3> Pos;
 			Math::Vec<2> Tex;
 			Math::Vec<3> Normal;
+			uint32_t MatrixIndex;
 
 			bool operator<(const Vertex& vertex) const
 			{
@@ -73,7 +74,7 @@ namespace Loader
 					}
 				}
 
-				return false;
+				return MatrixIndex < vertex.MatrixIndex;
 			}
 		};
 
@@ -109,6 +110,8 @@ namespace Loader
 				normals.push_back(normal);
 			} else if (line[0] == "f") {
 				Vertex vertex;
+				vertex.MatrixIndex = 0;
+
 				vertex.Pos = vertPositions[
 					std::stoi(line[1]) - 1];
 				vertex.Tex = texCoords[std::stoi(line[2]) - 1];
@@ -142,6 +145,8 @@ namespace Loader
 				data.Vertices.push_back(vertex.Pos);
 				data.TexCoords.push_back(vertex.Tex);
 				data.Normals.push_back(vertex.Normal);
+				data.MatrixIndices.push_back(
+					vertex.MatrixIndex);
 			}
 
 			data.Indices.push_back(indexedVertices[vertex]);

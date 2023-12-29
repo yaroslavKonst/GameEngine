@@ -25,6 +25,7 @@ namespace Loader
 		std::vector<Math::Vec<3>> Vertices;
 		std::vector<Math::Vec<3>> Normals;
 		std::vector<Math::Vec<2>> TexCoords;
+		std::vector<uint32_t> MatrixIndices;
 		std::vector<uint32_t> Indices;
 
 		std::vector<Math::Mat<4>> Instances;

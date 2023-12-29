@@ -700,7 +700,8 @@ void Swapchain::CreatePipelines()
 	initInfo.DescriptorSetLayouts = {
 		_descriptorSetLayout,
 		_descriptorSetLayout,
-		_lightDescriptorSetLayout
+		_lightDescriptorSetLayout,
+		_dataBridge->UniformBuffers->GetDescriptorSetLayout()
 	};
 	initInfo.MsaaSamples = _msaaSamples;
 	initInfo.VertexShaderCode = ObjectShaderVert;
@@ -862,7 +863,8 @@ void Swapchain::CreatePipelines()
 	initInfo.Extent.height = _shadowSize;
 	initInfo.DepthAttachmentFormat = _shadowFormat;
 	initInfo.DescriptorSetLayouts = {
-		_lightDescriptorSetLayout
+		_lightDescriptorSetLayout,
+		_dataBridge->UniformBuffers->GetDescriptorSetLayout()
 	};
 	initInfo.MsaaSamples = VK_SAMPLE_COUNT_1_BIT;
 	initInfo.VertexShaderCode = ShadowShaderVert;
@@ -905,7 +907,8 @@ void Swapchain::CreatePipelines()
 
 	initInfo.DescriptorSetLayouts = {
 		_lightDescriptorSetLayout,
-		_descriptorSetLayout
+		_descriptorSetLayout,
+		_dataBridge->UniformBuffers->GetDescriptorSetLayout()
 	};
 
 	initInfo.VertexShaderCode = ShadowShaderDiscardVert;
@@ -1412,32 +1415,30 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdSetViewport(commandBuffer, 5, 1, &shadowViewport);
 		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
 
-		std::set<Model*> holedModels;
+		std::set<SceneContainer::ModelData*> holedModels;
 
 		for (auto& model : _dataBridge->DrawnScene.Models) {
-			if (!model.DrawParams.Enabled) {
+			if (!model.model.DrawParams.Enabled) {
 				continue;
 			}
 
-			if (model.TextureParams.IsLight) {
+			if (model.model.TextureParams.IsLight) {
 				continue;
 			}
 
-			if (model.DrawParams.ColorMultiplier.a < 1.0f) {
+			if (model.model.DrawParams.ColorMultiplier.a < 1.0f) {
 				continue;
 			}
 
-			if (model.ModelParams.Holed) {
+			if (model.model.ModelParams.Holed) {
 				holedModels.insert(&model);
 				continue;
 			}
 
-			mvp.Model = MatToGlm(model.ModelParams.Matrix);
-			mvp.InnerModel = MatToGlm(
-				model.ModelParams.InnerMatrix);
+			mvp.Model = MatToGlm(model.model.ModelParams.Matrix);
 
 			if (_dataBridge->ModelDescriptors.find(
-				model.ModelParams.Model) ==
+				model.model.ModelParams.Model) ==
 				_dataBridge->ModelDescriptors.end())
 			{
 				continue;
@@ -1445,7 +1446,7 @@ void Swapchain::RecordCommandBuffer(
 
 			auto& desc =
 				_dataBridge->ModelDescriptors[
-					model.ModelParams.Model];
+					model.model.ModelParams.Model];
 
 			if (desc.InstanceCount == 0) {
 				continue;
@@ -1487,8 +1488,11 @@ void Swapchain::RecordCommandBuffer(
 				sizeof(uint32_t),
 				&lightIndex);
 
-			std::array<VkDescriptorSet, 1> descriptorSets = {
-				_lightDescriptorSets[currentFrame]
+			std::array<VkDescriptorSet, 2> descriptorSets = {
+				_lightDescriptorSets[currentFrame],
+				_dataBridge->UniformBuffers->
+					GetDescriptorSet(
+						model.pointer)
 			};
 
 			vkCmdBindDescriptorSets(
@@ -1535,12 +1539,10 @@ void Swapchain::RecordCommandBuffer(
 		vkCmdSetScissor(commandBuffer, 5, 1, &shadowScissor);
 
 		for (auto& model : holedModels) {
-			mvp.Model = MatToGlm(model->ModelParams.Matrix);
-			mvp.InnerModel = MatToGlm(
-				model->ModelParams.InnerMatrix);
+			mvp.Model = MatToGlm(model->model.ModelParams.Matrix);
 
 			if (_dataBridge->ModelDescriptors.find(
-				model->ModelParams.Model) ==
+				model->model.ModelParams.Model) ==
 				_dataBridge->ModelDescriptors.end())
 			{
 				continue;
@@ -1548,14 +1550,14 @@ void Swapchain::RecordCommandBuffer(
 
 			auto& desc =
 				_dataBridge->ModelDescriptors[
-					model->ModelParams.Model];
+					model->model.ModelParams.Model];
 
 			if (desc.InstanceCount == 0) {
 				continue;
 			}
 
 			if (!_dataBridge->Textures->CheckTexture(
-				model->TextureParams.Diffuse))
+				model->model.TextureParams.Diffuse))
 			{
 				continue;
 			}
@@ -1597,11 +1599,14 @@ void Swapchain::RecordCommandBuffer(
 				&lightIndex);
 
 			auto& texDiff = _dataBridge->Textures->GetTexture(
-				model->TextureParams.Diffuse);
+				model->model.TextureParams.Diffuse);
 
-			std::array<VkDescriptorSet, 2> descriptorSets = {
+			std::array<VkDescriptorSet, 3> descriptorSets = {
 				_lightDescriptorSets[currentFrame],
-				texDiff.DescriptorSet
+				texDiff.DescriptorSet,
+				_dataBridge->UniformBuffers->
+					GetDescriptorSet(
+						model->pointer)
 			};
 
 			vkCmdBindDescriptorSets(
@@ -1632,25 +1637,25 @@ void Swapchain::RecordCommandBuffer(
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::multimap<double, Model*> transparentModels;
-	std::set<Model*> holedModels;
+	std::multimap<double, SceneContainer::ModelData*> transparentModels;
+	std::set<SceneContainer::ModelData*> holedModels;
 
 	for (auto& model : _dataBridge->DrawnScene.Models) {
-		if (!model.DrawParams.Enabled) {
+		if (!model.model.DrawParams.Enabled) {
 			continue;
 		}
 
-		if (model.DrawParams.ColorMultiplier.a < 1.0f) {
+		if (model.model.DrawParams.ColorMultiplier.a < 1.0f) {
 			double distance = glm::length(
 				_dataBridge->DrawnScene.CameraPosition -
-				VecToGlm(model.ModelParams.Center));
+				VecToGlm(model.model.ModelParams.Center));
 
 			transparentModels.insert({distance, &model});
 
 			continue;
 		}
 
-		if (model.ModelParams.Holed) {
+		if (model.model.ModelParams.Holed) {
 			holedModels.insert(&model);
 			continue;
 		}
@@ -1942,28 +1947,28 @@ void Swapchain::RecordCommandBuffer(
 void Swapchain::RecordObjectCommandBuffer(
 	VkCommandBuffer commandBuffer,
 	uint32_t currentFrame,
-	Model* model,
+	SceneContainer::ModelData* model,
 	MVP mvp,
 	Pipeline* pipeline)
 {
-	mvp.Model = MatToGlm(model->ModelParams.Matrix);
-	mvp.InnerModel = MatToGlm(model->ModelParams.InnerMatrix);
+	mvp.Model = MatToGlm(model->model.ModelParams.Matrix);
 
 	if (_dataBridge->ModelDescriptors.find(
-		model->ModelParams.Model) ==
+		model->model.ModelParams.Model) ==
 		_dataBridge->ModelDescriptors.end())
 	{
 		return;
 	}
 
-	auto& desc = _dataBridge->ModelDescriptors[model->ModelParams.Model];
+	auto& desc =
+		_dataBridge->ModelDescriptors[model->model.ModelParams.Model];
 
 	if (desc.InstanceCount == 0) {
 		return;
 	}
 
-	uint32_t diffTexIndex = model->TextureParams.Diffuse;
-	uint32_t specTexIndex = model->TextureParams.Specular;
+	uint32_t diffTexIndex = model->model.TextureParams.Diffuse;
+	uint32_t specTexIndex = model->model.TextureParams.Specular;
 
 	bool validDiffTexture =
 		_dataBridge->Textures->CheckTexture(diffTexIndex);
@@ -2010,7 +2015,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		sizeof(glm::vec3),
 		&_dataBridge->DrawnScene.CameraPosition);
 
-	uint32_t isLight = model->TextureParams.IsLight ? 1 : 0;
+	uint32_t isLight = model->model.TextureParams.IsLight ? 1 : 0;
 
 	vkCmdPushConstants(
 		commandBuffer,
@@ -2021,7 +2026,7 @@ void Swapchain::RecordObjectCommandBuffer(
 		&isLight);
 
 	glm::vec4 colorMultiplier =
-		model->DrawParams.ColorMultiplier;
+		model->model.DrawParams.ColorMultiplier;
 
 	vkCmdPushConstants(
 		commandBuffer,
@@ -2034,10 +2039,13 @@ void Swapchain::RecordObjectCommandBuffer(
 	auto& texDiff = _dataBridge->Textures->GetTexture(diffTexIndex);
 	auto& texSpec = _dataBridge->Textures->GetTexture(specTexIndex);
 
-	std::array<VkDescriptorSet, 3> descriptorSets = {
+	std::array<VkDescriptorSet, 4> descriptorSets = {
 		texDiff.DescriptorSet,
 		texSpec.DescriptorSet,
-		_lightDescriptorSets[currentFrame]
+		_lightDescriptorSets[currentFrame],
+		_dataBridge->UniformBuffers->
+			GetDescriptorSet(
+				model->pointer)
 	};
 
 	vkCmdBindDescriptorSets(

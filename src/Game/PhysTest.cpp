@@ -76,9 +76,9 @@ namespace PhysTest
 			cube->TextureParams.SetAll(_cubeTexture);
 			cube->DrawParams.Enabled = true;
 			cube->ModelParams.Matrix = Math::Mat<4>(1.0);
-			cube->ModelParams.InnerMatrix = GlmToMat(glm::scale(
+			cube->ModelParams.InnerMatrix = {GlmToMat(glm::scale(
 				glm::dmat4(1.0),
-				glm::dvec3(0.05, 0.05, 0.05)));
+				glm::dvec3(0.05, 0.05, 0.05)))};
 
 			_common.video->RegisterModel(cube);
 			_cubes.push_back(cube);

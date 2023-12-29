@@ -45,6 +45,8 @@ public:
 			{1, 1}
 		};
 
+		model.MatrixIndices = {0, 0, 0, 0, 0, 0, 0, 0};
+
 		model.Indices = {
 			0, 1, 2, 2, 1, 3,
 			4, 6, 5, 6, 7, 5

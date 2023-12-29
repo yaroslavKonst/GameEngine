@@ -1,5 +1,7 @@
 #include "player.h"
 
+#include "../Assets/ScriptHandler.h"
+
 #include "../Logger/logger.h"
 
 static glm::dvec3 VecToGlm(const Math::Vec<3>& vec)
@@ -41,7 +43,6 @@ Player::Player(
 	_go = 0;
 	_strafe = 0;
 	_jump = false;
-	//_speed = {0, 0, 0};
 	_lightActive = false;
 	_ship = ship;
 	_buildMode = false;
@@ -51,6 +52,8 @@ Player::Player(
 	_actionRRequested = false;
 	_actionFRequested = false;
 	_activeFlightControl = nullptr;
+
+	_sword = new Sword(_common, nullptr);
 
 	SoftPhysicsValues::Vertex phVertex;
 	phVertex.Mass = 80;
@@ -108,6 +111,8 @@ Player::~Player()
 	delete _centerTextBox;
 	_cornerTextBox->Deactivate();
 	delete _cornerTextBox;
+
+	delete _sword;
 
 	_common.video->Unsubscribe(this);
 	_common.video->RemoveLight(&_light);
@@ -276,6 +281,31 @@ void Player::Tick()
 			SoftPhysicsParams.Vertices[0].Speed.Length()));
 	_cornerTextBox->Activate();
 
+	Math::Mat<4> translateMat = GlmToMat(glm::translate(
+		glm::dmat4(1.0),
+		VecToGlm(_pos + _dirF + _dirUp + _dirR * 0.5)));
+
+	Math::Mat<4> swordMat(1.0);
+
+	swordMat[0][0] = -_dirR[0];
+	swordMat[0][1] = -_dirR[1];
+	swordMat[0][2] = -_dirR[2];
+
+	swordMat[1][0] = _dirF[0];
+	swordMat[1][1] = _dirF[1];
+	swordMat[1][2] = _dirF[2];
+
+	swordMat[2][0] = _dirUp[0];
+	swordMat[2][1] = _dirUp[1];
+	swordMat[2][2] = _dirUp[2];
+
+	swordMat[0][1] *= -1;
+	swordMat[1][1] *= -1;
+	swordMat[2][1] *= -1;
+
+	_sword->ModelParams.Matrix = translateMat * swordMat;
+	_sword->Update(0.01);
+
 	_planet->Update(_pos);
 
 	Math::Vec<3> hspeed = _dirF * (double)_go +
@@ -351,4 +381,45 @@ void Player::Tick()
 	_actionERequested = false;
 	_actionRRequested = false;
 	_actionFRequested = false;
+}
+
+Sword::Sword(Common common, Math::Mat<4>* extMat)
+{
+	_common = common;
+
+	ModelParams.Model = _common.video->LoadModel(Loader::LoadModel(
+		"Models/Player/Sword.obj"));
+	TextureParams.SetAll(_common.video->LoadTexture(Loader::LoadImage(
+		"Models/Player/Sword.png")));
+
+	ModelParams.ExternalMatrix = extMat;
+
+	DrawParams.Enabled = true;
+	ModelParams.Matrix = Math::Mat<4>(1.0);
+	ModelParams.Matrix[1][3] = 2.0;
+
+	_common.video->RegisterModel(this);
+
+	_animation = ScriptHandler::LoadAnimation("Models/Player/Sword.txt");
+	_time = 0;
+}
+
+Sword::~Sword()
+{
+	_common.video->RemoveModel(this);
+
+	_common.video->UnloadModel(ModelParams.Model);
+	_common.video->UnloadTexture(TextureParams.Diffuse);
+}
+
+void Sword::Update(float time)
+{
+	_time += time;
+
+	if (_time >= 6) {
+		_time = 0;
+	}
+
+	ModelParams.InnerMatrix = {GlmToMat(
+		_animation.GetTransform(_time, glm::mat4(1.0)))};
 }

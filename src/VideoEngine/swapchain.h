@@ -141,7 +141,7 @@ private:
 	void RecordObjectCommandBuffer(
 		VkCommandBuffer commandBuffer,
 		uint32_t currentFrame,
-		Model* model,
+		SceneContainer::ModelData* model,
 		MVP mvp,
 		Pipeline* pipeline);
 

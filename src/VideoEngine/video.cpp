@@ -43,6 +43,11 @@ Video::Video(
 		&_graphicsQueue,
 		_loaderThreadPool);
 
+	_dataBridge.UniformBuffers = new UniformBufferStorage(
+		_device,
+		_memorySystem,
+		&_deviceSupport);
+
 	CreateSwapchain();
 }
 
@@ -54,6 +59,7 @@ Video::~Video()
 
 	RemoveAllModels();
 
+	delete _dataBridge.UniformBuffers;
 	delete _dataBridge.Textures;
 	DestroyDescriptorSetLayout();
 	DestroyCommandPools();
@@ -437,6 +443,7 @@ void Video::RemoveModel(Model* model)
 {
 	_dataBridge.ExtModMutex.lock();
 	_dataBridge.StagedScene.Models.erase(model);
+	_dataBridge.StagedScene.RemovedModels.insert(model);
 	_dataBridge.ExtModMutex.unlock();
 }
 

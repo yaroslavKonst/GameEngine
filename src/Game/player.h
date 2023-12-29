@@ -14,6 +14,21 @@
 #include "GravityField.h"
 #include "planet.h"
 
+class Sword : public Model
+{
+public:
+	Sword(Common common, Math::Mat<4>* extMat);
+	~Sword();
+
+	void Update(float time);
+
+private:
+	Common _common;
+
+	Animation _animation;
+	float _time;
+};
+
 class Player : public Actor, public SoftObject, public InputHandler
 {
 public:
@@ -49,6 +64,8 @@ private:
 	Math::Vec<3> _dirF;
 	Math::Vec<3> _dirR;
 	Math::Mat<4> _matrix;
+
+	Sword* _sword;
 
 	double _angleH;
 	double _angleV;

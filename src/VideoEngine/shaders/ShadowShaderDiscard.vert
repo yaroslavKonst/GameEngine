@@ -1,21 +1,23 @@
 #version 450
 
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inNormal;
-layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in mat4 instanceTransform;
+#include "ObjectInputArray.glsl"
 
 layout(location = 0) out vec2 outTexCoord;
 
 layout(push_constant) uniform MVP
 {
 	mat4 Model;
-	mat4 InnerModel;
 	mat4 ProjView;
 } mvp;
 
+layout(set = 2, binding = 0) uniform InnerModelTransforms
+{
+	mat4 Transforms[20];
+} InnerModel;
+
 void main() {
-	mat4 toWorldTransform = mvp.Model * instanceTransform * mvp.InnerModel;
+	mat4 toWorldTransform = mvp.Model * instanceTransform *
+		InnerModel.Transforms[matrixIndex];
 
 	gl_Position = toWorldTransform * vec4(inPosition, 1.0);
 	outTexCoord = inTexCoord;

@@ -17,6 +17,7 @@ all: \
 	../../build/InputControl.o \
 	../../build/TextureHandler.o \
 	../../build/TextHandler.o \
+	../../build/UniformBufferStorage.o \
 	gui
 
 shaders:

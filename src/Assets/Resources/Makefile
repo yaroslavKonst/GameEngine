@@ -11,6 +11,10 @@ ENTRIES=\
 	Models/Archive/field.obj \
 	Models/Archive/floor.jpg \
 	Models/Player/Collision.obj \
+	Models/Player/Sword.obj \
+	Models/Player/Sword.png \
+	Models/Player/Sword.txt \
+	Models/Player/Player.obj \
 	Models/Ship/ShipFloor.obj \
 	Models/Ship/ShipFloor.png \
 	Models/Ship/ShipFloorComm.obj \

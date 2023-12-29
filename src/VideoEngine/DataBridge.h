@@ -12,6 +12,7 @@
 #include "TextureHandler.h"
 #include "sprite.h"
 #include "InputControl.h"
+#include "UniformBufferStorage.h"
 #include "../Utils/RingBuffer.h"
 
 #define RING_BUFFER_SIZE 1024 * 1024
@@ -23,6 +24,8 @@ struct Scene
 	std::set<Light*> Lights;
 	std::set<Sprite*> Sprites;
 
+	std::set<const Model*> RemovedModels;
+
 	std::vector<Skybox> skybox;
 
 	double FOV;
@@ -33,10 +36,18 @@ struct Scene
 
 struct SceneContainer
 {
-	std::vector<Model> Models;
+	struct ModelData
+	{
+		Model model;
+		const Model* pointer;
+	};
+
+	std::vector<ModelData> Models;
 	std::vector<Rectangle> Rectangles;
 	std::vector<Light> Lights;
 	std::vector<Sprite> Sprites;
+
+	std::set<const Model*> RemovedModels;
 
 	std::vector<Skybox> skybox;
 
@@ -73,6 +84,7 @@ struct DataBridge
 	SceneContainer DrawnScene;
 
 	TextureHandler* Textures;
+	UniformBufferStorage* UniformBuffers;
 
 	std::mutex SceneMutex;
 	std::mutex ExtModMutex;
@@ -101,16 +113,19 @@ struct DataBridge
 		size_t idx = 0;
 
 		for (auto model : StagedScene.Models) {
-			SubmittedScene.Models[idx] = *model;
+			SubmittedScene.Models[idx] = {*model, model};
 
 			const Math::Mat<4>* extMat =
-				SubmittedScene.Models[idx].ModelParams.ExternalMatrix;
+				SubmittedScene.Models[idx].model.ModelParams.ExternalMatrix;
 
 			if (extMat) {
-				SubmittedScene.Models[idx].ModelParams.Matrix =
+				SubmittedScene.Models[idx].model.ModelParams.Matrix =
 					*extMat *
-					SubmittedScene.Models[idx].ModelParams.Matrix;
+					SubmittedScene.Models[idx].model.ModelParams.Matrix;
 			}
+
+			SubmittedScene.Models[idx].model.ModelParams.InnerMatrix =
+				model->ModelParams.InnerMatrix;
 
 			++idx;
 		}
@@ -157,6 +172,9 @@ struct DataBridge
 
 		SubmittedScene.skybox = StagedScene.skybox;
 
+		SubmittedScene.RemovedModels = StagedScene.RemovedModels;
+		StagedScene.RemovedModels.clear();
+
 		inputControl->SubmitEvents();
 
 		SceneMutex.unlock();
@@ -169,6 +187,7 @@ struct DataBridge
 	{
 		SceneMutex.lock();
 		DrawnScene = SubmittedScene;
+		SubmittedScene.RemovedModels.clear();
 		inputControl->PollEvents();
 		SceneMutex.unlock();
 
@@ -203,6 +222,18 @@ struct DataBridge
 		}
 
 		Textures->PollTextureMessages();
+
+		for (const Model* model : DrawnScene.RemovedModels) {
+			UniformBuffers->Free(model);
+		}
+
+		UniformBuffers->SwitchSet();
+
+		for (auto& model : DrawnScene.Models) {
+			UniformBuffers->UpdateBuffer(
+				model.model,
+				model.pointer);
+		}
 	}
 };
 

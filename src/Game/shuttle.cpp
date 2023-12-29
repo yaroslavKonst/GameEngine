@@ -124,9 +124,9 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 	_wings[1]->DrawParams.Enabled = true;
 	_wings[1]->ModelParams.Matrix = Math::Mat<4>(1.0);
 	_wings[1]->ModelParams.ExternalMatrix = &_shipMatrix;
-	_wings[1]->ModelParams.InnerMatrix = GlmToMat(glm::scale(
+	_wings[1]->ModelParams.InnerMatrix = {GlmToMat(glm::scale(
 		glm::dmat4(1.0),
-		glm::dvec3(-1, 1, 1)));
+		glm::dvec3(-1, 1, 1)))};
 	_common.video->RegisterModel(_wings[1]);
 
 	_cornerTextBox = new TextBox(_common.video, _common.textHandler);

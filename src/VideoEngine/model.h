@@ -15,7 +15,7 @@ public:
 		bool Holed;
 
 		Math::Mat<4> Matrix;
-		Math::Mat<4> InnerMatrix;
+		std::vector<Math::Mat<4>> InnerMatrix;
 		const Math::Mat<4>* ExternalMatrix;
 
 		Math::Vec<3> Center;
@@ -27,7 +27,6 @@ public:
 	{
 		ModelParams.Holed = false;
 		ModelParams.ExternalMatrix = nullptr;
-		ModelParams.InnerMatrix = Math::Mat<4>(1.0);
 	}
 };
 
