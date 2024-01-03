@@ -9,6 +9,7 @@
 #include "board.h"
 #include "GravityField.h"
 #include "PhysTest.h"
+#include "InnerMatTest.h"
 
 static void UniverseThread(Universe* universe)
 {
@@ -79,6 +80,8 @@ void World::Run()
 
 	auto td = Loader::LoadImage("Images/transparent.png");
 	uint32_t testTexture = _common.video->LoadTexture(td);
+
+	InnerMatTest innerMatTest(_common.video, _common.universe);
 
 	Planet planet(
 		20000,

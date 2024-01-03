@@ -50,7 +50,9 @@ ENTRIES=\
 	Models/Shuttle/ThrusterExh.obj \
 	Models/Shuttle/ThrusterExh.png \
 	Models/Shuttle/Wing.obj \
-	Models/Shuttle/Wing.png
+	Models/Shuttle/Wing.png \
+	Models/Test/Cube.obj \
+	Models/Test/Cube.png
 
 .PHONY: all
 

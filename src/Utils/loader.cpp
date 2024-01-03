@@ -89,6 +89,11 @@ namespace Loader
 		std::vector<Math::Vec<3>> vertPositions;
 		std::vector<Math::Vec<3>> normals;
 		std::vector<Math::Vec<2>> texCoords;
+		std::vector<uint32_t> matrixIndices;
+
+		std::map<std::string, uint32_t> vertexGroups;
+		uint32_t nextVertexGroup = 0;
+		std::string currentGroup = "";
 
 		for (auto line : modelFile) {
 			if (line[0] == "v") {
@@ -97,6 +102,18 @@ namespace Loader
 				vertex[1] = std::stod(line[2]);
 				vertex[2] = std::stod(line[3]);
 				vertPositions.push_back(vertex);
+
+				if (
+					vertexGroups.find(currentGroup) ==
+					vertexGroups.end())
+				{
+					vertexGroups[currentGroup] =
+						nextVertexGroup;
+					++nextVertexGroup;
+				}
+
+				matrixIndices.push_back(
+					vertexGroups[currentGroup]);
 			} else if (line[0] == "vt") {
 				Math::Vec<2> texCoord;
 				texCoord[0] = std::stod(line[1]);
@@ -110,25 +127,32 @@ namespace Loader
 				normals.push_back(normal);
 			} else if (line[0] == "f") {
 				Vertex vertex;
-				vertex.MatrixIndex = 0;
 
+				vertex.MatrixIndex = matrixIndices[
+					std::stoi(line[1]) - 1];
 				vertex.Pos = vertPositions[
 					std::stoi(line[1]) - 1];
 				vertex.Tex = texCoords[std::stoi(line[2]) - 1];
 				vertex.Normal = normals[std::stoi(line[3]) - 1];
 				vertices.push_back(vertex);
 
+				vertex.MatrixIndex = matrixIndices[
+					std::stoi(line[4]) - 1];
 				vertex.Pos = vertPositions[
 					std::stoi(line[4]) - 1];
 				vertex.Tex = texCoords[std::stoi(line[5]) - 1];
 				vertex.Normal = normals[std::stoi(line[6]) - 1];
 				vertices.push_back(vertex);
 
+				vertex.MatrixIndex = matrixIndices[
+					std::stoi(line[7]) - 1];
 				vertex.Pos = vertPositions[
 					std::stoi(line[7]) - 1];
 				vertex.Tex = texCoords[std::stoi(line[8]) - 1];
 				vertex.Normal = normals[std::stoi(line[9]) - 1];
 				vertices.push_back(vertex);
+			} else if (line[0] == "vg") {
+				currentGroup = line[1];
 			}
 		}
 
