@@ -4,6 +4,7 @@
 #include <string>
 #include <stdexcept>
 #include <vector>
+#include <array>
 #include <cstdint>
 
 #include "../Math/vec.h"
@@ -22,10 +23,16 @@ namespace Loader
 
 	struct VertexData
 	{
+		struct MatrixIndex
+		{
+			std::array<uint32_t, 2> Index;
+			std::array<float, 2> Coeff;
+		};
+
 		std::vector<Math::Vec<3>> Vertices;
 		std::vector<Math::Vec<3>> Normals;
 		std::vector<Math::Vec<2>> TexCoords;
-		std::vector<uint32_t> MatrixIndices;
+		std::vector<MatrixIndex> MatrixIndices;
 		std::vector<uint32_t> Indices;
 
 		std::vector<Math::Mat<4>> Instances;

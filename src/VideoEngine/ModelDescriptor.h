@@ -18,7 +18,8 @@ struct ModelDescriptor
 		alignas(16) glm::vec3 Pos;
 		alignas(16) glm::vec3 Normal;
 		alignas(8) glm::vec2 TexCoord;
-		alignas(4) unsigned int MatrixIndex;
+		alignas(8) glm::ivec2 MatrixIndex;
+		alignas(8) glm::vec2 MatrixCoeff;
 	};
 
 	uint32_t VertexCount;

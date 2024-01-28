@@ -19,9 +19,20 @@ layout(location = 2) out vec3 outPos;
 
 #include "DepthTransform.glsl"
 
-void main() {
-	mat4 toWorldTransform = mvp.Model * instanceTransform *
-		InnerModel.Transforms[matrixIndex];
+void main()
+{
+	mat4 innerMatrix;
+	innerMatrix[0] = vec4(0.0);
+	innerMatrix[1] = vec4(0.0);
+	innerMatrix[2] = vec4(0.0);
+	innerMatrix[3] = vec4(0.0);
+
+	for (int i = 0; i < 2; ++i) {
+		innerMatrix += InnerModel.Transforms[matrixIndex[i]] *
+			matrixCoeff[i];
+	}
+
+	mat4 toWorldTransform = mvp.Model * instanceTransform * innerMatrix;
 
 	gl_Position = mvp.ProjView * toWorldTransform * vec4(inPosition, 1.0);
 

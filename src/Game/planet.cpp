@@ -893,7 +893,8 @@ Planet::Planet(
 					((Math::Vec<3>)t->P1).Normalize());
 				segment->Geometry.TexCoords.push_back(
 					{0.0, 0.0});
-				segment->Geometry.MatrixIndices.push_back(0);
+				segment->Geometry.MatrixIndices.push_back(
+					{{0, 0}, {1, 0}});
 			}
 
 			if (
@@ -907,7 +908,8 @@ Planet::Planet(
 					((Math::Vec<3>)t->P2).Normalize());
 				segment->Geometry.TexCoords.push_back(
 					{0.0, 100.0});
-				segment->Geometry.MatrixIndices.push_back(0);
+				segment->Geometry.MatrixIndices.push_back(
+					{{0, 0}, {1, 0}});
 			}
 
 			if (
@@ -921,7 +923,8 @@ Planet::Planet(
 					((Math::Vec<3>)t->P3).Normalize());
 				segment->Geometry.TexCoords.push_back(
 					{100.0, 100.0});
-				segment->Geometry.MatrixIndices.push_back(0);
+				segment->Geometry.MatrixIndices.push_back(
+					{{0, 0}, {1, 0}});
 			}
 
 			segment->Geometry.Indices.push_back(

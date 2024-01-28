@@ -42,7 +42,7 @@ std::vector<VkVertexInputAttributeDescription>
 ModelDescriptor::GetAttributeDescriptions()
 {
 	std::vector<VkVertexInputAttributeDescription>
-		attributeDescriptions(8);
+		attributeDescriptions(9);
 
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
@@ -61,28 +61,33 @@ ModelDescriptor::GetAttributeDescriptions()
 
 	attributeDescriptions[3].binding = 0;
 	attributeDescriptions[3].location = 3;
-	attributeDescriptions[3].format = VK_FORMAT_R32_UINT;
+	attributeDescriptions[3].format = VK_FORMAT_R32G32_UINT;
 	attributeDescriptions[3].offset = offsetof(Vertex, MatrixIndex);
 
-	attributeDescriptions[4].binding = 1;
+	attributeDescriptions[4].binding = 0;
 	attributeDescriptions[4].location = 4;
-	attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[4].offset = 0;
+	attributeDescriptions[4].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescriptions[4].offset = offsetof(Vertex, MatrixCoeff);
 
 	attributeDescriptions[5].binding = 1;
 	attributeDescriptions[5].location = 5;
 	attributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[5].offset = sizeof(glm::vec4);
+	attributeDescriptions[5].offset = 0;
 
 	attributeDescriptions[6].binding = 1;
 	attributeDescriptions[6].location = 6;
 	attributeDescriptions[6].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[6].offset = sizeof(glm::vec4) * 2;
+	attributeDescriptions[6].offset = sizeof(glm::vec4);
 
 	attributeDescriptions[7].binding = 1;
 	attributeDescriptions[7].location = 7;
 	attributeDescriptions[7].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[7].offset = sizeof(glm::vec4) * 3;
+	attributeDescriptions[7].offset = sizeof(glm::vec4) * 2;
+
+	attributeDescriptions[8].binding = 1;
+	attributeDescriptions[8].location = 8;
+	attributeDescriptions[8].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[8].offset = sizeof(glm::vec4) * 3;
 
 	return attributeDescriptions;
 }
@@ -131,9 +136,12 @@ ModelDescriptor ModelDescriptor::CreateModelDescriptor(
 
 		for (int i = 0; i < 2; ++i) {
 			vertexData[idx].TexCoord[i] = texCoords[idx][i];
-		}
 
-		vertexData[idx].MatrixIndex = matrixIndices[idx];
+			vertexData[idx].MatrixIndex[i] =
+				matrixIndices[idx].Index[i];
+			vertexData[idx].MatrixCoeff[i] =
+				matrixIndices[idx].Coeff[i];
+		}
 	}
 
 	BufferHelper::LoadDataToBuffer(

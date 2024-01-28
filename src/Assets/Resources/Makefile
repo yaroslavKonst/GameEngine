@@ -52,7 +52,9 @@ ENTRIES=\
 	Models/Shuttle/Wing.obj \
 	Models/Shuttle/Wing.png \
 	Models/Test/Cube.obj \
-	Models/Test/Cube.png
+	Models/Test/Cube.png \
+	Models/Test/Beam.obj \
+	Models/Test/Beam.png
 
 .PHONY: all
 

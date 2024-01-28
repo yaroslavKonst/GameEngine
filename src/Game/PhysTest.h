@@ -33,7 +33,12 @@ namespace PhysTest
 				{0.5, 0.5}
 			};
 
-			Geometry.MatrixIndices = {0, 0, 0, 0};
+			Geometry.MatrixIndices = {
+				{{0, 0}, {1, 0}},
+				{{0, 0}, {1, 0}},
+				{{0, 0}, {1, 0}},
+				{{0, 0}, {1, 0}}
+			};
 
 			Geometry.Indices = {0, 2, 1, 1, 2, 3};
 			Geometry.Instances = {Math::Mat<4>(1.0)};
