@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <mutex>
+#include <atomic>
 #include <portaudio.h>
 
 class Audio
@@ -12,7 +13,7 @@ public:
 	{
 		std::vector<float> Data;
 		float Multiplier;
-		bool Finished;
+		std::atomic<bool> Finished;
 		bool Active;
 		bool Discard;
 

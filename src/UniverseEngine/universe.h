@@ -5,6 +5,7 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
+#include <atomic>
 
 #include "../Utils/ThreadPool.h"
 #include "../VideoEngine/video.h"
@@ -37,7 +38,7 @@ private:
 	std::set<PhysicalEngineBase*> _physicalEngines;
 	std::mutex _engineMutex;
 
-	bool _work;
+	std::atomic<bool> _work;
 
 	ThreadPool* _threadPool;
 };

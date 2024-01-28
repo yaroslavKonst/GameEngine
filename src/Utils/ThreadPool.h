@@ -7,6 +7,7 @@
 #include <thread>
 #include <list>
 #include <set>
+#include <atomic>
 
 class ThreadPool
 {
@@ -37,7 +38,7 @@ private:
 	uint32_t _taskCount;
 	uint32_t _lastId;
 
-	bool _work;
+	std::atomic<bool> _work;
 	void ThreadFunction();
 
 	void StartThreads(uint32_t threadCount);
