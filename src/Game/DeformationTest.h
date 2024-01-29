@@ -32,10 +32,7 @@ public:
 		};
 
 		_diff = -1.0;
-		_step = 0.01;
-
-		ModelParams.InnerMatrix[1][0][3] = _diff;
-		ModelParams.InnerMatrix[2][0][3] = -_diff;
+		_step = 0.1;
 
 		_video->RegisterModel(this);
 		_universe->RegisterActor(this);
@@ -53,9 +50,9 @@ public:
 		_diff += _step;
 
 		ModelParams.InnerMatrix[1] =
-			Math::Rotate(_diff * 3.0, {0 ,0 , 1}, Math::Degrees);
+			Math::Rotate(_diff, {0, 0, 1}, Math::Degrees);
 
-		if (_diff > 10 || _diff < -10) {
+		if (_diff > 100 || _diff < -100) {
 			_step *= -1;
 		}
 	}

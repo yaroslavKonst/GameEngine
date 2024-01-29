@@ -44,6 +44,8 @@ Audio::Audio() : _ringBuffer(RING_BUFFER_SIZE)
 			std::string("Failed to start stream: ") +
 			Pa_GetErrorText(err));
 	}
+
+	Logger::Verbose() << "Audio subsystem started.";
 }
 
 Audio::~Audio()
@@ -71,6 +73,8 @@ Audio::~Audio()
 			"Failed to terminate portaudio: " <<
 			Pa_GetErrorText(err);
 	}
+
+	Logger::Verbose() << "Audio subsystem stopped.";
 }
 
 void Audio::Submit(Buffer* buffer)
