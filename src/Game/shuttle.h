@@ -1,7 +1,7 @@
 #ifndef _SHUTTLE_H
 #define _SHUTTLE_H
 
-#include "../VideoEngine/GUI/TextBox.h"
+#include "../Engine/Video/GUI/TextBox.h"
 #include "global.h"
 #include "common.h"
 #include "GravityField.h"

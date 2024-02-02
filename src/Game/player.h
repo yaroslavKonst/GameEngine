@@ -3,13 +3,12 @@
 
 #include <algorithm>
 
-#include "../VideoEngine/GUI/TextBox.h"
-#include "../VideoEngine/GUI/button.h"
-#include "../UniverseEngine/universe.h"
-#include "../Utils/loader.h"
-#include "../Assets/animation.h"
+#include "../Engine/Video/GUI/TextBox.h"
+#include "../Engine/Video/GUI/button.h"
+#include "../Engine/Time/TimeEngine.h"
+#include "../Engine/Utils/loader.h"
+#include "../Engine/Assets/animation.h"
 #include "global.h"
-#include "ship.h"
 #include "shuttle.h"
 #include "GravityField.h"
 #include "planet.h"
@@ -21,6 +20,8 @@ public:
 	~Sword();
 
 	void Update(float time);
+
+	void Use();
 
 private:
 	Common _common;
@@ -48,6 +49,13 @@ public:
 	bool MouseMoveRaw(
 		double xoffset,
 		double yoffset) override;
+
+	bool MouseButton(int button, int action, int mods) override;
+
+	bool InInputArea(float x, float y) override
+	{
+		return true;
+	}
 
 	void Tick() override;
 	void TickEarly() override;
@@ -92,8 +100,6 @@ private:
 
 	Rectangle _cross;
 	uint32_t _crossTexture;
-
-	FlightControl* _activeFlightControl;
 };
 
 #endif

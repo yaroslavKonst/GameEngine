@@ -1,10 +1,15 @@
 .PHONY: all
 
 all: \
-	../../build/SoundTool
+	$(BUILD_DIR)/packer \
+	$(BUILD_DIR)/SoundTool \
+	$(BUILD_DIR)/SoftBodyTool
 
-../../build/SoundTool: SoundTool.cpp ../../build/audio.o ../../build/logger.o ../../build/TextFileParser.o ../../build/package.o ../../build/compressor.o
-	$(CC) $(CC_OPTS) -fopenmp -o $@ $< ../../build/audio.o ../../build/logger.o ../../build/TextFileParser.o ../../build/package.o ../../build/compressor.o -lportaudio
+$(BUILD_DIR)/packer: packer.cpp $(BUILD_DIR)/engine.a
+	$(CXX) $(CXX_OPTS) -o $@ $< $(BUILD_DIR)/engine.a
 
-../../build/%.o: %.cpp %.h
-	$(CC) $(CC_OPTS) $(CC_OBJ) -o $@ $<
+$(BUILD_DIR)/SoundTool: SoundTool.cpp $(BUILD_DIR)/engine.a
+	$(CXX) $(CXX_OPTS) -fopenmp -o $@ $< $(BUILD_DIR)/engine.a $(LIBS)
+
+$(BUILD_DIR)/SoftBodyTool: SoftBodyTool.cpp $(BUILD_DIR)/engine.a
+	$(CXX) $(CXX_OPTS) -o $@ $< $(BUILD_DIR)/engine.a $(LIBS)

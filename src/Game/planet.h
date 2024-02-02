@@ -4,8 +4,8 @@
 #include <list>
 #include <set>
 
-#include "../VideoEngine/video.h"
-#include "../PhysicalEngine/PhysicalEngine.h"
+#include "../Engine/Video/video.h"
+#include "../Engine/Physics/PhysicalEngine.h"
 
 class Segment : public Model, public PhysicalObject
 {

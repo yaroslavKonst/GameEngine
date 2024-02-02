@@ -1,11 +1,21 @@
-.PHONY: all
+PREFIX = $(BUILD_DIR)/Game
 
-all: \
-	../../build/player.o \
-	../../build/world.o \
-	../../build/shuttle.o \
-	../../build/planet.o \
-	../../build/PhysTest.o
+OBJECTS = \
+	$(PREFIX)/player.o \
+	$(PREFIX)/world.o \
+	$(PREFIX)/shuttle.o \
+	$(PREFIX)/planet.o \
+	$(PREFIX)/PhysTest.o \
+	$(PREFIX)/main.o
 
-../../build/%.o: %.cpp %.h
-	$(CC) $(CC_OPTS) $(CC_OBJ) -o $@ $<
+$(BUILD_DIR)/game: $(OBJECTS)
+	$(CXX) -o $@ $(OBJECTS) $(BUILD_DIR)/engine.a $(LIBS)
+
+$(PREFIX)/main.o: main.cpp | $(PREFIX)
+	$(CXX) $(CXX_OPTS) $(CXX_OBJ) -o $@ $<
+
+$(PREFIX)/%.o: %.cpp %.h | $(PREFIX)
+	$(CXX) $(CXX_OPTS) $(CXX_OBJ) -o $@ $<
+
+$(PREFIX):
+	mkdir -p $@

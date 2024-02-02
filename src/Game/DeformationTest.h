@@ -1,17 +1,17 @@
 #ifndef _DEFORMATION_TEST
 #define _DEFORMATION_TEST
 
-#include "../VideoEngine/model.h"
-#include "../VideoEngine/video.h"
-#include "../UniverseEngine/actor.h"
-#include "../UniverseEngine/universe.h"
-#include "../Utils/loader.h"
-#include "../Math/transform.h"
+#include "../Engine/Video/model.h"
+#include "../Engine/Video/video.h"
+#include "../Engine/Time/actor.h"
+#include "../Engine/Time/TimeEngine.h"
+#include "../Engine/Utils/loader.h"
+#include "../Engine/Math/transform.h"
 
 class DeformationTest : public Model, public Actor
 {
 public:
-	DeformationTest(Video* video, Universe* universe)
+	DeformationTest(Video* video, TimeEngine* universe)
 	{
 		_video = video;
 		_universe = universe;
@@ -59,7 +59,7 @@ public:
 
 private:
 	Video* _video;
-	Universe* _universe;
+	TimeEngine* _universe;
 
 	float _diff;
 	float _step;

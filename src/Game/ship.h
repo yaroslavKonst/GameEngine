@@ -1,7 +1,7 @@
 #ifndef _SHIP_H
 #define _SHIP_H
 
-#include "../VideoEngine/video.h"
+#include "../Engine/Video/video.h"
 #include "../PhysicalEngine/CollisionEngine.h"
 #include "../UniverseEngine/actor.h"
 #include "BaseGrid.h"

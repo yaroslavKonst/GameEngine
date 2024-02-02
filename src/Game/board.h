@@ -1,7 +1,7 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include "../VideoEngine/video.h"
+#include "../Engine/Video/video.h"
 
 class Board : public Model
 {

@@ -1,0 +1,32 @@
+#version 450
+
+#include "ObjectInputArray.glsl"
+
+layout(push_constant) uniform MVP
+{
+	mat4 Model;
+	mat4 ProjView;
+} mvp;
+
+layout(set = 1, binding = 0) uniform InnerModelTransforms
+{
+	mat4 Transforms[20];
+} InnerModel;
+
+void main()
+{
+	mat4 innerMatrix;
+	innerMatrix[0] = vec4(0.0);
+	innerMatrix[1] = vec4(0.0);
+	innerMatrix[2] = vec4(0.0);
+	innerMatrix[3] = vec4(0.0);
+
+	for (int i = 0; i < 2; ++i) {
+		innerMatrix += InnerModel.Transforms[matrixIndex[i]] *
+			matrixCoeff[i];
+	}
+
+	mat4 toWorldTransform = mvp.Model * instanceTransform * innerMatrix;
+
+	gl_Position = toWorldTransform * vec4(inPosition, 1.0);
+}

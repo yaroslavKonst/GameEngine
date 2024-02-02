@@ -6,12 +6,10 @@
 #include <thread>
 #include <chrono>
 
-#include "../AudioEngine/audio.h"
-#include "../Utils/TextFileParser.h"
-#include "../Logger/logger.h"
-#include "../Utils/ComplexMath.h"
-
-#define SAMPLE_RATE 44100
+#include "../Engine/Audio/audio.h"
+#include "../Engine/Utils/TextFileParser.h"
+#include "../Engine/Logger/logger.h"
+#include "../Engine/Math/ComplexMath.h"
 
 float Wave(float x)
 {
@@ -35,7 +33,7 @@ std::vector<float> Flute(float frequency, size_t duration)
 		}
 
 		float value = sin(
-			(float)index / SAMPLE_RATE * 2 * M_PI *
+			(float)index / Audio::SampleRate * 2 * M_PI *
 			frequency) * multiplier;
 
 		buffer[index * 2] = value;
@@ -66,14 +64,14 @@ std::vector<float> Piano(float frequency, size_t duration)
 			}
 
 			float waveValue = Wave(
-				(float)index / SAMPLE_RATE * 2 * M_PI *
+				(float)index / Audio::SampleRate * 2 * M_PI *
 				frequency * tone);
 
 			float addMul = 1.0f +
 				0.5 * std::max<int64_t>(
-					(float)(SAMPLE_RATE * 0.5 -
+					(float)(Audio::SampleRate * 0.5 -
 						(int64_t)index) /
-					(SAMPLE_RATE * 0.5),
+					(Audio::SampleRate * 0.5),
 					0);
 
 			float value =
@@ -258,12 +256,12 @@ std::vector<float> CompileFile(std::string filename)
 		notes.back().Duration = 20;
 	}
 
-	std::vector<float> buffer(duration * SAMPLE_RATE * 2, 0);
+	std::vector<float> buffer(duration * Audio::SampleRate * 2, 0);
 
 	for (auto& note : notes) {
 		Logger::Verbose() << "Note: " << note.Name;
-		size_t lim = note.Duration * SAMPLE_RATE;
-		size_t start = note.Start * SAMPLE_RATE;
+		size_t lim = note.Duration * Audio::SampleRate;
+		size_t start = note.Start * Audio::SampleRate;
 
 		if (lim + start > buffer.size() / 2) {
 			lim -= lim + start - buffer.size() / 2;
@@ -311,7 +309,8 @@ int main(int argc, char** argv)
 	audio.Submit(&buffer);
 
 	std::this_thread::sleep_for(
-		std::chrono::seconds(buffer.Data.size() / SAMPLE_RATE / 2 + 1));
+		std::chrono::seconds(
+			buffer.Data.size() / Audio::SampleRate / 2 + 1));
 
 	return 0;
 }

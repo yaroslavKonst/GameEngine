@@ -1,8 +1,8 @@
 #include "player.h"
 
-#include "../Assets/ScriptHandler.h"
+#include "../Engine/Assets/ScriptHandler.h"
 
-#include "../Logger/logger.h"
+#include "../Engine/Logger/logger.h"
 
 static glm::dvec3 VecToGlm(const Math::Vec<3>& vec)
 {
@@ -51,7 +51,6 @@ Player::Player(
 	_actionERequested = false;
 	_actionRRequested = false;
 	_actionFRequested = false;
-	_activeFlightControl = nullptr;
 
 	_sword = new Sword(_common, nullptr);
 
@@ -210,6 +209,17 @@ bool Player::MouseMoveRaw(
 	_angleV -= yoffset * 0.1;
 
 	_angleV = std::clamp(_angleV, -85.0, 85.0);
+
+	return true;
+}
+
+bool Player::MouseButton(int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (action == GLFW_PRESS) {
+			_sword->Use();
+		}
+	}
 
 	return true;
 }
@@ -414,6 +424,10 @@ Sword::~Sword()
 
 void Sword::Update(float time)
 {
+	if (_time == 0) {
+		return;
+	}
+
 	_time += time;
 
 	if (_time >= 6) {
@@ -422,4 +436,13 @@ void Sword::Update(float time)
 
 	ModelParams.InnerMatrix = {GlmToMat(
 		_animation.GetTransform(_time, glm::mat4(1.0)))};
+}
+
+void Sword::Use()
+{
+	_animation = ScriptHandler::LoadAnimation("../Sword.txt");
+
+	if (_time == 0) {
+		_time += 0.0001;
+	}
 }

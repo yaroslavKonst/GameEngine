@@ -1,18 +1,17 @@
 #include "world.h"
 
-#include "../Utils/loader.h"
-#include "../Utils/Text.h"
+#include "../Engine/Utils/loader.h"
+#include "../Engine/Utils/Text.h"
+#include "../Engine/Logger/logger.h"
 #include "player.h"
-#include "ship.h"
 #include "planet.h"
-#include "../Logger/logger.h"
 #include "board.h"
 #include "GravityField.h"
 #include "PhysTest.h"
 #include "InnerMatTest.h"
 #include "DeformationTest.h"
 
-static void UniverseThread(Universe* universe)
+static void UniverseThread(TimeEngine* universe)
 {
 	universe->MainLoop();
 }
@@ -24,7 +23,7 @@ World::World()
 
 	_common.video = new Video(1400, 1000, "Game", "Game", &videoSettings);
 	_common.audio = new Audio;
-	_common.universe = new Universe(10, _common.video);
+	_common.universe = new TimeEngine(10, _common.video);
 
 	_common.universe->RegisterActor(this);
 

@@ -1,16 +1,16 @@
 #ifndef _INNER_MAT_TEST
 #define _INNER_MAT_TEST
 
-#include "../VideoEngine/model.h"
-#include "../VideoEngine/video.h"
-#include "../UniverseEngine/actor.h"
-#include "../UniverseEngine/universe.h"
-#include "../Utils/loader.h"
+#include "../Engine/Video/model.h"
+#include "../Engine/Video/video.h"
+#include "../Engine/Time/actor.h"
+#include "../Engine/Time/TimeEngine.h"
+#include "../Engine/Utils/loader.h"
 
 class InnerMatTest : public Model, public Actor
 {
 public:
-	InnerMatTest(Video* video, Universe* universe)
+	InnerMatTest(Video* video, TimeEngine* universe)
 	{
 		_video = video;
 		_universe = universe;
@@ -62,7 +62,7 @@ public:
 
 private:
 	Video* _video;
-	Universe* _universe;
+	TimeEngine* _universe;
 
 	float _diff;
 	float _step;

@@ -1,24 +1,16 @@
-CC=g++
-CC_OPTS=-Wall -g -std=c++20 -O3
-CC_OBJ=-c
-OUTPUT=game
-LIBS=-lglfw -lvulkan -ldl -lpthread -lX11 -lXrandr -lfreetype -lportaudio
+export CXX = g++
+export CXX_OPTS = -Wall -g -std=c++20 -O3
+export CXX_OBJ = -c
+export AR = ar rcs
+export LIBS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXrandr -lfreetype -lportaudio
 
 .PHONY: all clean
 
 all:
-	mkdir -p ../build
-	cd Main ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd VideoEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd AudioEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd UniverseEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd PhysicalEngine ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd Utils ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd Logger ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd Assets ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd Tools ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	cd Game ; make CC=$(CC) CC_OPTS="$(CC_OPTS)" CC_OBJ=$(CC_OBJ)
-	$(CC) $(CC_OPTS) ../build/*.o -o ../build/$(OUTPUT) $(LIBS)
+	cd Engine ; make
+	cd Tools ; make
+	cd Game ; make
+	cd Resources ; make
 
 clean:
-	rm -rf ../build
+	rm -rf $(BUILD_DIR)
