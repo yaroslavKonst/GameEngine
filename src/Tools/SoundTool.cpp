@@ -2,6 +2,7 @@
 #include <map>
 #include <list>
 #include <cmath>
+#include <cstring>
 #include <algorithm>
 #include <thread>
 #include <chrono>
@@ -10,6 +11,7 @@
 #include "../Engine/Utils/TextFileParser.h"
 #include "../Engine/Logger/logger.h"
 #include "../Engine/Math/ComplexMath.h"
+#include "../Engine/Assets/package.h"
 
 float Wave(float x)
 {
@@ -97,10 +99,13 @@ std::vector<float> FilterSound(std::vector<float> buffer)
 	std::vector<float> result(buffer.size(), 0);
 
 	result[0] = buffer[0];
+	result[1] = buffer[1];
 	result[buffer.size() - 1] = buffer[buffer.size() - 1];
+	result[buffer.size() - 2] = buffer[buffer.size() - 2];
 
-	for (size_t index = 1; index < result.size() - 1; ++index) {
-		result[index] = (buffer[index - 1] + buffer[index + 1]) / 2;
+	for (size_t index = 2; index < result.size() - 2; index += 2) {
+		result[index] = (buffer[index - 2] + buffer[index + 2]) / 2;
+		result[index + 1] = (buffer[index - 1] + buffer[index + 3]) / 2;
 	}
 
 	return result;
@@ -295,15 +300,148 @@ std::vector<float> CompileFile(std::string filename)
 	return buffer;
 }
 
+std::vector<float> GenerateFrequencies(int octCount, int noteCount)
+{
+	std::vector<float> frequencies(octCount * noteCount);
+
+	float o1LaFreq = 440;
+
+	float noteStep = powf(2.0, 1.0 / (double)noteCount);
+	float octStep = 2.0;
+
+	size_t index = 0;
+
+	for (int oct = 0; oct < octCount; ++oct) {
+		for (int note = -5; note <= 1; ++note) {
+			float value = o1LaFreq * powf(octStep, oct) *
+				powf(noteStep, note);
+
+			frequencies[index] = value;
+			++index;
+		}
+	}
+
+	return frequencies;
+}
+
+std::vector<float> ProcessTimeNotation(std::string filename)
+{
+	int octCount = 6;
+	int noteCount = 7;
+	float nps = 1;
+
+	int notes = octCount * noteCount;
+
+	std::vector<bool> noteState(notes, false);
+	std::vector<float> frequencies = GenerateFrequencies(
+		octCount,
+		noteCount);
+	std::vector<float> starts(notes, 0.0);
+
+	struct Slot
+	{
+		float Frequency;
+		size_t Start;
+		size_t Length;
+	};
+
+	std::list<Slot> slots;
+
+	TextFileParser::File file = TextFileParser::ParseFile(filename, {});
+	float currentTime = 0.0;
+
+	for (auto& line : file) {
+		std::string word = line[0];
+
+		if (word[0] == ' ' || word[0] == 'f') {
+			// Process note line.
+			std::vector<bool> curNoteState(notes, false);
+
+			int index = 0;
+			for (char c : word) {
+				if (c == 'f') {
+					curNoteState[index] = true;
+				}
+
+				++index;
+			}
+
+			for (int index = 0; index < notes; ++index) {
+				if (noteState[index] && !curNoteState[index]) {
+					Slot slot;
+					slot.Frequency = frequencies[index];
+					slot.Start = starts[index] *
+						Audio::SampleRate;
+					slot.Length = currentTime *
+						Audio::SampleRate - slot.Start;
+
+					slots.push_back(slot);
+				}
+
+				if (!noteState[index] && curNoteState[index]) {
+					starts[index] = currentTime;
+				}
+
+				noteState[index] = curNoteState[index];
+			}
+
+			currentTime += 1.0 / nps;
+		} else {
+			// Process command.
+			if (word.starts_with("nps")) {
+				nps = std::stof(word.substr(4));
+			} else if (word.starts_with("npm")) {
+				nps = std::stof(word.substr(4)) / 60.0;
+			}
+		}
+	}
+
+	for (int index = 0; index < notes; ++index) {
+		if (noteState[index]) {
+			Slot slot;
+			slot.Frequency = frequencies[index];
+			slot.Start = starts[index] * Audio::SampleRate;
+			slot.Length = currentTime * Audio::SampleRate -
+				slot.Start;
+
+			slots.push_back(slot);
+		}
+	}
+
+	std::vector<float> buffer(
+		(currentTime + 1) * Audio::SampleRate * 2,
+		0.0);
+
+	for (auto& slot : slots) {
+		std::vector<float> sound = Flute(slot.Frequency, slot.Length);
+
+		for (size_t i = 0; i < slot.Length * 2; ++i) {
+			buffer[i + slot.Start * 2] += sound[i];
+		}
+	}
+
+	buffer = FilterSound(buffer);
+	buffer = NormalizeSound(buffer);
+
+	return buffer;
+}
+
 int main(int argc, char** argv)
 {
 	Logger::SetLevel(Logger::Level::Verbose);
+
+	Package::LoadPackage("resources.bin");
 
 	Audio audio;
 	Audio::Buffer buffer;
 
 	Logger::Verbose() << "Compiling.";
-	buffer.Data = CompileFile(argv[1]);
+
+	if (strcmp(argv[1], "-t")) {
+		buffer.Data = CompileFile(argv[1]);
+	} else {
+		buffer.Data = ProcessTimeNotation(argv[2]);
+	}
 
 	Logger::Verbose() << "Playing.";
 	audio.Submit(&buffer);
@@ -311,6 +449,8 @@ int main(int argc, char** argv)
 	std::this_thread::sleep_for(
 		std::chrono::seconds(
 			buffer.Data.size() / Audio::SampleRate / 2 + 1));
+
+	Package::UnloadPackage();
 
 	return 0;
 }

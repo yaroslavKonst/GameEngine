@@ -1,0 +1,47 @@
+|      |      |      |      |      |      |
+nps 1
+f
+ f
+f
+  f
+f
+   f
+f
+    f
+nps 2
+f
+ f
+f
+  f
+f
+   f
+f
+    f
+nps 3
+f
+ f
+f
+  f
+f
+   f
+f
+    f
+nps 4
+f
+ f
+f
+  f
+f
+   f
+f
+    f
+nps 5
+f
+ f
+f
+  f
+f
+   f
+f
+    f
+   
