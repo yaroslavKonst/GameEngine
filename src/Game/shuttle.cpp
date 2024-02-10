@@ -4,25 +4,8 @@
 
 #include "../Engine/Utils/loader.h"
 #include "../Engine/Math/PlaneHelper.h"
+#include "../Engine/Math/transform.h"
 #include "../Engine/Logger/logger.h"
-
-static glm::dvec3 VecToGlm(const Math::Vec<3>& vec)
-{
-	return glm::dvec3(vec[0], vec[1], vec[2]);
-}
-
-static Math::Mat<4> GlmToMat(const glm::dmat4& mat)
-{
-	Math::Mat<4> res;
-
-	for (int row = 0; row < 4; ++row) {
-		for (int col = 0; col < 4; ++col) {
-			res[row][col] = mat[col][row];
-		}
-	}
-
-	return res;
-}
 
 Shuttle::Shuttle(Common common, GravityField* gf)
 {
@@ -123,9 +106,7 @@ Shuttle::Shuttle(Common common, GravityField* gf)
 	_wings[1]->DrawParams.Enabled = true;
 	_wings[1]->ModelParams.Matrix = Math::Mat<4>(1.0);
 	_wings[1]->ModelParams.ExternalMatrix = &_shipMatrix;
-	_wings[1]->ModelParams.InnerMatrix = {GlmToMat(glm::scale(
-		glm::dmat4(1.0),
-		glm::dvec3(-1, 1, 1)))};
+	_wings[1]->ModelParams.InnerMatrix = {Math::Scale({-1, 1, 1})};
 	_common.video->RegisterModel(_wings[1]);
 
 	_cornerTextBox = new TextBox(_common.video, _common.textHandler);
@@ -736,31 +717,19 @@ Math::Vec<3> Thruster::SetDirection(
 
 	_angle = std::clamp(_angle, 0.0, 120.0);
 
-	glm::dmat4 baseMatrix = glm::translate(
-		glm::dmat4(1.0),
-		VecToGlm(_position));
-	baseMatrix = glm::rotate(
-		baseMatrix,
-		glm::radians(_angle),
-		glm::dvec3(-1, 0, 0));
-	ModelParams.Matrix = GlmToMat(baseMatrix);
+	Math::Mat<4> baseMatrix = Math::Translate(_position);
+	baseMatrix *= Math::Rotate(_angle, {-1, 0, 0}, Math::Degrees);
+	ModelParams.Matrix = baseMatrix;
 
 	AdjustFAngle(value, speed);
 	AdjustRAngle(value, speed);
 
-	glm::dmat4 exhaustMatrix = glm::translate(
-		baseMatrix,
-		glm::dvec3(0, 2, 0));
+	Math::Mat<4> exhaustMatrix = baseMatrix * Math::Translate({0, 2, 0});
 
-	exhaustMatrix = glm::rotate(
-		exhaustMatrix,
-		glm::radians(_angleF),
-		glm::dvec3(1, 0, 0));
+	exhaustMatrix *= Math::Rotate(_angleF, {1, 0, 0}, Math::Degrees);
 
-	_exhaust->ModelParams.Matrix = GlmToMat(glm::rotate(
-		exhaustMatrix,
-		glm::radians(_angleR),
-		glm::dvec3(0, 0, 1)));
+	_exhaust->ModelParams.Matrix = exhaustMatrix *
+		Math::Rotate(_angleR, {0, 0, 1}, Math::Degrees);
 
 	Math::Vec<3> thrustDir({0, -1, 0});
 	Math::Mat<4> rotMatrix = *ModelParams.ExternalMatrix *
@@ -995,20 +964,19 @@ Math::Vec<3> Wing::SetSpeed(
 
 	_angleUp = std::clamp(_angleUp, 0.0, 90.0);
 
-	glm::dmat4 matrix = glm::translate(
-		glm::dmat4(1.0),
-		VecToGlm(_position));
+	Math::Mat<4> matrix = Math::Translate(_position);
 
-	matrix = glm::rotate(
-		matrix,
-		glm::radians(_angle),
-		glm::dvec3(0, 0, _inverted ? -1 : 1));
-	matrix = glm::rotate(
-		matrix,
-		glm::radians(_angleUp),
-		glm::dvec3(0, _inverted ? 1 : -1, 0));
+	matrix *= Math::Rotate(
+		_angle,
+		{0.0, 0.0, _inverted ? -1.0 : 1.0},
+		Math::Degrees);
 
-	ModelParams.Matrix = GlmToMat(matrix);
+	matrix *= Math::Rotate(
+		_angleUp,
+		{0.0, _inverted ? 1.0 : -1.0, 0.0},
+		Math::Degrees);
+
+	ModelParams.Matrix = matrix;
 
 	if (value.Length() < 0.00001) {
 		return Math::Vec<3>(0.0);

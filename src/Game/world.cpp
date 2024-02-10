@@ -10,6 +10,7 @@
 #include "PhysTest.h"
 #include "InnerMatTest.h"
 #include "DeformationTest.h"
+#include "PlayerModelTest.h"
 
 static void UniverseThread(TimeEngine* universe)
 {
@@ -83,6 +84,7 @@ void World::Run()
 
 	InnerMatTest innerMatTest(_common.video, _common.universe);
 	DeformationTest deformationTest(_common.video, _common.universe);
+	PlayerModelTest playerModelTest(_common.video, _common.universe);
 
 	Planet planet(
 		20000,

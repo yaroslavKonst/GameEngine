@@ -70,6 +70,17 @@ namespace Math
 
 		return result;
 	}
+
+	inline Mat<4> Scale(Vec<3> coeff)
+	{
+		Mat<4> result(1.0);
+
+		for (int i = 0; i < 3; ++i) {
+			result[i][i] = coeff[i];
+		}
+
+		return result;
+	}
 }
 
 #endif

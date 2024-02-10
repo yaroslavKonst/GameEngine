@@ -115,7 +115,7 @@ namespace Math
 							mat.Data[i][col];
 					}
 
-					res.Data[row][col] = sum;
+					res[row][col] = sum;
 				}
 			}
 

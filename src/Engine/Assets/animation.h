@@ -3,14 +3,15 @@
 
 #include <vector>
 
-#include "../Video/glm.h"
+#include "../Math/vec.h"
+#include "../Math/mat.h"
 
 class Animation
 {
 public:
 	struct TimePoint
 	{
-		glm::vec3 Position;
+		Math::Vec<3> Position;
 		float RotationX;
 		float RotationY;
 		float RotationZ;
@@ -24,8 +25,10 @@ public:
 		_twoPos = false;
 	}
 
-	glm::mat4 GetTransform(float time, glm::mat4 matrix = glm::mat4(1.0f));
-	glm::mat4 Step(glm::mat4 matrix = glm::mat4(1.0f));
+	Math::Mat<4> GetTransform(
+		float time,
+		Math::Mat<4> matrix = Math::Mat<4>(1.0f));
+	Math::Mat<4> Step(Math::Mat<4> matrix = Math::Mat<4>(1.0f));
 
 	void SetStep(float value)
 	{

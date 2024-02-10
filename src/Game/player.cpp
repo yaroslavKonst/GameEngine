@@ -1,26 +1,9 @@
 #include "player.h"
 
 #include "../Engine/Assets/ScriptHandler.h"
+#include "../Engine/Math/transform.h"
 
 #include "../Engine/Logger/logger.h"
-
-static glm::dvec3 VecToGlm(const Math::Vec<3>& vec)
-{
-	return glm::dvec3(vec[0], vec[1], vec[2]);
-}
-
-static Math::Mat<4> GlmToMat(const glm::dmat4& mat)
-{
-	Math::Mat<4> res;
-
-	for (int row = 0; row < 4; ++row) {
-		for (int col = 0; col < 4; ++col) {
-			res[row][col] = mat[col][row];
-		}
-	}
-
-	return res;
-}
 
 Player::Player(
 	Common common,
@@ -251,10 +234,9 @@ void Player::TickEarly()
 			angle = angleLim;
 		}
 
-		Math::Mat<4> rotMat = GlmToMat(glm::rotate(
-			glm::dmat4(1.0),
+		Math::Mat<4> rotMat = Math::Rotate(
 			angle,
-			VecToGlm(-rotAxis.Normalize())));
+			-rotAxis.Normalize());
 
 		_matrix = rotMat * _matrix;
 
@@ -264,10 +246,10 @@ void Player::TickEarly()
 	}
 
 	if (_angleH != 0) {
-		Math::Mat<4> rotMat = GlmToMat(glm::rotate(
-			glm::dmat4(1.0),
-			glm::radians(_angleH),
-			VecToGlm(_dirUp.Normalize())));
+		Math::Mat<4> rotMat = Math::Rotate(
+			_angleH,
+			_dirUp.Normalize(),
+			Math::Degrees);
 
 		_matrix = rotMat * _matrix;
 
@@ -291,9 +273,8 @@ void Player::Tick()
 			SoftPhysicsParams.Vertices[0].Speed.Length()));
 	_cornerTextBox->Activate();
 
-	Math::Mat<4> translateMat = GlmToMat(glm::translate(
-		glm::dmat4(1.0),
-		VecToGlm(_pos + _dirF + _dirUp + _dirR * 0.5)));
+	Math::Mat<4> translateMat = Math::Translate(
+		_pos + _dirF + _dirUp + _dirR * 0.5);
 
 	Math::Mat<4> swordMat(1.0);
 
@@ -342,10 +323,10 @@ void Player::Tick()
 	}
 
 	if (!_flightMode) {
-		Math::Mat<4> cameraDirectionRotMat = GlmToMat(glm::rotate(
-			glm::dmat4(1.0),
-			glm::radians(_angleV),
-			VecToGlm(_dirR)));
+		Math::Mat<4> cameraDirectionRotMat = Math::Rotate(
+			_angleV,
+			_dirR,
+			Math::Degrees);
 
 		Math::Vec<3> cameraPosition = _pos + _dirUp * 1.85;
 		Math::Vec<3> cameraDirection =
@@ -434,8 +415,8 @@ void Sword::Update(float time)
 		_time = 0;
 	}
 
-	ModelParams.InnerMatrix = {GlmToMat(
-		_animation.GetTransform(_time, glm::mat4(1.0)))};
+	ModelParams.InnerMatrix = {
+		_animation.GetTransform(_time, Math::Mat<4>(1.0))};
 }
 
 void Sword::Use()

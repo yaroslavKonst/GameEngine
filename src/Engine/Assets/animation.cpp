@@ -1,8 +1,11 @@
 #include "animation.h"
 
+#include <algorithm>
+
+#include "../Math/transform.h"
 #include "../Logger/logger.h"
 
-glm::mat4 Animation::GetTransform(float time, glm::mat4 matrix)
+Math::Mat<4> Animation::GetTransform(float time, Math::Mat<4> matrix)
 {
 	int index = 0;
 
@@ -16,8 +19,8 @@ glm::mat4 Animation::GetTransform(float time, glm::mat4 matrix)
 	auto& elem = _sequence[index];
 	auto& elemNext = _sequence[index + 1];
 
-	glm::vec3 pos =
-		elem.Position * (1.0f - coeff) + elemNext.Position * coeff;
+	Math::Vec<3> pos =
+		elem.Position * (1.0 - coeff) + elemNext.Position * coeff;
 
 	float rotX =
 		elem.RotationX * (1.0f - coeff) + elemNext.RotationX * coeff;
@@ -28,15 +31,15 @@ glm::mat4 Animation::GetTransform(float time, glm::mat4 matrix)
 	float rotZ =
 		elem.RotationZ * (1.0f - coeff) + elemNext.RotationZ * coeff;
 
-	matrix = glm::translate(matrix, pos);
-	matrix = glm::rotate(matrix, glm::radians(rotZ), glm::vec3(0, 0, 1));
-	matrix = glm::rotate(matrix, glm::radians(rotX), glm::vec3(1, 0, 0));
-	matrix = glm::rotate(matrix, glm::radians(rotY), glm::vec3(0, 1, 0));
+	matrix = Math::Translate(pos) * matrix;
+	matrix *= Math::Rotate(rotZ, {0, 0, 1}, Math::Degrees);
+	matrix *= Math::Rotate(rotX, {1, 0, 0}, Math::Degrees);
+	matrix *= Math::Rotate(rotY, {0, 1, 0}, Math::Degrees);
 
 	return matrix;
 }
 
-glm::mat4 Animation::Step(glm::mat4 matrix)
+Math::Mat<4> Animation::Step(Math::Mat<4> matrix)
 {
 	auto res = GetTransform(_current, matrix);
 

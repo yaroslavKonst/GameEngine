@@ -4,7 +4,7 @@
 
 // 128 MB for page.
 // 1 MB for domain page.
-#define PAGE_SIZE 1048576 * 64 * 4
+#define PAGE_SIZE 1048576 * 64 * 4 * 2
 #define DOMAIN_PAGE_SIZE 1048576
 
 MemorySystem::MemorySystem(VkDevice device)

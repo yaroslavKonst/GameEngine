@@ -77,7 +77,6 @@ private:
 
 	double _angleH;
 	double _angleV;
-	//glm::vec3 _speed;
 
 	int _go;
 	int _strafe;
@@ -89,7 +88,7 @@ private:
 	bool _buildMode;
 	bool _flightMode;
 	float _buildCamCoeff;
-	glm::vec3 _buildCamPos;
+	Math::Vec<3> _buildCamPos;
 
 	bool _actionERequested;
 	bool _actionRRequested;
