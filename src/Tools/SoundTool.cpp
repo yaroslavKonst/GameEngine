@@ -19,7 +19,7 @@ float Wave(float x)
 	return x;
 }
 
-std::vector<float> Flute(float frequency, size_t duration)
+std::vector<float> SinWave(float frequency, size_t duration)
 {
 	std::vector<float> buffer(duration * 2, 0);
 
@@ -36,10 +36,39 @@ std::vector<float> Flute(float frequency, size_t duration)
 
 		float value = sin(
 			(float)index / Audio::SampleRate * 2 * M_PI *
-			frequency) * multiplier;
+			frequency) * multiplier / frequency;
 
 		buffer[index * 2] = value;
 		buffer[index * 2 + 1] = value;
+	}
+
+	return buffer;
+}
+
+std::vector<float> SyntheticSound(float frequency, size_t duration)
+{
+	std::vector<float> buffer(duration * 2, 0);
+
+	float step = 0.001;
+	size_t edgeLen = 1.0 / step;
+	float multiplier = 0;
+
+	for (float tone = 0.9; tone <= 1.1; tone += 0.01) {
+		for (size_t index = 0; index < duration; ++index) {
+			if (duration - index < edgeLen) {
+				multiplier -= step;
+			} else if (multiplier < 1.0) {
+				multiplier += step;
+			}
+
+			float value = sin(
+				(float)index / Audio::SampleRate * 2 * M_PI *
+				frequency * tone) *
+				multiplier / powf(frequency, 0.5);
+
+			buffer[index * 2] += value;
+			buffer[index * 2 + 1] += value;
+		}
 	}
 
 	return buffer;
@@ -304,7 +333,7 @@ std::vector<float> GenerateFrequencies(int octCount, int noteCount)
 {
 	std::vector<float> frequencies(octCount * noteCount);
 
-	float o1LaFreq = 440;
+	float o1LaFreq = 440 / 10;
 
 	float noteStep = powf(2.0, 1.0 / (double)noteCount);
 	float octStep = 2.0;
@@ -413,7 +442,9 @@ std::vector<float> ProcessTimeNotation(std::string filename)
 		0.0);
 
 	for (auto& slot : slots) {
-		std::vector<float> sound = Flute(slot.Frequency, slot.Length);
+		std::vector<float> sound = SyntheticSound(
+			slot.Frequency,
+			slot.Length);
 
 		for (size_t i = 0; i < slot.Length * 2; ++i) {
 			buffer[i + slot.Start * 2] += sound[i];

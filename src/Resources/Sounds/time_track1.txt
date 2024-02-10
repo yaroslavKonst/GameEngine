@@ -1,0 +1,288 @@
+|      |      |      |      |      |      |
+nps 4
+          f
+ 
+          f
+ 
+          f
+ 
+          f
+ 
+          f       f
+                  f
+          f       f
+                  f
+          f
+ 
+          f
+ 
+          f
+ 
+          f
+ 
+          f       f
+                  f
+          f       f
+                  f
+          f
+ 
+          f
+ 
+          f                f
+ 
+          f                   f
+ 
+          f             f
+ 
+          f                f
+ 
+          f
+ 
+          f
+ 
+          f
+ 
+          f
+ 
+          f                f
+                           f
+          f                   f
+                              f
+          f             f
+                        f
+          f                f
+                           f
+          f
+ 
+          f
+ 
+          f
+ 
+          f
+ 
+          f                f
+ 
+          f                   f
+ 
+          f             f
+ 
+          f                f
+ 
+          f
+ 
+          f
+ 
+          f                f
+                           f
+          f                   f
+                              f
+          f             f
+                        f
+          f                f
+                           f
+          f
+ 
+          f
+ 
+          f                f
+ 
+          f                   f
+ 
+          f             f
+ 
+          f                f
+                              f
+                                 f
+                              f
+                                 f
+                             f
+                           f
+                               f
+nps 8
+             f
+             f
+            f
+            f
+             f
+             f
+          f
+          f
+              f
+             f
+          f
+             f
+nps 4
+          f                f
+                              f
+                                 f
+                              f
+                                 f
+                             f
+                           f
+                               f
+nps 8
+             f
+              f
+             f
+            f
+             f
+           f
+          f
+         f
+           f
+             f
+            f
+           f
+             f
+             f
+         f
+         f
+nps 4
+                           f
+                              f
+                                 f
+                              f
+                                 f
+                             f
+                           f
+                               f
+         f
+                           f
+                             f
+                                f
+                                   f
+                             f
+                                f
+                           f
+                              f
+                           f
+nps 8
+          f
+           f
+          f
+           f
+          f
+            f
+             f
+              f
+             f
+               f
+              f
+             f
+            f
+             f
+          f
+           f
+          f
+             f
+             f
+        f
+        f
+           f
+           f
+        f
+        f
+nps 4
+           f               f
+              f               f
+                 f               f
+              f               f
+                 f               f
+             f               f
+           f               f
+               f               f
+         f
+           f               f
+             f               f
+                f               f
+                   f               f
+             f               f
+                f               f
+           f               f
+              f               f
+           f               f
+nps 8
+             f               f
+              f               f
+             f               f
+            f               f
+             f               f
+           f               f
+          f               f
+         f               f
+           f               f
+             f               f
+            f               f
+           f               f
+             f               f
+             f               f
+         f               f
+         f               f
+nps 32
+ 
+nps 8
+             f               f
+              f               f
+             f               f
+            f               f
+             f                 f
+           f                f
+          f                f
+         f                f
+           f                f
+             f                f
+            f                f
+           f                f
+             f                   f
+             f                   f
+         f                 f
+         f                 f
+nps 32
+ 
+nps 8
+        f               f
+         f               f
+           f               f
+          f               f
+             f               f
+            f               f
+           f               f
+            f               f
+           f               f
+         f               f
+           f               f
+          f               f
+           f               f
+             f               f
+          f               f
+         f               f
+nps 4
+                 f               f
+                 f               f
+                     f               f
+                     f               f
+                   f               f
+                   f               f
+                 f               f
+                 f               f
+                              f
+                              f
+                              f
+                                 f
+                                 f
+                                 f
+                                f
+                                f
+                                f
+                               f
+                               f
+                               f
+nps 4
+        f
+ 
+        f
+ 
+        f
+nps 2
+          f
+        f
