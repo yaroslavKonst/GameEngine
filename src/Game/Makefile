@@ -8,7 +8,7 @@ OBJECTS = \
 	$(PREFIX)/PhysTest.o \
 	$(PREFIX)/main.o
 
-$(BUILD_DIR)/game: $(OBJECTS)
+$(BUILD_DIR)/game: $(OBJECTS) $(BUILD_DIR)/engine.a
 	$(CXX) -o $@ $(OBJECTS) $(BUILD_DIR)/engine.a $(LIBS)
 
 $(PREFIX)/main.o: main.cpp | $(PREFIX)
