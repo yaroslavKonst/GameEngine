@@ -32,7 +32,7 @@ void Button::Activate()
 
 void Button::Deactivate()
 {
-	SetInputEnabled(false);
+	Disable();
 	_label.Deactivate();
 }
 

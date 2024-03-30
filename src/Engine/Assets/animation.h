@@ -55,6 +55,11 @@ public:
 		_timeValues = sequence;
 	}
 
+	float GetMaxTime()
+	{
+		return _timeValues.back();
+	}
+
 private:
 	std::vector<TimePoint> _sequence;
 	std::vector<float> _timeValues;
