@@ -74,6 +74,35 @@ std::vector<float> SyntheticSound(float frequency, size_t duration)
 	return buffer;
 }
 
+std::vector<float> SyntheticSound2(float frequency, size_t duration)
+{
+	std::vector<float> buffer(duration * 2, 0);
+
+	float step = 0.001;
+	size_t edgeLen = 1.0 / step;
+	float multiplier = 0;
+
+	for (float tone = 0.99; tone <= 1.01; tone += 0.01) {
+		for (size_t index = 0; index < duration; ++index) {
+			if (duration - index < edgeLen) {
+				multiplier -= step;
+			} else if (multiplier < 1.0) {
+				multiplier += step;
+			}
+
+			float value = sin(
+				(float)index / Audio::SampleRate * 2 * M_PI *
+				frequency * tone + tone * 0.1) *
+				multiplier / powf(frequency, 0.5);
+
+			buffer[index * 2] += value;
+			buffer[index * 2 + 1] += value;
+		}
+	}
+
+	return buffer;
+}
+
 std::vector<float> Piano(float frequency, size_t duration)
 {
 	std::vector<float> buffer(duration * 2, 0);
@@ -442,7 +471,7 @@ std::vector<float> ProcessTimeNotation(std::string filename)
 		0.0);
 
 	for (auto& slot : slots) {
-		std::vector<float> sound = SyntheticSound(
+		std::vector<float> sound = SyntheticSound2(
 			slot.Frequency,
 			slot.Length);
 

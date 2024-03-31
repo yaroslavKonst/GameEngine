@@ -9,8 +9,8 @@ export LIBS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXrandr -lfreetype -lportaud
 all:
 	cd Engine ; make
 	cd Tools ; make
-	cd Game ; make
-	cd Resources ; make
+	cd SampleCode ; make
+	cd SampleResources ; make
 
 clean:
 	rm -rf $(BUILD_DIR)

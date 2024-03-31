@@ -28,6 +28,7 @@ private:
 
 	Animation _animation;
 	float _time;
+	float _timeLimit;
 };
 
 class Player : public Actor, public SoftObject, public InputHandler

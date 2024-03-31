@@ -393,6 +393,7 @@ Sword::Sword(Common common, Math::Mat<4>* extMat)
 
 	_animation = ScriptHandler::LoadAnimation("Models/Player/Sword.txt");
 	_time = 0;
+	_timeLimit = _animation.GetMaxTime();
 }
 
 Sword::~Sword()
@@ -411,7 +412,7 @@ void Sword::Update(float time)
 
 	_time += time;
 
-	if (_time >= 6) {
+	if (_time > _timeLimit) {
 		_time = 0;
 	}
 
@@ -422,6 +423,7 @@ void Sword::Update(float time)
 void Sword::Use()
 {
 	_animation = ScriptHandler::LoadAnimation("../Sword.txt");
+	_timeLimit = _animation.GetMaxTime();
 
 	if (_time == 0) {
 		_time += 0.0001;
