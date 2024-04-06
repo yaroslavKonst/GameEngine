@@ -10,7 +10,6 @@
 Audio::Audio() : _inBuffers(RING_BUFFER_SIZE), _outBuffers(RING_BUFFER_SIZE)
 {
 	_activeBuffers = nullptr;
-	_activeBuffersEnd = nullptr;
 
 	PaError err = Pa_Initialize();
 
@@ -99,10 +98,14 @@ void Audio::Submit(Buffer* buffer)
 
 	_inBuffers.Insert(bufferData);
 
+	_mutex.lock();
+
 	while (!_outBuffers.IsEmpty()) {
 		BufferData* buffer = _outBuffers.Get();
 		delete buffer;
 	}
+
+	_mutex.unlock();
 }
 
 int Audio::AudioCallback(
@@ -121,13 +124,8 @@ int Audio::AudioCallback(
 	while (!audio->_inBuffers.IsEmpty()) {
 		BufferData* bd = audio->_inBuffers.Get();
 
-		if (audio->_activeBuffers) {
-			audio->_activeBuffersEnd->next = bd;
-			audio->_activeBuffersEnd = bd;
-		} else {
-			audio->_activeBuffers = bd;
-			audio->_activeBuffersEnd = bd;
-		}
+		bd->next = audio->_activeBuffers;
+		audio->_activeBuffers = bd;
 	}
 
 	BufferData** currentBuffer = &audio->_activeBuffers;

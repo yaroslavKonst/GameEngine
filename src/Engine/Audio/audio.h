@@ -54,10 +54,10 @@ private:
 	PaStream* _stream;
 
 	BufferData* _activeBuffers;
-	BufferData* _activeBuffersEnd;
 
 	RingBuffer<BufferData*> _inBuffers;
 	RingBuffer<BufferData*, false> _outBuffers;
+	std::mutex _mutex;
 
 	static int AudioCallback(
 		const void* inputBuffer,
