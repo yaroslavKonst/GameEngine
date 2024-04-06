@@ -173,6 +173,7 @@ static std::vector<uint8_t> Decode(const std::vector<uint8_t>& data)
 	dataIndex += 8;
 
 	std::vector<uint8_t> decodedData;
+	decodedData.reserve(dataSize / 8 + 1);
 
 	BitReader reader(data.data() + dataIndex, dataSize);
 
