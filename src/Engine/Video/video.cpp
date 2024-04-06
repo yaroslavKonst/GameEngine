@@ -177,44 +177,44 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 			!swapchainSupport.presentModes.empty();
 	}
 
-	bool discreteGpu = deviceProperties.deviceType ==
+	/*bool discreteGpu = deviceProperties.deviceType ==
 		VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 
 	if (!discreteGpu) {
-		Logger::Verbose() << "Not a discrete GPU.";
-	}
+		Logger::Error() << "Not a discrete GPU.";
+	}*/
 
 	if (!extensionsSupported) {
-		Logger::Verbose() << "Unsupported extensions.";
+		Logger::Error() << "Unsupported extensions.";
 	}
 
 	if (!swapchainAdequate) {
-		Logger::Verbose() << "Unsupported swapchain.";
+		Logger::Error() << "Unsupported swapchain.";
 	}
 
 	if (!deviceFeatures.geometryShader) {
-		Logger::Verbose() << "Geometry shaders are not supported.";
+		Logger::Error() << "Geometry shaders are not supported.";
 	}
 
 	if (!deviceFeatures.samplerAnisotropy) {
-		Logger::Verbose() << "Anisotropic filtering is not supported.";
+		Logger::Error() << "Anisotropic filtering is not supported.";
 	}
 
 	if (!deviceFeatures.shaderUniformBufferArrayDynamicIndexing) {
-		Logger::Verbose() <<
+		Logger::Error() <<
 			"Dynamic indexing of UBO is not supported.";
 	}
 
 	if (!_deviceSupport.FindQueueFamilies().graphicsFamily.has_value()) {
-		Logger::Verbose() << "Graphics queue is not available.";
+		Logger::Error() << "Graphics queue is not available.";
 	}
 
 	if (!_deviceSupport.FindQueueFamilies().presentFamily.has_value()) {
-		Logger::Verbose() << "Present queue is not available.";
+		Logger::Error() << "Present queue is not available.";
 	}
 
 	bool res =
-		discreteGpu &&
+		//discreteGpu &&
 		extensionsSupported &&
 		swapchainAdequate &&
 		deviceFeatures.geometryShader &&
