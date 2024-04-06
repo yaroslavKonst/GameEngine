@@ -5,12 +5,12 @@
 
 #include "../Logger/logger.h"
 
-#define RING_BUFFER_SIZE 1024 * 1024
+#define RING_BUFFER_SIZE 1024 * 16
 
-Audio::Audio() : _ringBuffer(RING_BUFFER_SIZE)
+Audio::Audio() : _inBuffers(RING_BUFFER_SIZE), _outBuffers(RING_BUFFER_SIZE)
 {
-	_bufferStart = 0;
-	_bufferEnd = 0;
+	_activeBuffers = nullptr;
+	_activeBuffersEnd = nullptr;
 
 	PaError err = Pa_Initialize();
 
@@ -73,26 +73,36 @@ Audio::~Audio()
 			Pa_GetErrorText(err);
 	}
 
+	while (!_inBuffers.IsEmpty()) {
+		delete _inBuffers.Get();
+	}
+
+	while (!_outBuffers.IsEmpty()) {
+		delete _outBuffers.Get();
+	}
+
+	while (_activeBuffers) {
+		BufferData* tmp = _activeBuffers;
+		_activeBuffers = _activeBuffers->next;
+		delete tmp;
+	}
+
 	Logger::Verbose() << "Audio subsystem stopped.";
 }
 
 void Audio::Submit(Buffer* buffer)
 {
-	_submitMutex.lock();
+	BufferData* bufferData = new BufferData();
 
-	_ringBuffer[_bufferEnd].buffer = buffer;
-	_ringBuffer[_bufferEnd].position = 0;
-	_ringBuffer[_bufferEnd].valid = true;
-
+	bufferData->buffer = buffer;
 	buffer->Finished = false;
 
-	if (_bufferEnd == RING_BUFFER_SIZE - 1) {
-		_bufferEnd = 0;
-	} else {
-		++_bufferEnd;
-	}
+	_inBuffers.Insert(bufferData);
 
-	_submitMutex.unlock();
+	while (!_outBuffers.IsEmpty()) {
+		BufferData* buffer = _outBuffers.Get();
+		delete buffer;
+	}
 }
 
 int Audio::AudioCallback(
@@ -108,66 +118,67 @@ int Audio::AudioCallback(
 
 	memset(out, 0, sizeof(float) * framesPerBuffer * 2);
 
-	size_t bufIdx = audio->_bufferStart;
+	while (!audio->_inBuffers.IsEmpty()) {
+		BufferData* bd = audio->_inBuffers.Get();
 
-	while (bufIdx != audio->_bufferEnd) {
-		BufferData& buffer = audio->_ringBuffer[bufIdx];
-
-		if (bufIdx == RING_BUFFER_SIZE - 1) {
-			bufIdx = 0;
+		if (audio->_activeBuffers) {
+			audio->_activeBuffersEnd->next = bd;
+			audio->_activeBuffersEnd = bd;
 		} else {
-			++bufIdx;
+			audio->_activeBuffers = bd;
+			audio->_activeBuffersEnd = bd;
 		}
+	}
 
-		if (!buffer.valid) {
+	BufferData** currentBuffer = &audio->_activeBuffers;
+
+	while (*currentBuffer) {
+		BufferData* buffer = *currentBuffer;
+
+		if (!buffer->buffer->Active) {
+			currentBuffer = &(*currentBuffer)->next;
 			continue;
 		}
 
-		if (!buffer.buffer->Active) {
+		if (buffer->buffer->Discard) {
+			buffer->buffer->Finished = true;
+
+			BufferData* deletedBuf = *currentBuffer;
+			*currentBuffer = (*currentBuffer)->next;
+			audio->_outBuffers.Insert(deletedBuf);
+
 			continue;
 		}
 
-		if (buffer.buffer->Discard) {
-			buffer.buffer->Finished = true;
-			buffer.valid = false;
-			continue;
-		}
-
-		size_t inIdx = buffer.position;
-		size_t inLen = buffer.buffer->Data.size();
+		size_t inIdx = buffer->position;
+		size_t inLen = buffer->buffer->Data.size();
 
 		if (inIdx >= inLen) {
+			buffer->buffer->Finished = true;
+
+			BufferData* deletedBuf = *currentBuffer;
+			*currentBuffer = (*currentBuffer)->next;
+			audio->_outBuffers.Insert(deletedBuf);
+
 			continue;
 		}
 
 		for (size_t outIdx = 0; outIdx < framesPerBuffer * 2; ++outIdx)
 		{
 			out[outIdx] +=
-				buffer.buffer->Data[inIdx] *
-				buffer.buffer->Multiplier;
+				buffer->buffer->Data[inIdx] *
+				buffer->buffer->Multiplier;
 
 			++inIdx;
 
 			if (inIdx >= inLen) {
-				buffer.valid = false;
-				buffer.buffer->Finished = true;
 				break;
 			}
 		}
 
-		buffer.position += framesPerBuffer * 2;
-	}
+		buffer->position += framesPerBuffer * 2;
 
-	while (!audio->_ringBuffer[audio->_bufferStart].valid) {
-		if (audio->_bufferStart == audio->_bufferEnd) {
-			return 0;
-		}
-
-		if (audio->_bufferStart == RING_BUFFER_SIZE - 1) {
-			audio->_bufferStart = 0;
-		} else {
-			++audio->_bufferStart;
-		}
+		currentBuffer = &(*currentBuffer)->next;
 	}
 
 	return 0;

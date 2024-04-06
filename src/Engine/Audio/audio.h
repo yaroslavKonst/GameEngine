@@ -6,6 +6,8 @@
 #include <atomic>
 #include <portaudio.h>
 
+#include "../Utils/RingBuffer.h"
+
 class Audio
 {
 public:
@@ -38,23 +40,24 @@ private:
 	{
 		Buffer* buffer;
 		size_t position;
-		bool valid;
+
+		BufferData* next;
 
 		BufferData()
 		{
 			buffer = nullptr;
 			position = 0;
-			valid = false;
+			next = nullptr;
 		}
 	};
 
 	PaStream* _stream;
 
-	std::mutex _submitMutex;
+	BufferData* _activeBuffers;
+	BufferData* _activeBuffersEnd;
 
-	std::vector<BufferData> _ringBuffer;
-	size_t _bufferStart;
-	size_t _bufferEnd;
+	RingBuffer<BufferData*> _inBuffers;
+	RingBuffer<BufferData*, false> _outBuffers;
 
 	static int AudioCallback(
 		const void* inputBuffer,

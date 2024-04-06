@@ -4,7 +4,7 @@
 #include <vector>
 #include <mutex>
 
-template<typename T>
+template<typename T, bool MT = true>
 class RingBuffer
 {
 public:
@@ -23,7 +23,9 @@ public:
 
 	void Insert(const T& item)
 	{
-		_insertMutex.lock();
+		if (MT) {
+			_insertMutex.lock();
+		}
 
 		_buffer[_end] = item;
 
@@ -33,7 +35,9 @@ public:
 			++_end;
 		}
 
-		_insertMutex.unlock();
+		if (MT) {
+			_insertMutex.unlock();
+		}
 	}
 
 	T Get()
