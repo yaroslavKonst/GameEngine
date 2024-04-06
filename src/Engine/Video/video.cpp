@@ -171,8 +171,44 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 			!swapchainSupport.presentModes.empty();
 	}
 
-	bool res = deviceProperties.deviceType ==
-		VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+	bool discreteGpu = deviceProperties.deviceType ==
+		VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+
+	if (!discreteGpu) {
+		Logger::Verbose() << "Not a discrete GPU.";
+	}
+
+	if (!extensionsSupported) {
+		Logger::Verbose() << "Unsupported extensions.";
+	}
+
+	if (!swapchainAdequate) {
+		Logger::Verbose() << "Unsupported swapchain.";
+	}
+
+	if (!deviceFeatures.geometryShader) {
+		Logger::Verbose() << "Geometry shaders are not supported.";
+	}
+
+	if (!deviceFeatures.samplerAnisotropy) {
+		Logger::Verbose() << "Anisotropic filtering is not supported.";
+	}
+
+	if (!deviceFeatures.shaderUniformBufferArrayDynamicIndexing) {
+		Logger::Verbose() <<
+			"Dynamic indexing of UBO is not supported.";
+	}
+
+	if (!_deviceSupport.FindQueueFamilies().graphicsFamily.has_value()) {
+		Logger::Verbose() << "Graphics queue is not available.";
+	}
+
+	if (!_deviceSupport.FindQueueFamilies().presentFamily.has_value()) {
+		Logger::Verbose() << "Present queue is not available.";
+	}
+
+	bool res =
+		discreteGpu &&
 		extensionsSupported &&
 		swapchainAdequate &&
 		deviceFeatures.geometryShader &&
