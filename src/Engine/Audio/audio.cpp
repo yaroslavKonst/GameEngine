@@ -133,11 +133,6 @@ int Audio::AudioCallback(
 	while (*currentBuffer) {
 		BufferData* buffer = *currentBuffer;
 
-		if (!buffer->buffer->Active) {
-			currentBuffer = &(*currentBuffer)->next;
-			continue;
-		}
-
 		if (buffer->buffer->Discard) {
 			buffer->buffer->Finished = true;
 
@@ -145,6 +140,11 @@ int Audio::AudioCallback(
 			*currentBuffer = (*currentBuffer)->next;
 			audio->_outBuffers.Insert(deletedBuf);
 
+			continue;
+		}
+
+		if (!buffer->buffer->Active) {
+			currentBuffer = &(*currentBuffer)->next;
 			continue;
 		}
 
