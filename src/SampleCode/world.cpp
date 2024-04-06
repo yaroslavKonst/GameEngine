@@ -40,6 +40,8 @@ World::World(Common* common, std::function<void()> endCallback)
 		_audioBitBuffer.Data[i * 2 + 1] = value;
 	}
 
+	_audioBitBuffer.Finished = true;
+
 	_common->universe->RegisterActor(this);
 
 	SetInputLayer(11);
@@ -53,6 +55,8 @@ World::~World()
 	_common->video->Unsubscribe(this);
 
 	_common->universe->RemoveActor(this);
+
+	_audioBitBuffer.Discard = true;
 
 	while (!_audioBitBuffer.Finished)
 	{
@@ -111,7 +115,7 @@ void World::Load()
 	_light->Enabled = true;
 	_common->video->RegisterLight(_light);
 
-	_map = LoadMap("../Level.txt");
+	_map = LoadMap("World/Levels/Level.txt");
 
 	_player = new Sprite();
 
@@ -177,8 +181,8 @@ std::map<World::Coord, World::Cell>* World::LoadMap(std::string name)
 					row.push_back(Cell::Type::Finish);
 					break;
 				default:
-					Logger::Warning() <<
-						"Unknown char in map";
+					Logger::Error() <<
+						"Unknown char in map.";
 					break;
 				}
 			}

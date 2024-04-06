@@ -85,6 +85,7 @@ Swapchain::Swapchain(
 	Logger::Verbose() << "Swapchain constructor called.";
 
 	_initialized = false;
+	_reloadFlag = false;
 }
 
 Swapchain::~Swapchain()
@@ -2075,8 +2076,7 @@ void Swapchain::MainLoop() {
 	uint32_t frameCount = 0;
 	auto refTime = std::chrono::high_resolution_clock::now();
 
-	while (!glfwWindowShouldClose(_window) && _work) {
-		glfwPollEvents();
+	while (_work) {
 		DrawFrame();
 
 		++frameCount;
@@ -2122,13 +2122,19 @@ void Swapchain::DrawFrame()
 		VK_NULL_HANDLE,
 		&imageIndex);
 
-	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
+	bool reload =
+		res == VK_ERROR_OUT_OF_DATE_KHR ||
+		res == VK_SUBOPTIMAL_KHR ||
+		_reloadFlag;
+
+	if (reload) {
+		_reloadFlag = false;
 		vkDeviceWaitIdle(_device);
 		Destroy();
 		Create();
 		return;
 	} else if (res != VK_SUCCESS) {
-		throw std::runtime_error("Failed to acquire swap chain image.");
+		throw std::runtime_error("Failed to acquire swapchain image.");
 	}
 
 	vkResetFences(_device, 1, &_inFlightFences[_currentFrame]);

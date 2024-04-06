@@ -201,6 +201,27 @@ private:
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();
 	void DestroyDescriptorSetLayout();
+
+	class ResizeHandler : public InputHandler
+	{
+	public:
+		ResizeHandler(Swapchain* swapchain)
+		{
+			_swapchain = swapchain;
+			SetInputLayer(10000);
+			SetInputEnabled(true);
+		}
+
+		void WindowResize() override
+		{
+			_swapchain->RequestReload();
+		}
+
+	private:
+		Swapchain* _swapchain;
+	};
+
+	ResizeHandler* _resizeHandler;
 };
 
 #endif

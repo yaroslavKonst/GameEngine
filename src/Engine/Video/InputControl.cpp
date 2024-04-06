@@ -10,11 +10,13 @@ InputControl::InputControl(GLFWwindow* window)
 	_rawX = 0;
 	_rawY = 0;
 	_rawMouseInput = false;
-	_stagedMouseInput = 0;
-	_submittedMouseInput = 0;
+	_requestedRawMouseInput = false;
+	_continuousRawInput = false;
 
 	glfwSetWindowUserPointer(_window, this);
 
+	glfwSetWindowCloseCallback(_window, WindowCloseCallback);
+	glfwSetFramebufferSizeCallback(_window, FramebufferResizeCallback);
 	glfwSetKeyCallback(_window, KeyCallback);
 	glfwSetCursorPosCallback(_window, CursorPositionCallback);
 	glfwSetMouseButtonCallback(_window, MouseButtonCallback);
@@ -25,6 +27,8 @@ InputControl::~InputControl()
 {
 	glfwSetWindowUserPointer(_window, nullptr);
 
+	glfwSetWindowCloseCallback(_window, nullptr);
+	glfwSetFramebufferSizeCallback(_window, nullptr);
 	glfwSetKeyCallback(_window, nullptr);
 	glfwSetCursorPosCallback(_window, nullptr);
 	glfwSetMouseButtonCallback(_window, nullptr);
@@ -47,11 +51,15 @@ void InputControl::Unsubscribe(InputHandler* handler)
 
 void InputControl::ToggleRawMouseInput()
 {
-	++_stagedMouseInput;
+	_requestedRawMouseInput = !_requestedRawMouseInput;
 }
 
 void InputControl::ToggleRawMouseInputInternal()
 {
+	if (_rawMouseInput == _requestedRawMouseInput) {
+		return;
+	}
+
 	if (!_rawMouseInput) {
 		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		_rawMouseInput = true;
@@ -63,109 +71,56 @@ void InputControl::ToggleRawMouseInputInternal()
 
 void InputControl::PollEvents()
 {
-	size_t idx = _submittedEvents.KeyEvents.size();
-	_submittedEvents.KeyEvents.resize(idx + _polledEvents.KeyEvents.size());
+	ToggleRawMouseInputInternal();
+	glfwPollEvents();
+}
 
-	for (auto& event : _polledEvents.KeyEvents) {
-		_submittedEvents.KeyEvents[idx] = event;
-		++idx;
+void InputControl::FramebufferResizeCallback(
+	GLFWwindow* window,
+	int width,
+	int height)
+{
+	InputControl* control = reinterpret_cast<InputControl*>(
+		glfwGetWindowUserPointer(window));
+
+	std::set<InputHandler*> activeHandlers;
+
+	for (auto handler : control->_handlers) {
+		if (handler->IsInputEnabled()) {
+			activeHandlers.insert(handler);
+		}
 	}
 
-	idx = _submittedEvents.CursorPositionEvents.size();
-	_submittedEvents.CursorPositionEvents.resize(
-		idx + _polledEvents.CursorPositionEvents.size());
-
-	for (auto& event : _polledEvents.CursorPositionEvents) {
-		_submittedEvents.CursorPositionEvents[idx] = event;
-		++idx;
-	}
-
-	idx = _submittedEvents.RawCursorPositionEvents.size();
-	_submittedEvents.RawCursorPositionEvents.resize(
-		idx + _polledEvents.RawCursorPositionEvents.size());
-
-	for (auto& event : _polledEvents.RawCursorPositionEvents) {
-		_submittedEvents.RawCursorPositionEvents[idx] = event;
-		++idx;
-	}
-
-	idx = _submittedEvents.MouseButtonEvents.size();
-	_submittedEvents.MouseButtonEvents.resize(
-		idx + _polledEvents.MouseButtonEvents.size());
-
-	for (auto& event : _polledEvents.MouseButtonEvents) {
-		_submittedEvents.MouseButtonEvents[idx] = event;
-		++idx;
-	}
-
-	idx = _submittedEvents.ScrollEvents.size();
-	_submittedEvents.ScrollEvents.resize(
-		idx + _polledEvents.ScrollEvents.size());
-
-	for (auto& event : _polledEvents.ScrollEvents) {
-		_submittedEvents.ScrollEvents[idx] = event;
-		++idx;
-	}
-
-	_polledEvents.KeyEvents.clear();
-	_polledEvents.CursorPositionEvents.clear();
-	_polledEvents.RawCursorPositionEvents.clear();
-	_polledEvents.MouseButtonEvents.clear();
-	_polledEvents.ScrollEvents.clear();
-
-	while (_submittedMouseInput) {
-		ToggleRawMouseInputInternal();
-		--_submittedMouseInput;
+	for (auto handler : activeHandlers) {
+		handler->WindowResize();
 	}
 }
 
-void InputControl::SubmitEvents()
+void InputControl::WindowCloseCallback(GLFWwindow* window)
 {
-	_pendingEvents = _submittedEvents;
+	InputControl* control = reinterpret_cast<InputControl*>(
+		glfwGetWindowUserPointer(window));
 
-	_submittedEvents.KeyEvents.clear();
-	_submittedEvents.CursorPositionEvents.clear();
-	_submittedEvents.RawCursorPositionEvents.clear();
-	_submittedEvents.MouseButtonEvents.clear();
-	_submittedEvents.ScrollEvents.clear();
+	glfwSetWindowShouldClose(window, GLFW_FALSE);
 
-	while (_stagedMouseInput) {
-		++_submittedMouseInput;
-		--_stagedMouseInput;
-	}
-}
+	std::map<float, InputHandler*> orderedHandlers;
 
-void InputControl::InvokeEvents()
-{
-	for (auto& event : _pendingEvents.KeyEvents) {
-		KeyProcess(event);
+	for (auto handler : control->_handlers) {
+		if (!handler->IsInputEnabled()) {
+			continue;
+		}
+
+		orderedHandlers[handler->GetInputLayer()] = handler;
 	}
 
-	_pendingEvents.KeyEvents.clear();
+	for (auto handler : orderedHandlers) {
+		bool processed =
+			handler.second->WindowClose();
 
-	for (auto& event : _pendingEvents.CursorPositionEvents) {
-		CursorPositionProcess(event);
+		if (processed) {
+			break;
+		}
 	}
-
-	_pendingEvents.CursorPositionEvents.clear();
-
-	for (auto& event : _pendingEvents.RawCursorPositionEvents) {
-		RawCursorPositionProcess(event);
-	}
-
-	_pendingEvents.RawCursorPositionEvents.clear();
-
-	for (auto& event : _pendingEvents.MouseButtonEvents) {
-		MouseButtonProcess(event);
-	}
-
-	_pendingEvents.MouseButtonEvents.clear();
-
-	for (auto& event : _pendingEvents.ScrollEvents) {
-		ScrollProcess(event);
-	}
-
-	_pendingEvents.ScrollEvents.clear();
 }
 
 void InputControl::KeyCallback(
@@ -178,13 +133,21 @@ void InputControl::KeyCallback(
 	InputControl* control = reinterpret_cast<InputControl*>(
 		glfwGetWindowUserPointer(window));
 
-	KeyData event;
-	event.Key = key;
-	event.Scancode = scancode;
-	event.Action = action;
-	event.Mods = mods;
+	std::set<InputHandler*> activeHandlers;
 
-	control->_polledEvents.KeyEvents.push_back(event);
+	for (auto handler : control->_handlers) {
+		if (handler->IsInputEnabled()) {
+			activeHandlers.insert(handler);
+		}
+	}
+
+	for (auto handler : activeHandlers) {
+		handler->Key(
+			key,
+			scancode,
+			action,
+			mods);
+	}
 }
 
 void InputControl::CursorPositionCallback(
@@ -200,6 +163,8 @@ void InputControl::CursorPositionCallback(
 		return;
 	}
 
+	control->_continuousRawInput = false;
+
 	int width;
 	int height;
 	glfwGetWindowSize(window, &width, &height);
@@ -213,13 +178,37 @@ void InputControl::CursorPositionCallback(
 	control->_x = x;
 	control->_y = y;
 
-	CursorPositionData event;
-	event.XPos = xpos;
-	event.YPos = ypos;
-	event.x = x;
-	event.y = y;
+	std::map<float, InputHandler*> orderedHandlers;
 
-	control->_polledEvents.CursorPositionEvents.push_back(event);
+	for (auto handler : control->_handlers) {
+		if (!handler->IsInputEnabled()) {
+			continue;
+		}
+
+		orderedHandlers[handler->GetInputLayer()] = handler;
+	}
+
+	bool processed = false;
+
+	for (auto handler : orderedHandlers) {
+		if (!handler.second->InInputArea(x, y)) {
+			handler.second->MouseMove(0, 0, false);
+			continue;
+		}
+
+		if (!processed) {
+			float locX = x - handler.second->InputArea.x0;
+			float locY = y - handler.second->InputArea.y0;
+
+			bool proc = handler.second->MouseMove(locX, locY, true);
+
+			if (proc) {
+				processed = true;
+			}
+		} else {
+			handler.second->MouseMove(0, 0, false);
+		}
+	}
 }
 
 void InputControl::RawCursorPositionCallback(
@@ -230,14 +219,34 @@ void InputControl::RawCursorPositionCallback(
 	float xoffset = xpos - control->_rawX;
 	float yoffset = ypos - control->_rawY;
 
+	if (!control->_continuousRawInput) {
+		control->_continuousRawInput = true;
+		xoffset = 0;
+		yoffset = 0;
+	}
+
 	control->_rawX = xpos;
 	control->_rawY = ypos;
 
-	CursorPositionData event;
-	event.XPos = xoffset;
-	event.YPos = yoffset;
+	std::map<float, InputHandler*> orderedHandlers;
 
-	control->_polledEvents.RawCursorPositionEvents.push_back(event);
+	for (auto handler : control->_handlers) {
+		if (!handler->IsInputEnabled()) {
+			continue;
+		}
+
+		orderedHandlers[handler->GetInputLayer()] = handler;
+	}
+
+	for (auto handler : orderedHandlers) {
+		bool processed = handler.second->MouseMoveRaw(
+			xoffset,
+			yoffset);
+
+		if (processed) {
+			break;
+		}
+	}
 }
 
 void InputControl::MouseButtonCallback(
@@ -252,14 +261,31 @@ void InputControl::MouseButtonCallback(
 	float x = control->_x;
 	float y = control->_y;
 
-	MouseButtonData event;
-	event.Button = button;
-	event.Action = action;
-	event.Mods = mods;
-	event.x = x;
-	event.y = y;
+	std::map<float, InputHandler*> orderedHandlers;
 
-	control->_polledEvents.MouseButtonEvents.push_back(event);
+	for (auto handler : control->_handlers) {
+		if (!handler->IsInputEnabled()) {
+			continue;
+		}
+
+		if (!handler->InInputArea(x, y)) {
+			continue;
+		}
+
+		orderedHandlers[handler->GetInputLayer()] = handler;
+	}
+
+	for (auto handler : orderedHandlers) {
+		bool processed =
+			handler.second->MouseButton(
+				button,
+				action,
+				mods);
+
+		if (processed) {
+			break;
+		}
+	}
 }
 
 void InputControl::ScrollCallback(
@@ -273,131 +299,14 @@ void InputControl::ScrollCallback(
 	float x = control->_x;
 	float y = control->_y;
 
-	ScrollData event;
-	event.XOffset = xoffset;
-	event.YOffset = yoffset;
-	event.x = x;
-	event.y = y;
-
-	control->_polledEvents.ScrollEvents.push_back(event);
-}
-
-void InputControl::KeyProcess(KeyData& event)
-{
-	std::set<InputHandler*> activeHandlers;
-
-	for (auto handler : _handlers) {
-		if (handler->IsInputEnabled()) {
-			activeHandlers.insert(handler);
-		}
-	}
-
-	for (auto handler : activeHandlers) {
-		handler->Key(
-			event.Key,
-			event.Scancode,
-			event.Action,
-			event.Mods);
-	}
-}
-
-void InputControl::CursorPositionProcess(CursorPositionData& event)
-{
 	std::map<float, InputHandler*> orderedHandlers;
 
-	for (auto handler : _handlers) {
+	for (auto handler : control->_handlers) {
 		if (!handler->IsInputEnabled()) {
 			continue;
 		}
 
-		orderedHandlers[handler->GetInputLayer()] = handler;
-	}
-
-	bool processed = false;
-
-	for (auto handler : orderedHandlers) {
-		if (!handler.second->InInputArea(event.x, event.y)) {
-			handler.second->MouseMove(0, 0, false);
-			continue;
-		}
-
-		if (!processed) {
-			float locX = event.x - handler.second->InputArea.x0;
-			float locY = event.y - handler.second->InputArea.y0;
-
-			bool proc = handler.second->MouseMove(locX, locY, true);
-
-			if (proc) {
-				processed = true;
-			}
-		} else {
-			handler.second->MouseMove(0, 0, false);
-		}
-	}
-}
-
-void InputControl::RawCursorPositionProcess(CursorPositionData& event)
-{
-	std::map<float, InputHandler*> orderedHandlers;
-
-	for (auto handler : _handlers) {
-		if (!handler->IsInputEnabled()) {
-			continue;
-		}
-
-		orderedHandlers[handler->GetInputLayer()] = handler;
-	}
-
-	for (auto handler : orderedHandlers) {
-		bool processed = handler.second->MouseMoveRaw(
-			event.XPos,
-			event.YPos);
-
-		if (processed) {
-			break;
-		}
-	}
-}
-
-void InputControl::MouseButtonProcess(MouseButtonData& event)
-{
-	std::map<float, InputHandler*> orderedHandlers;
-
-	for (auto handler : _handlers) {
-		if (!handler->IsInputEnabled()) {
-			continue;
-		}
-
-		if (!handler->InInputArea(event.x, event.y)) {
-			continue;
-		}
-
-		orderedHandlers[handler->GetInputLayer()] = handler;
-	}
-
-	for (auto handler : orderedHandlers) {
-		bool processed =
-			handler.second->MouseButton(
-				event.Button,
-				event.Action,
-				event.Mods);
-
-		if (processed) {
-			break;
-		}
-	}
-}
-
-void InputControl::ScrollProcess(ScrollData& event)
-{
-	std::map<float, InputHandler*> orderedHandlers;
-
-	for (auto handler : _handlers) {
-		if (!handler->IsInputEnabled()) {
-			continue;
-		}
-
-		if (!handler->InInputArea(event.x, event.y)) {
+		if (!handler->InInputArea(x, y)) {
 			continue;
 		}
 
@@ -406,14 +315,13 @@ void InputControl::ScrollProcess(ScrollData& event)
 
 	for (auto handler : orderedHandlers) {
 		bool processed = handler.second->Scroll(
-			event.XOffset,
-			event.YOffset);
+			xoffset,
+			yoffset);
 
 		if (processed) {
 			break;
 		}
 	}
-
 }
 
 // Handler methods.

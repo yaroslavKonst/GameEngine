@@ -18,6 +18,7 @@ public:
 
 	void Key(int key, int scancode, int action, int mods) override;
 	void ProcessEscape();
+	bool WindowClose() override;
 
 private:
 	Common* _common;

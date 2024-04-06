@@ -49,11 +49,17 @@ Video::Video(
 		&_deviceSupport);
 
 	CreateSwapchain();
+
+	_resizeHandler = new ResizeHandler(_swapchain);
+	_dataBridge.inputControl->Subscribe(_resizeHandler);
 }
 
 Video::~Video()
 {
 	delete _loaderThreadPool;
+
+	_dataBridge.inputControl->Unsubscribe(_resizeHandler);
+	delete _resizeHandler;
 
 	DestroySwapchain();
 

@@ -89,6 +89,15 @@ public:
 		return false;
 	}
 
+	virtual bool WindowClose()
+	{
+		return false;
+	}
+
+	virtual void WindowResize()
+	{
+	}
+
 private:
 	bool _inputEnabled;
 	float _layer;
@@ -104,67 +113,10 @@ public:
 	void Unsubscribe(InputHandler* handler);
 
 	void PollEvents();
-	void SubmitEvents();
-	void InvokeEvents();
 
 	void ToggleRawMouseInput();
 
 private:
-	struct KeyData
-	{
-		int Key;
-		int Scancode;
-		int Action;
-		int Mods;
-	};
-
-	struct CursorPositionData
-	{
-		double XPos;
-		double YPos;
-		float x;
-		float y;
-	};
-
-	struct MouseButtonData
-	{
-		int Button;
-		int Action;
-		int Mods;
-		float x;
-		float y;
-	};
-
-	struct ScrollData
-	{
-		double XOffset;
-		double YOffset;
-		float x;
-		float y;
-	};
-
-	struct PolledEventData
-	{
-		std::list<KeyData> KeyEvents;
-		std::list<CursorPositionData> CursorPositionEvents;
-		std::list<CursorPositionData> RawCursorPositionEvents;
-		std::list<MouseButtonData> MouseButtonEvents;
-		std::list<ScrollData> ScrollEvents;
-	};
-
-	struct EventData
-	{
-		std::vector<KeyData> KeyEvents;
-		std::vector<CursorPositionData> CursorPositionEvents;
-		std::vector<CursorPositionData> RawCursorPositionEvents;
-		std::vector<MouseButtonData> MouseButtonEvents;
-		std::vector<ScrollData> ScrollEvents;
-	};
-
-	PolledEventData _polledEvents;
-	EventData _submittedEvents;
-	EventData _pendingEvents;
-
 	GLFWwindow* _window;
 
 	std::mutex _mutex;
@@ -172,17 +124,24 @@ private:
 	float _x;
 	float _y;
 
+	bool _continuousRawInput;
 	float _rawX;
 	float _rawY;
 
+	bool _requestedRawMouseInput;
 	bool _rawMouseInput;
-
-	uint32_t _stagedMouseInput;
-	uint32_t _submittedMouseInput;
 
 	std::set<InputHandler*> _handlers;
 
 	void ToggleRawMouseInputInternal();
+
+	static void WindowCloseCallback(
+		GLFWwindow* window);
+
+	static void FramebufferResizeCallback(
+		GLFWwindow* window,
+		int width,
+		int height);
 
 	static void KeyCallback(
 		GLFWwindow* window,
@@ -211,12 +170,6 @@ private:
 		GLFWwindow* window,
 		double xoffset,
 		double yoffset);
-
-	void KeyProcess(KeyData& event);
-	void CursorPositionProcess(CursorPositionData& event);
-	void RawCursorPositionProcess(CursorPositionData& event);
-	void MouseButtonProcess(MouseButtonData& event);
-	void ScrollProcess(ScrollData& event);
 };
 
 #endif

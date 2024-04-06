@@ -175,12 +175,10 @@ struct DataBridge
 		SubmittedScene.RemovedModels = StagedScene.RemovedModels;
 		StagedScene.RemovedModels.clear();
 
-		inputControl->SubmitEvents();
-
 		SceneMutex.unlock();
 		ExtModMutex.unlock();
 
-		inputControl->InvokeEvents();
+		inputControl->PollEvents();
 	}
 
 	void LoadToDrawn()
@@ -188,7 +186,6 @@ struct DataBridge
 		SceneMutex.lock();
 		DrawnScene = SubmittedScene;
 		SubmittedScene.RemovedModels.clear();
-		inputControl->PollEvents();
 		SceneMutex.unlock();
 
 		while (!LoadModelMessages.IsEmpty()) {

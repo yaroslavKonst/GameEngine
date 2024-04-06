@@ -5,9 +5,9 @@
 #include "../Engine/Logger/logger.h"
 #include "menu.h"
 
-static void UniverseThread(TimeEngine* universe)
+static void VideoThread(Video* video)
 {
-	universe->MainLoop();
+	video->MainLoop();
 }
 
 Program::Program()
@@ -45,12 +45,12 @@ void Program::Run()
 {
 	Menu menu(&_common);
 
-	std::thread* universeThread =
-		new std::thread(UniverseThread, _common.universe);
+	std::thread* videoThread =
+		new std::thread(VideoThread, _common.video);
 
-	_common.video->MainLoop();
+	_common.universe->MainLoop();
 
-	_common.universe->Stop();
-	universeThread->join();
-	delete universeThread;
+	_common.video->Stop();
+	videoThread->join();
+	delete videoThread;
 }

@@ -41,6 +41,11 @@ public:
 	void Create();
 	void Destroy();
 
+	void RequestReload()
+	{
+		_reloadFlag = true;
+	}
+
 	void MainLoop();
 	void Stop();
 
@@ -69,6 +74,7 @@ private:
 	VkQueue _presentQueue;
 
 	bool _initialized;
+	bool _reloadFlag;
 
 	VkSurfaceFormatKHR ChooseSurfaceFormat(
 		const std::vector<VkSurfaceFormatKHR>& formats);

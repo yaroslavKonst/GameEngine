@@ -1,5 +1,7 @@
 #include "menu.h"
 
+#include "../Engine/Logger/logger.h"
+
 Menu::Menu(Common* common)
 {
 	_common = common;
@@ -164,7 +166,8 @@ void Menu::PlayButtonPressed()
 
 void Menu::ExitButtonPressed()
 {
-	_common->video->Stop();
+	HideMainMenu();
+	_common->universe->Stop();
 }
 
 void Menu::ContinueButtonPressed()
@@ -191,6 +194,17 @@ void Menu::Key(int key, int scancode, int action, int mods)
 	if (escPressed) {
 		ProcessEscape();
 	}
+}
+
+bool Menu::WindowClose()
+{
+	if (_inGame || _inPause) {
+		_world->Unload();
+	}
+
+	ExitButtonPressed();
+
+	return true;
 }
 
 void Menu::ProcessEscape()
