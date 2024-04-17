@@ -66,6 +66,7 @@ void InputControl::ToggleRawMouseInputInternal()
 	} else {
 		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		_rawMouseInput = false;
+		_continuousRawInput = false;
 	}
 }
 
@@ -268,8 +269,10 @@ void InputControl::MouseButtonCallback(
 			continue;
 		}
 
-		if (!handler->InInputArea(x, y)) {
-			continue;
+		if (!control->_rawMouseInput) {
+			if (!handler->InInputArea(x, y)) {
+				continue;
+			}
 		}
 
 		orderedHandlers[handler->GetInputLayer()] = handler;
@@ -306,8 +309,10 @@ void InputControl::ScrollCallback(
 			continue;
 		}
 
-		if (!handler->InInputArea(x, y)) {
-			continue;
+		if (!control->_rawMouseInput) {
+			if (!handler->InInputArea(x, y)) {
+				continue;
+			}
 		}
 
 		orderedHandlers[handler->GetInputLayer()] = handler;

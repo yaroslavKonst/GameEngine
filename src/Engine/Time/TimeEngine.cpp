@@ -54,27 +54,32 @@ void TimeEngine::MainLoop()
 	{
 		auto start = std::chrono::high_resolution_clock::now();
 
+		double time = (double)_tickDelayMS / 1000.0;
+
 		_actorMutex.lock();
 		std::set<Actor*> actors = _actors;
 		_actorMutex.unlock();
 
 		for (Actor* actor : actors) {
 			_threadPool->Enqueue(
-				[actor]() -> void {actor->TickEarly();});
+				[actor, time]() -> void
+				{
+					actor->TickEarly(time);
+				});
 		}
 
 		_threadPool->WaitAll();
 
 		_engineMutex.lock();
 		for (PhysicalEngineBase* engine : _physicalEngines) {
-			engine->Run(_threadPool, (double)_tickDelayMS / 1000.0);
+			engine->Run(_threadPool, time);
 		}
 
 		_engineMutex.unlock();
 
 		for (Actor* actor : actors) {
 			_threadPool->Enqueue(
-				[actor]() -> void {actor->Tick();});
+				[actor, time]() -> void {actor->Tick(time);});
 		}
 
 		_threadPool->WaitAll();

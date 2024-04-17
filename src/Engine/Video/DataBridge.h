@@ -105,6 +105,25 @@ struct DataBridge
 		ExtModMutex.lock();
 		SceneMutex.lock();
 
+		SubmittedScene.FOV = StagedScene.FOV;
+		SubmittedScene.CameraPosition = {
+			StagedScene.CameraPosition[0],
+			StagedScene.CameraPosition[1],
+			StagedScene.CameraPosition[2]
+		};
+
+		SubmittedScene.CameraDirection = {
+			StagedScene.CameraDirection[0],
+			StagedScene.CameraDirection[1],
+			StagedScene.CameraDirection[2]
+		};
+
+		SubmittedScene.CameraUp = {
+			StagedScene.CameraUp[0],
+			StagedScene.CameraUp[1],
+			StagedScene.CameraUp[2]
+		};
+
 		SubmittedScene.Models.resize(StagedScene.Models.size());
 		SubmittedScene.Rectangles.resize(StagedScene.Rectangles.size());
 		SubmittedScene.Lights.resize(StagedScene.Lights.size());
@@ -146,29 +165,16 @@ struct DataBridge
 
 		idx = 0;
 
+		Math::Vec<3> spriteOffsetVec =
+			-StagedScene.CameraDirection.Normalize();
+
 		for (auto sprite : StagedScene.Sprites) {
 			SubmittedScene.Sprites[idx] = *sprite;
+			SubmittedScene.Sprites[idx].SpriteParams.Position +=
+				spriteOffsetVec *
+				SubmittedScene.Sprites[idx].SpriteParams.Offset;
 			++idx;
 		}
-
-		SubmittedScene.FOV = StagedScene.FOV;
-		SubmittedScene.CameraPosition = {
-			StagedScene.CameraPosition[0],
-			StagedScene.CameraPosition[1],
-			StagedScene.CameraPosition[2]
-		};
-
-		SubmittedScene.CameraDirection = {
-			StagedScene.CameraDirection[0],
-			StagedScene.CameraDirection[1],
-			StagedScene.CameraDirection[2]
-		};
-
-		SubmittedScene.CameraUp = {
-			StagedScene.CameraUp[0],
-			StagedScene.CameraUp[1],
-			StagedScene.CameraUp[2]
-		};
 
 		SubmittedScene.skybox = StagedScene.skybox;
 

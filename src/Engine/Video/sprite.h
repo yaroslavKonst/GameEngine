@@ -12,6 +12,7 @@ public:
 		Math::Vec<3> Position;
 		Math::Vec<3> Up;
 		Math::Vec<2> Size;
+		double Offset;
 
 		glm::vec4 TexCoords;
 	};
@@ -21,6 +22,7 @@ public:
 	Sprite()
 	{
 		SpriteParams.TexCoords = {0, 0, 1, 1};
+		SpriteParams.Offset = 0;
 	}
 };
 

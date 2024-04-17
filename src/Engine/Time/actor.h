@@ -5,8 +5,8 @@ class Actor
 {
 public:
 	virtual ~Actor();
-	virtual void Tick() = 0;
-	virtual void TickEarly()
+	virtual void Tick(double time) = 0;
+	virtual void TickEarly(double time)
 	{ }
 };
 
