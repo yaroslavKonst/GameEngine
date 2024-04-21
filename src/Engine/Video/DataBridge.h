@@ -165,13 +165,18 @@ struct DataBridge
 
 		idx = 0;
 
-		Math::Vec<3> spriteOffsetVec =
-			-StagedScene.CameraDirection.Normalize();
-
 		for (auto sprite : StagedScene.Sprites) {
 			SubmittedScene.Sprites[idx] = *sprite;
+
+			Math::Vec<3> spriteOffset =
+				StagedScene.CameraPosition -
+				SubmittedScene.Sprites[idx].
+					SpriteParams.Position;
+
+			spriteOffset = spriteOffset.Normalize();
+
 			SubmittedScene.Sprites[idx].SpriteParams.Position +=
-				spriteOffsetVec *
+				spriteOffset *
 				SubmittedScene.Sprites[idx].SpriteParams.Offset;
 			++idx;
 		}
