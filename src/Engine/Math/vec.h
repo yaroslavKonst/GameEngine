@@ -1,8 +1,9 @@
 #ifndef _VEC_TEMPLATE_H
 #define _VEC_TEMPLATE_H
 
-#include "cstring"
-#include "cmath"
+#include <initializer_list>
+#include <cstring>
+#include <cmath>
 
 namespace Math
 {
