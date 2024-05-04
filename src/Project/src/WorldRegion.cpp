@@ -1,6 +1,7 @@
 #include "WorldRegion.h"
 
 #include "../../Engine/Math/transform.h"
+#include "surface.h"
 
 WorldRegion::WorldRegion(Engine* engine, int x, int y)
 {
@@ -66,7 +67,34 @@ void WorldRegion::BuildSurface()
 				0.0
 			};
 
-			Math::Vec<3> normal = {0.0, 0.0, 1.0};
+			double x = vertex[0] +
+				(_x * CellCount - (double)CellCount / 2.0) *
+				CellSize;
+			double y = vertex[1] +
+				(_y * CellCount - (double)CellCount / 2.0) *
+				CellSize;
+
+			vertex[2] = Surface::Height(x, y);
+
+			double delta = CellSize / 10.0;
+
+			double h = vertex[2];
+			double hdx = Surface::Height(x + delta, y);
+			double hdy = Surface::Height(x, y + delta);
+
+			Math::Vec<3> vecX = {
+				delta,
+				0,
+				hdx - h
+			};
+
+			Math::Vec<3> vecY = {
+				0,
+				delta,
+				hdy - h
+			};
+
+			Math::Vec<3> normal = vecX.Cross(vecY).Normalize();
 
 			Math::Vec<2> texCoord = {
 				(double)vx * CellSize,

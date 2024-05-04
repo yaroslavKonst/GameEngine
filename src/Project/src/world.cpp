@@ -44,11 +44,18 @@ World::World(Engine* engine, std::function<void()> endCallback)
 	_audioBitBuffer.Multiplier = 0.2;
 
 	_engine->universe->RegisterActor(this);
+
+	_threadWork = true;
+	_loaderThread = new std::thread([this]() -> void {LoaderThread();});
 }
 
 World::~World()
 {
 	_engine->universe->RemoveActor(this);
+
+	_threadWork = false;
+	_loaderThread->join();
+	delete _loaderThread;
 
 	_audioBitBuffer.Discard = true;
 
@@ -85,17 +92,23 @@ void World::Load()
 	_engine->video->SetSkyboxTexture(_skybox);
 	_engine->video->SetSkyboxEnabled(true);
 
-	for (int x = -1; x <= 1; ++x) {
-		for (int y = -1; y <= 1; ++y) {
-			_map.insert(new WorldRegion(_engine, x, y));
+	for (int x = -2; x <= 2; ++x) {
+		for (int y = -2; y <= 2; ++y) {
+			_map[{x, y}] = new WorldRegion(_engine, x, y);
 		}
 	}
 
-	for (WorldRegion* region : _map) {
-		region->Load();
+	for (auto& region : _map) {
+		region.second->Load();
 	}
 
-	_player = new Player(_engine, &_gameGlobal);
+	_player = new Player(
+		_engine,
+		&_gameGlobal,
+		[this](double x, double y) -> void {SetPlayerPosition(x, y);});
+
+	_playerX = 0;
+	_playerY = 0;
 
 	_loaded = true;
 	_gameGlobal.Paused = false;
@@ -116,8 +129,8 @@ void World::Unload()
 
 	delete _player;
 
-	for (WorldRegion* region : _map) {
-		delete region;
+	for (auto& region : _map) {
+		delete region.second;
 	}
 }
 
@@ -141,5 +154,53 @@ void World::Tick(double time)
 	if (_win) {
 		_win = false;
 		_endCallback();
+	}
+}
+
+void World::SetPlayerPosition(double x, double y)
+{
+	_newX = floor(x / WorldRegion::CellSize / WorldRegion::CellCount + 0.5);
+	_newY = floor(y / WorldRegion::CellSize / WorldRegion::CellCount + 0.5);
+}
+
+void World::LoaderThread()
+{
+	while (_threadWork) {
+		if (_playerX == _newX && _playerY == _newY) {
+			usleep(20000);
+			continue;
+		}
+
+		_playerX = _newX;
+		_playerY = _newY;
+
+		std::set<Coord> tilesToRemove;
+
+		for (auto& tile : _map) {
+			bool removeTile =
+				abs(tile.first.X - _playerX) > 2 ||
+				abs(tile.first.Y - _playerY) > 2;
+
+			if (removeTile) {
+				tilesToRemove.insert(tile.first);
+			}
+		}
+
+		for (Coord tile : tilesToRemove) {
+			delete _map[tile];
+			_map.erase(tile);
+		}
+
+		for (int x = _playerX - 2; x <= _playerX + 2; ++x) {
+			for (int y = _playerY - 2; y <= _playerY + 2; ++y) {
+				if (_map.find({x, y}) == _map.end()) {
+					_map[{x, y}] = new WorldRegion(
+						_engine,
+						x,
+						y);
+					_map[{x, y}]->Load();
+				}
+			}
+		}
 	}
 }

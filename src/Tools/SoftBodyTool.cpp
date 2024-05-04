@@ -273,6 +273,18 @@ public:
 			SetVertexGroup(_currentVertex, 8);
 		} else if (key == GLFW_KEY_9) {
 			SetVertexGroup(_currentVertex, 9);
+		} else if (key == GLFW_KEY_A) {
+			SetVertexGroup(_currentVertex, 10);
+		} else if (key == GLFW_KEY_B) {
+			SetVertexGroup(_currentVertex, 11);
+		} else if (key == GLFW_KEY_C) {
+			SetVertexGroup(_currentVertex, 12);
+		} else if (key == GLFW_KEY_D) {
+			SetVertexGroup(_currentVertex, 13);
+		} else if (key == GLFW_KEY_E) {
+			SetVertexGroup(_currentVertex, 14);
+		} else if (key == GLFW_KEY_F) {
+			SetVertexGroup(_currentVertex, 15);
 		} else if (key == GLFW_KEY_I) {
 			SetVertexGroup(_currentVertex, INTERPOLATE_GROUP);
 		}

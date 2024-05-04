@@ -4,24 +4,35 @@
 #include "../../Engine/Math/transform.h"
 #include "../../Engine/Logger/logger.h"
 #include "arm.h"
+#include "surface.h"
 
-Player::Player(Engine* engine, GameGlobal* gameGlobal)
+Player::Player(
+	Engine* engine,
+	GameGlobal* gameGlobal,
+	std::function<void(double, double)> positionCallback)
 {
 	_engine = engine;
 	_gameGlobal = gameGlobal;
+	_positionCallback = positionCallback;
 
 	_x = 0;
 	_y = 0;
+	_z = 0;
 	_angleH = 0;
-	_angleV = 0;
+	_tAngleH = 0;
+	_roll = 0;
+	_camAngleH = 0;
+	_camAngleV = -M_PI / 4.0;
 
 	_go = 0;
 	_strafe = 0;
+	_sprint = false;
+	_dash = 0;
+	_inDash = false;
+	_jump = false;
 
 	_legTime = 0;
-	_legStep = 0.1;
-
-	_debugAngle = 0;
+	_legStep = 0.2;
 
 	_cameraDist = 4.0;
 
@@ -84,64 +95,76 @@ void Player::Tick(double time)
 		return;
 	}
 
-	Math::Mat<4> modelMatrix =
-		Math::Translate({_x, _y, 1.37}) *
-		Math::Rotate(_angleH, {0, 0, 1});
+	double surfaceHeight = Surface::Height(_x, _y);
 
-	Math::Vec<2> speed({_go, _strafe});
+	if (_inDash || _dash) {
+		ProcessDash(surfaceHeight);
+	} else if (!_go && !_strafe) {
+		ProcessIdle(surfaceHeight);
+	} else if (_sprint) {
+		ProcessRun(surfaceHeight);
+	} else {
+		ProcessWalk(surfaceHeight);
+	}
 
-	ModelParams.Matrix = modelMatrix;
+	SetAngleH();
+	SetCameraParams();
 
-	speed = modelMatrix * Math::Vec<4>(Math::Vec<3>(speed, 0.0), 0.0);
+	ModelParams.Matrix =
+		Math::Translate({_x, _y, _z}) *
+		Math::Rotate(_angleH, {0, 0, 1}) *
+		Math::Rotate(_roll, {0, 1, 0});
 
-	Math::Vec<3> cameraDirection;
-	cameraDirection[0] = cos(_angleH) * cos(_angleV);
-	cameraDirection[1] = sin(_angleH) * cos(_angleV);
-	cameraDirection[2] = sin(_angleV);
+	_light[0]->Position = {_x - 5, _y, 10.0 + _z};
+	_light[1]->Position = {_x + 5, _y, 10.0 + _z};
+	_light[2]->Position = {_x, _y - 5, 10.0 + _z};
+	_light[3]->Position = {_x, _y + 5, 10.0 + _z};
 
-	Math::Vec<3> cameraPosition = {_x, _y, 1.6};
-	cameraPosition -= cameraDirection * _cameraDist;
+	_positionCallback(_x, _y);
 
-	_engine->video->SetCameraPosition(cameraPosition);
-	_engine->video->SetCameraDirection(cameraDirection);
+	double delta = 0.001;
 
-	_light[0]->Position = {_x - 5, _y, 10};
-	_light[1]->Position = {_x + 5, _y, 10};
-	_light[2]->Position = {_x, _y - 5, 10};
-	_light[3]->Position = {_x, _y + 5, 10};
+	Math::Vec<2> grad = {
+		Surface::Height(_x + delta, _y) - surfaceHeight,
+		Surface::Height(_x, _y + delta) - surfaceHeight
+	};
 
-	_x += speed[0] * time;
-	_y += speed[1] * time;
+	grad /= delta;
 
-	double angle = sin(_legTime) * M_PI / 4;
+	if (grad.Length() > 0.8) {
+		if (grad.Length() > 2.0) {
+			if (grad.Dot({_speed[0], _speed[1]}) > 0) {
+				Math::Vec<2> diff = grad.Normalize() *
+					grad.Normalize().Dot(
+						{_speed[0], _speed[1]});
+
+				_speed[0] -= diff[0];
+				_speed[1] -= diff[1];
+			}
+		}
+
+		_speed[0] -= grad[0];
+		_speed[1] -= grad[1];
+	}
+
+	_x += _speed[0] * time;
+	_y += _speed[1] * time;
 
 	ModelParams.InnerMatrix[1] =
 		Math::Translate({0, -0.58, 1.48}) *
-		Math::Rotate(angle / 3, {0, 1, 0}) *
+		Math::Rotate(_rArm, {0, -1, 0}) *
 		Math::Rotate(M_PI / 2.0, {1, 0, 0}) *
 		Math::Translate({0, 0.58, -1.48});
 
 	ModelParams.InnerMatrix[2] =
 		Math::Translate({0, 0.58, 1.48}) *
-		Math::Rotate(angle / 3, {0, -1, 0}) *
+		Math::Rotate(_lArm, {0, -1, 0}) *
 		Math::Rotate(M_PI / 2.0, {-1, 0, 0}) *
 		Math::Translate({0, -0.58, -1.48});
 
-	Math::Vec<3> leg1End = {
-		sin(_legTime) * 0.27,
-		-0.2,
-		std::max(-1.37 + cos(_legTime) * 0.4, -1.37)
-	};
-
-	Math::Vec<3> leg2End = {
-		sin(_legTime + M_PI) * 0.27,
-		0.2,
-		std::max(-1.37 + cos(_legTime + M_PI) * 0.4, -1.37)
-	};
-
 	GetArmMatrix(
 		{0, -0.2, 0},
-		leg1End,
+		_rLeg,
 		1.4,
 		0.65,
 		{1, 0, 0},
@@ -151,7 +174,7 @@ void Player::Tick(double time)
 
 	GetArmMatrix(
 		{0, 0.2, 0},
-		leg2End,
+		_lLeg,
 		1.4,
 		0.65,
 		{1, 0, 0},
@@ -159,10 +182,177 @@ void Player::Tick(double time)
 		ModelParams.InnerMatrix[4],
 		ModelParams.InnerMatrix[6]);
 
-	ModelParams.InnerMatrix[7] = Math::Translate(
-		leg1End - Math::Vec<3>({0, -0.2, -1.4}));
-	ModelParams.InnerMatrix[8] = Math::Translate(
-		leg2End - Math::Vec<3>({0, 0.2, -1.4}));
+	ModelParams.InnerMatrix[7] =
+		Math::Translate(_rLeg) *
+		Math::Rotate(-_roll, {0, 1, 0}) *
+		Math::Translate(-Math::Vec<3>({0, -0.2, -1.4}));
+	ModelParams.InnerMatrix[8] =
+		Math::Translate(_lLeg) *
+		Math::Rotate(-_roll, {0, 1, 0}) *
+		Math::Translate(-Math::Vec<3>({0, 0.2, -1.4}));
+}
+
+void Player::SetCameraParams()
+{
+	Math::Vec<3> cameraDirection;
+	cameraDirection[0] = cos(_camAngleH) * cos(_camAngleV);
+	cameraDirection[1] = sin(_camAngleH) * cos(_camAngleV);
+	cameraDirection[2] = sin(_camAngleV);
+
+	Math::Vec<3> cameraPosition = {_x, _y, _z + 1.0};
+	cameraPosition -= cameraDirection * _cameraDist;
+
+	_engine->video->SetCameraPosition(cameraPosition);
+	_engine->video->SetCameraDirection(cameraDirection);
+}
+
+void Player::SetAngleH()
+{
+	double step = 0.1;
+
+	double diff = _tAngleH - _angleH;
+
+	if (fabs(diff + M_PI * 2.0) < fabs(diff)) {
+		diff += M_PI * 2.0;
+	}
+
+	if (fabs(diff - M_PI * 2.0) < fabs(diff)) {
+		diff -= M_PI * 2.0;
+	}
+
+	double absDiff = fabs(diff);
+
+	if (absDiff < step) {
+		_angleH = _tAngleH;
+	} else {
+		_angleH += diff / absDiff * step;
+	}
+}
+
+void Player::ProcessIdle(double surfaceHeight)
+{
+	double armStep = 0.05;
+
+	if (_rArm > armStep) {
+		_rArm -= armStep;
+	} else if (_rArm < -armStep) {
+		_rArm += armStep;
+	} else {
+		_rArm = 0;
+	}
+
+	if (_lArm > armStep) {
+		_lArm -= armStep;
+	} else if (_lArm < -armStep) {
+		_lArm += armStep;
+	} else {
+		_lArm = 0;
+	}
+
+	Math::Vec<3> rLegT = {0, -0.2, -1.37};
+	Math::Vec<3> lLegT = {0, 0.2, -1.37};
+
+	double legStep = 0.05;
+
+	Math::Vec<3> diff = rLegT - _rLeg;
+
+	if (diff.Length() <= legStep) {
+		_rLeg = rLegT;
+	} else {
+		_rLeg += diff.Normalize() * legStep;
+	}
+
+	diff = lLegT - _lLeg;
+
+	if (diff.Length() <= legStep) {
+		_lLeg = lLegT;
+	} else {
+		_lLeg += diff.Normalize() * legStep;
+	}
+
+	_z = 1.37 + surfaceHeight;
+
+	_speed[0] = 0;
+	_speed[1] = 0;
+
+	if (_roll > 0) {
+		_roll -= 0.05;
+	} else {
+		_roll = 0;
+	}
+}
+
+void Player::ProcessWalk(double surfaceHeight)
+{
+	if (_roll > 0) {
+		_roll -= 0.05;
+	} else {
+		_roll = 0;
+	}
+
+	Math::Vec<2> speed({_go, _strafe});
+	speed *= 2.0;
+
+	double tmp = speed[0] * cos(_camAngleH) - speed[1] * sin(_camAngleH);
+	speed[1] = speed[0] * sin(_camAngleH) + speed[1] * cos(_camAngleH);
+	speed[0] = tmp;
+
+	_tAngleH = acos(speed.Normalize()[0]);
+
+	if (speed[1] < 0) {
+		_tAngleH = M_PI * 2.0 - _tAngleH;
+	}
+
+	Math::Vec<3> rLegT = {
+		sin(_legTime) * 0.27,
+		-0.2,
+		std::max(-1.37 + cos(_legTime) * 0.4, -1.37)
+	};
+
+	Math::Vec<3> lLegT = {
+		sin(_legTime + M_PI) * 0.27,
+		0.2,
+		std::max(-1.37 + cos(_legTime + M_PI) * 0.4, -1.37)
+	};
+
+	double rArm = sin(_legTime + M_PI) * M_PI / 8.0;
+	double lArm = sin(_legTime) * M_PI / 8.0;
+
+	double armStep = 0.05;
+
+	if (_rArm - rArm > armStep) {
+		_rArm -= armStep;
+	} else if (_rArm - rArm < -armStep) {
+		_rArm += armStep;
+	} else {
+		_rArm = rArm;
+	}
+
+	if (_lArm - lArm > armStep) {
+		_lArm -= armStep;
+	} else if (_lArm - lArm < -armStep) {
+		_lArm += armStep;
+	} else {
+		_lArm = lArm;
+	}
+
+	double legStep = 0.1;
+
+	Math::Vec<3> diff = rLegT - _rLeg;
+
+	if (diff.Length() <= legStep) {
+		_rLeg = rLegT;
+	} else {
+		_rLeg += diff.Normalize() * legStep;
+	}
+
+	diff = lLegT - _lLeg;
+
+	if (diff.Length() <= legStep) {
+		_lLeg = lLegT;
+	} else {
+		_lLeg += diff.Normalize() * legStep;
+	}
 
 	if (speed.Length() > 0) {
 		_legTime += _legStep;
@@ -180,11 +370,196 @@ void Player::Tick(double time)
 		_legTime = 0;
 	}
 
-	_debugAngle += 0.01;
+	_speed[0] = speed[0];
+	_speed[1] = speed[1];
+	_z = 1.37 + surfaceHeight;
+}
 
-	if (_debugAngle >= M_PI * 2.0) {
-		_debugAngle = 0;
+void Player::ProcessRun(double surfaceHeight)
+{
+	if (_roll < 0.5) {
+		_roll += 0.05;
+	} else {
+		_roll = 0.5;
 	}
+
+	Math::Vec<2> speed({_go, _strafe});
+	speed *= 8.0;
+
+	double tmp = speed[0] * cos(_camAngleH) - speed[1] * sin(_camAngleH);
+	speed[1] = speed[0] * sin(_camAngleH) + speed[1] * cos(_camAngleH);
+	speed[0] = tmp;
+
+	_tAngleH = acos(speed.Normalize()[0]);
+
+	if (speed[1] < 0) {
+		_tAngleH = M_PI * 2.0 - _tAngleH;
+	}
+
+	Math::Vec<3> rLegT = {
+		sin(_legTime) * 0.8 + 0.5,
+		-0.2,
+		-1.1 + cos(_legTime) * 0.4
+	};
+
+	Math::Vec<3> lLegT = {
+		sin(_legTime + M_PI) * 0.8 + 0.5,
+		0.2,
+		-1.1 + cos(_legTime + M_PI) * 0.4
+	};
+
+	rLegT[2] = std::max(rLegT[2], -1.1 + rLegT[0] * 0.5);
+	lLegT[2] = std::max(lLegT[2], -1.1 + lLegT[0] * 0.5);
+
+	double rArm = sin(_legTime + M_PI) * M_PI / 5.0;
+	double lArm = sin(_legTime) * M_PI / 5.0;
+
+	double armStep = 0.5;
+
+	if (_rArm - rArm > armStep) {
+		_rArm -= armStep;
+	} else if (_rArm - rArm < -armStep) {
+		_rArm += armStep;
+	} else {
+		_rArm = rArm;
+	}
+
+	if (_lArm - lArm > armStep) {
+		_lArm -= armStep;
+	} else if (_lArm - lArm < -armStep) {
+		_lArm += armStep;
+	} else {
+		_lArm = lArm;
+	}
+
+	double legStep = 0.5;
+
+	Math::Vec<3> diff = rLegT - _rLeg;
+
+	if (diff.Length() <= legStep) {
+		_rLeg = rLegT;
+	} else {
+		_rLeg += diff.Normalize() * legStep;
+	}
+
+	diff = lLegT - _lLeg;
+
+	if (diff.Length() <= legStep) {
+		_lLeg = lLegT;
+	} else {
+		_lLeg += diff.Normalize() * legStep;
+	}
+
+	if (speed.Length() > 0) {
+		_legTime += _legStep * 2.0;
+	} else {
+		if (_legTime > 0) {
+			if (_legTime > M_PI) {
+				_legTime += _legStep;
+			} else {
+				_legTime -= _legStep;
+			}
+		}
+	}
+
+	if (_legTime >= M_PI * 2.0 || _legTime < 0) {
+		_legTime = 0;
+	}
+
+	_speed[0] = speed[0];
+	_speed[1] = speed[1];
+	_z = 1.0 + surfaceHeight;
+}
+
+void Player::ProcessDash(double surfaceHeight)
+{
+	Math::Vec<2> speed({_go, _strafe});
+
+	if (speed.Length() == 0) {
+		speed[0] = 1;
+	}
+
+	double tmp = speed[0] * cos(_camAngleH) - speed[1] * sin(_camAngleH);
+	speed[1] = speed[0] * sin(_camAngleH) + speed[1] * cos(_camAngleH);
+	speed[0] = tmp;
+
+	if (_inDash) {
+		speed = _dashDir;
+	}
+
+	_tAngleH = acos(speed.Normalize()[0]);
+
+	if (speed[1] < 0) {
+		_tAngleH = M_PI * 2.0 - _tAngleH;
+	}
+
+	Math::Vec<3> rLegT = {
+		0.2,
+		-0.2,
+		-0.4
+	};
+
+	Math::Vec<3> lLegT = {
+		0.2,
+		0.2,
+		-0.4
+	};
+
+	double rArm = 0.1;
+	double lArm = 0.1;
+
+	double armStep = 0.5;
+
+	if (_rArm - rArm > armStep) {
+		_rArm -= armStep;
+	} else if (_rArm - rArm < -armStep) {
+		_rArm += armStep;
+	} else {
+		_rArm = rArm;
+	}
+
+	if (_lArm - lArm > armStep) {
+		_lArm -= armStep;
+	} else if (_lArm - lArm < -armStep) {
+		_lArm += armStep;
+	} else {
+		_lArm = lArm;
+	}
+
+	double legStep = 0.05;
+
+	Math::Vec<3> diff = rLegT - _rLeg;
+
+	if (diff.Length() <= legStep) {
+		_rLeg = rLegT;
+	} else {
+		_rLeg += diff.Normalize() * legStep;
+	}
+
+	diff = lLegT - _lLeg;
+
+	if (diff.Length() <= legStep) {
+		_lLeg = lLegT;
+	} else {
+		_lLeg += diff.Normalize() * legStep;
+	}
+
+	if (!_inDash) {
+		_inDash = true;
+		--_dash;
+		_dashDir = speed.Normalize();
+	} else {
+		if (_roll < M_PI * 2.0) {
+			_roll += 0.3;
+		} else {
+			_roll = 0;
+			_inDash = false;
+		}
+	}
+
+	_speed[0] = _dashDir[0] * 20.0;
+	_speed[1] = _dashDir[1] * 20.0;
+	_z = 1.4 + surfaceHeight + sin(_roll / 2.0);
 }
 
 void Player::Key(int key, int scancode, int action, int mods)
@@ -217,6 +592,12 @@ void Player::Key(int key, int scancode, int action, int mods)
 		} else if (action == GLFW_RELEASE) {
 			_strafe -= 1;
 		}
+	} else if (key == GLFW_KEY_LEFT_SHIFT) {
+		if (action == GLFW_PRESS) {
+			_sprint = true;
+		} else if (action == GLFW_RELEASE) {
+			_sprint = false;
+		}
 	}
 }
 
@@ -226,16 +607,16 @@ bool Player::MouseMoveRaw(double xoffset, double yoffset)
 		return false;
 	}
 
-	_angleH -= xoffset / 100.0;
-	_angleV += yoffset / 100.0;
+	_camAngleH -= xoffset / 100.0;
+	_camAngleV += yoffset / 100.0;
 
-	if (_angleH < 0) {
-		_angleH += M_PI * 2.0;
-	} else if (_angleH >= M_PI * 2.0) {
-		_angleH -= M_PI * 2.0;
+	if (_camAngleH < 0) {
+		_camAngleH += M_PI * 2.0;
+	} else if (_camAngleH >= M_PI * 2.0) {
+		_camAngleH -= M_PI * 2.0;
 	}
 
-	_angleV = std::clamp(_angleV, -M_PI / 2.01, M_PI / 2.01);
+	_camAngleV = std::clamp(_camAngleV, -M_PI / 2.01, M_PI / 2.01);
 
 	return true;
 }
@@ -247,6 +628,27 @@ bool Player::Scroll(double xoffset, double yoffset)
 	}
 
 	_cameraDist += yoffset * 0.1;
+
+	if (_cameraDist < 0.5) {
+		_cameraDist = 0.5;
+	}
+
+	return true;
+}
+
+bool Player::MouseButton(int button, int action, int mods)
+{
+	if (_gameGlobal->Paused) {
+		return false;
+	}
+
+	if (action != GLFW_PRESS) {
+		return false;
+	}
+
+	if (button == GLFW_MOUSE_BUTTON_4) {
+		_dash = true;
+	}
 
 	return true;
 }

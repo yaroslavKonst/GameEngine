@@ -62,7 +62,11 @@ private:
 	void LoadResources();
 	void UnloadResources();
 
-	std::set<WorldRegion*> _map;
+	std::map<Coord, WorldRegion*> _map;
+	int _playerX;
+	int _playerY;
+	int _newX;
+	int _newY;
 
 	Audio::Buffer _audioBitBuffer;
 	size_t _ticksBetweenBits;
@@ -72,6 +76,12 @@ private:
 
 	bool _win;
 	std::function<void()> _endCallback;
+
+	void SetPlayerPosition(double x, double y);
+
+	std::atomic<bool> _threadWork;
+	std::thread* _loaderThread;
+	void LoaderThread();
 };
 
 #endif
