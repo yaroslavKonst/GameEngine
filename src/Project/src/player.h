@@ -52,8 +52,8 @@ private:
 
 	Math::Vec<3> _rLeg;
 	Math::Vec<3> _lLeg;
-	double _rArm;
-	double _lArm;
+	Math::Vec<3> _rArm;
+	Math::Vec<3> _lArm;
 
 	std::function<void(double, double)> _positionCallback;
 

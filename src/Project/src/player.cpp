@@ -50,6 +50,8 @@ Player::Player(
 		Math::Mat<4>(1.0),
 		Math::Mat<4>(1.0),
 		Math::Mat<4>(1.0),
+		Math::Mat<4>(1.0),
+		Math::Mat<4>(1.0),
 		Math::Mat<4>(1.0)
 	};
 
@@ -150,7 +152,7 @@ void Player::Tick(double time)
 	_x += _speed[0] * time;
 	_y += _speed[1] * time;
 
-	ModelParams.InnerMatrix[1] =
+	/*ModelParams.InnerMatrix[1] =
 		Math::Translate({0, -0.58, 1.48}) *
 		Math::Rotate(_rArm, {0, -1, 0}) *
 		Math::Rotate(M_PI / 2.0, {1, 0, 0}) *
@@ -160,7 +162,27 @@ void Player::Tick(double time)
 		Math::Translate({0, 0.58, 1.48}) *
 		Math::Rotate(_lArm, {0, -1, 0}) *
 		Math::Rotate(M_PI / 2.0, {-1, 0, 0}) *
-		Math::Translate({0, -0.58, -1.48});
+		Math::Translate({0, -0.58, -1.48});*/
+
+	GetArmMatrix(
+		{0, -0.58, 1.48},
+		_rArm,
+		1.42,
+		0.77,
+		{-1, 0, 0},
+		{0, -1, 0},
+		ModelParams.InnerMatrix[1],
+		ModelParams.InnerMatrix[3]);
+
+	GetArmMatrix(
+		{0, 0.58, 1.48},
+		_lArm,
+		1.42,
+		0.77,
+		{-1, 0, 0},
+		{0, 1, 0},
+		ModelParams.InnerMatrix[2],
+		ModelParams.InnerMatrix[4]);
 
 	GetArmMatrix(
 		{0, -0.2, 0},
@@ -169,8 +191,8 @@ void Player::Tick(double time)
 		0.65,
 		{1, 0, 0},
 		{0, 0, -1},
-		ModelParams.InnerMatrix[3],
-		ModelParams.InnerMatrix[5]);
+		ModelParams.InnerMatrix[5],
+		ModelParams.InnerMatrix[7]);
 
 	GetArmMatrix(
 		{0, 0.2, 0},
@@ -179,16 +201,20 @@ void Player::Tick(double time)
 		0.65,
 		{1, 0, 0},
 		{0, 0, -1},
-		ModelParams.InnerMatrix[4],
-		ModelParams.InnerMatrix[6]);
+		ModelParams.InnerMatrix[6],
+		ModelParams.InnerMatrix[8]);
 
-	ModelParams.InnerMatrix[7] =
+	ModelParams.InnerMatrix[9] =
 		Math::Translate(_rLeg) *
-		Math::Rotate(-_roll, {0, 1, 0}) *
+		Math::Rotate(
+			std::clamp(-_roll, -M_PI / 4.0, M_PI / 4.0),
+			{0, 1, 0}) *
 		Math::Translate(-Math::Vec<3>({0, -0.2, -1.4}));
-	ModelParams.InnerMatrix[8] =
+	ModelParams.InnerMatrix[10] =
 		Math::Translate(_lLeg) *
-		Math::Rotate(-_roll, {0, 1, 0}) *
+		Math::Rotate(
+			std::clamp(-_roll, -M_PI / 4.0, M_PI / 4.0),
+			{0, 1, 0}) *
 		Math::Translate(-Math::Vec<3>({0, 0.2, -1.4}));
 }
 
@@ -233,20 +259,23 @@ void Player::ProcessIdle(double surfaceHeight)
 {
 	double armStep = 0.05;
 
-	if (_rArm > armStep) {
-		_rArm -= armStep;
-	} else if (_rArm < -armStep) {
-		_rArm += armStep;
+	Math::Vec<3> rArmT = {0, -0.58, 0.07};
+	Math::Vec<3> lArmT = {0, 0.58, 0.07};
+
+	Math::Vec<3> diff = rArmT - _rArm;
+
+	if (diff.Length() <= armStep) {
+		_rArm = rArmT;
 	} else {
-		_rArm = 0;
+		_rArm += diff.Normalize() * armStep;
 	}
 
-	if (_lArm > armStep) {
-		_lArm -= armStep;
-	} else if (_lArm < -armStep) {
-		_lArm += armStep;
+	diff = lArmT - _lArm;
+
+	if (diff.Length() <= armStep) {
+		_lArm = lArmT;
 	} else {
-		_lArm = 0;
+		_lArm += diff.Normalize() * armStep;
 	}
 
 	Math::Vec<3> rLegT = {0, -0.2, -1.37};
@@ -254,7 +283,7 @@ void Player::ProcessIdle(double surfaceHeight)
 
 	double legStep = 0.05;
 
-	Math::Vec<3> diff = rLegT - _rLeg;
+	diff = rLegT - _rLeg;
 
 	if (diff.Length() <= legStep) {
 		_rLeg = rLegT;
@@ -303,6 +332,36 @@ void Player::ProcessWalk(double surfaceHeight)
 		_tAngleH = M_PI * 2.0 - _tAngleH;
 	}
 
+	double armStep = 0.05;
+
+	Math::Vec<3> rArmT = {
+		sin(sin(_legTime + M_PI) * M_PI / 8.0) * 1.41,
+		-0.58,
+		1.48 - cos(sin(_legTime + M_PI) * M_PI / 8.0) * 1.41
+	};
+
+	Math::Vec<3> lArmT = {
+		sin(sin(_legTime) * M_PI / 8.0) * 1.41,
+		0.58,
+		1.48 - cos(sin(_legTime) * M_PI / 8.0) * 1.41
+	};
+
+	Math::Vec<3> diff = rArmT - _rArm;
+
+	if (diff.Length() <= armStep) {
+		_rArm = rArmT;
+	} else {
+		_rArm += diff.Normalize() * armStep;
+	}
+
+	diff = lArmT - _lArm;
+
+	if (diff.Length() <= armStep) {
+		_lArm = lArmT;
+	} else {
+		_lArm += diff.Normalize() * armStep;
+	}
+
 	Math::Vec<3> rLegT = {
 		sin(_legTime) * 0.27,
 		-0.2,
@@ -315,30 +374,9 @@ void Player::ProcessWalk(double surfaceHeight)
 		std::max(-1.37 + cos(_legTime + M_PI) * 0.4, -1.37)
 	};
 
-	double rArm = sin(_legTime + M_PI) * M_PI / 8.0;
-	double lArm = sin(_legTime) * M_PI / 8.0;
-
-	double armStep = 0.05;
-
-	if (_rArm - rArm > armStep) {
-		_rArm -= armStep;
-	} else if (_rArm - rArm < -armStep) {
-		_rArm += armStep;
-	} else {
-		_rArm = rArm;
-	}
-
-	if (_lArm - lArm > armStep) {
-		_lArm -= armStep;
-	} else if (_lArm - lArm < -armStep) {
-		_lArm += armStep;
-	} else {
-		_lArm = lArm;
-	}
-
 	double legStep = 0.1;
 
-	Math::Vec<3> diff = rLegT - _rLeg;
+	diff = rLegT - _rLeg;
 
 	if (diff.Length() <= legStep) {
 		_rLeg = rLegT;
@@ -396,6 +434,36 @@ void Player::ProcessRun(double surfaceHeight)
 		_tAngleH = M_PI * 2.0 - _tAngleH;
 	}
 
+	double armStep = 0.5;
+
+	Math::Vec<3> rArmT = {
+		sin(_legTime + M_PI) * 0.5 + 0.6,
+		-0.58,
+		0.9 + sin(_legTime + M_PI) * 0.5
+	};
+
+	Math::Vec<3> lArmT = {
+		sin(_legTime) * 0.5 + 0.6,
+		0.58,
+		0.9 + sin(_legTime) * 0.5
+	};
+
+	Math::Vec<3> diff = rArmT - _rArm;
+
+	if (diff.Length() <= armStep) {
+		_rArm = rArmT;
+	} else {
+		_rArm += diff.Normalize() * armStep;
+	}
+
+	diff = lArmT - _lArm;
+
+	if (diff.Length() <= armStep) {
+		_lArm = lArmT;
+	} else {
+		_lArm += diff.Normalize() * armStep;
+	}
+
 	Math::Vec<3> rLegT = {
 		sin(_legTime) * 0.8 + 0.5,
 		-0.2,
@@ -411,30 +479,9 @@ void Player::ProcessRun(double surfaceHeight)
 	rLegT[2] = std::max(rLegT[2], -1.1 + rLegT[0] * 0.5);
 	lLegT[2] = std::max(lLegT[2], -1.1 + lLegT[0] * 0.5);
 
-	double rArm = sin(_legTime + M_PI) * M_PI / 5.0;
-	double lArm = sin(_legTime) * M_PI / 5.0;
-
-	double armStep = 0.5;
-
-	if (_rArm - rArm > armStep) {
-		_rArm -= armStep;
-	} else if (_rArm - rArm < -armStep) {
-		_rArm += armStep;
-	} else {
-		_rArm = rArm;
-	}
-
-	if (_lArm - lArm > armStep) {
-		_lArm -= armStep;
-	} else if (_lArm - lArm < -armStep) {
-		_lArm += armStep;
-	} else {
-		_lArm = lArm;
-	}
-
 	double legStep = 0.5;
 
-	Math::Vec<3> diff = rLegT - _rLeg;
+	diff = rLegT - _rLeg;
 
 	if (diff.Length() <= legStep) {
 		_rLeg = rLegT;
@@ -493,6 +540,27 @@ void Player::ProcessDash(double surfaceHeight)
 		_tAngleH = M_PI * 2.0 - _tAngleH;
 	}
 
+	double armStep = 0.5;
+
+	Math::Vec<3> rArmT = {0.6, -0.58, 0.9};
+	Math::Vec<3> lArmT = {0.6, 0.58, 0.9};
+
+	Math::Vec<3> diff = rArmT - _rArm;
+
+	if (diff.Length() <= armStep) {
+		_rArm = rArmT;
+	} else {
+		_rArm += diff.Normalize() * armStep;
+	}
+
+	diff = lArmT - _lArm;
+
+	if (diff.Length() <= armStep) {
+		_lArm = lArmT;
+	} else {
+		_lArm += diff.Normalize() * armStep;
+	}
+
 	Math::Vec<3> rLegT = {
 		0.2,
 		-0.2,
@@ -505,30 +573,9 @@ void Player::ProcessDash(double surfaceHeight)
 		-0.4
 	};
 
-	double rArm = 0.1;
-	double lArm = 0.1;
-
-	double armStep = 0.5;
-
-	if (_rArm - rArm > armStep) {
-		_rArm -= armStep;
-	} else if (_rArm - rArm < -armStep) {
-		_rArm += armStep;
-	} else {
-		_rArm = rArm;
-	}
-
-	if (_lArm - lArm > armStep) {
-		_lArm -= armStep;
-	} else if (_lArm - lArm < -armStep) {
-		_lArm += armStep;
-	} else {
-		_lArm = lArm;
-	}
-
 	double legStep = 0.05;
 
-	Math::Vec<3> diff = rLegT - _rLeg;
+	diff = rLegT - _rLeg;
 
 	if (diff.Length() <= legStep) {
 		_rLeg = rLegT;
