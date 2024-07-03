@@ -44,18 +44,13 @@ World::World(Engine* engine, std::function<void()> endCallback)
 	_audioBitBuffer.Multiplier = 0.2;
 
 	_engine->universe->RegisterActor(this);
-
-	_threadWork = true;
-	_loaderThread = new std::thread([this]() -> void {LoaderThread();});
 }
 
 World::~World()
 {
-	_engine->universe->RemoveActor(this);
+	Unload();
 
-	_threadWork = false;
-	_loaderThread->join();
-	delete _loaderThread;
+	_engine->universe->RemoveActor(this);
 
 	_audioBitBuffer.Discard = true;
 
@@ -92,26 +87,19 @@ void World::Load()
 	_engine->video->SetSkyboxTexture(_skybox);
 	_engine->video->SetSkyboxEnabled(true);
 
-	for (int x = -2; x <= 2; ++x) {
-		for (int y = -2; y <= 2; ++y) {
-			_map[{x, y}] = new WorldRegion(_engine, x, y);
-		}
-	}
-
-	for (auto& region : _map) {
-		region.second->Load();
-	}
-
 	_player = new Player(
 		_engine,
 		&_gameGlobal,
 		[this](double x, double y) -> void {SetPlayerPosition(x, y);});
 
-	_playerX = 0;
-	_playerY = 0;
+	_playerX = 20000;
+	_playerY = 20000;
 
 	_loaded = true;
 	_gameGlobal.Paused = false;
+
+	_threadWork = true;
+	_loaderThread = new std::thread([this]() -> void {LoaderThread();});
 }
 
 void World::Unload()
@@ -119,6 +107,10 @@ void World::Unload()
 	if (!_loaded) {
 		return;
 	}
+
+	_threadWork = false;
+	_loaderThread->join();
+	delete _loaderThread;
 
 	_engine->video->SetSkyboxNumber(0);
 
@@ -159,12 +151,14 @@ void World::Tick(double time)
 
 void World::SetPlayerPosition(double x, double y)
 {
-	_newX = floor(x / WorldRegion::CellSize / WorldRegion::CellCount + 0.5);
-	_newY = floor(y / WorldRegion::CellSize / WorldRegion::CellCount + 0.5);
+	_newX = floor(x / 0.5 / 128.0 + 0.5);
+	_newY = floor(y / 0.5 / 128.0 + 0.5);
 }
 
 void World::LoaderThread()
 {
+	const int lim = 7;
+
 	while (_threadWork) {
 		if (_playerX == _newX && _playerY == _newY) {
 			usleep(20000);
@@ -178,8 +172,8 @@ void World::LoaderThread()
 
 		for (auto& tile : _map) {
 			bool removeTile =
-				abs(tile.first.X - _playerX) > 2 ||
-				abs(tile.first.Y - _playerY) > 2;
+				abs(tile.first.X - _playerX) > lim ||
+				abs(tile.first.Y - _playerY) > lim;
 
 			if (removeTile) {
 				tilesToRemove.insert(tile.first);
@@ -191,15 +185,22 @@ void World::LoaderThread()
 			_map.erase(tile);
 		}
 
-		for (int x = _playerX - 2; x <= _playerX + 2; ++x) {
-			for (int y = _playerY - 2; y <= _playerY + 2; ++y) {
+		for (int x = _playerX - lim; x <= _playerX + lim; ++x) {
+			for (int y = _playerY - lim; y <= _playerY + lim; ++y) {
 				if (_map.find({x, y}) == _map.end()) {
 					_map[{x, y}] = new WorldRegion(
 						_engine,
 						x,
 						y);
-					_map[{x, y}]->Load();
 				}
+
+				int lod = std::max<int>(
+					abs(x - _playerX),
+					abs(y - _playerY)) - 1;
+
+				lod = std::clamp<int>(lod, 0, 6);
+
+				_map[{x, y}]->Load(lod);
 			}
 		}
 	}

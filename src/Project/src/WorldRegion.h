@@ -7,21 +7,23 @@
 class WorldRegion : public Model
 {
 public:
-	static constexpr double CellSize = 0.5;
-	static constexpr int CellCount = 100;
-
 	WorldRegion(Engine* engine, int x, int y);
 	~WorldRegion();
 
-	void Load();
+	void Load(int lod);
 	void Unload();
 
 private:
+	double _cellSize;
+	int _cellCount;
+
 	Engine* _engine;
 
 	int _x;
 	int _y;
 	bool _loaded;
+
+	int _lod;
 
 	void BuildSurface();
 };

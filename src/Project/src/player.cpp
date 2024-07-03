@@ -23,6 +23,7 @@ Player::Player(
 	_roll = 0;
 	_camAngleH = 0;
 	_camAngleV = -M_PI / 4.0;
+	_block = false;
 
 	_go = 0;
 	_strafe = 0;
@@ -66,7 +67,7 @@ Player::Player(
 
 	SetInputEnabled(true);
 
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < 2; ++i) {
 		_light[i] = new Light();
 		_light[i]->Type = Light::Type::Point;
 		_light[i]->Color = {10, 10, 10};
@@ -82,7 +83,7 @@ Player::~Player()
 	_engine->video->RemoveModel(this);
 	_engine->universe->RemoveActor(this);
 
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < 2; ++i) {
 		_engine->video->RemoveLight(_light[i]);
 		delete _light[i];
 	}
@@ -109,6 +110,8 @@ void Player::Tick(double time)
 		ProcessWalk(surfaceHeight);
 	}
 
+	ProcessBlock();
+
 	SetAngleH();
 	SetCameraParams();
 
@@ -119,8 +122,6 @@ void Player::Tick(double time)
 
 	_light[0]->Position = {_x - 5, _y, 10.0 + _z};
 	_light[1]->Position = {_x + 5, _y, 10.0 + _z};
-	_light[2]->Position = {_x, _y - 5, 10.0 + _z};
-	_light[3]->Position = {_x, _y + 5, 10.0 + _z};
 
 	_positionCallback(_x, _y);
 
@@ -152,24 +153,12 @@ void Player::Tick(double time)
 	_x += _speed[0] * time;
 	_y += _speed[1] * time;
 
-	/*ModelParams.InnerMatrix[1] =
-		Math::Translate({0, -0.58, 1.48}) *
-		Math::Rotate(_rArm, {0, -1, 0}) *
-		Math::Rotate(M_PI / 2.0, {1, 0, 0}) *
-		Math::Translate({0, 0.58, -1.48});
-
-	ModelParams.InnerMatrix[2] =
-		Math::Translate({0, 0.58, 1.48}) *
-		Math::Rotate(_lArm, {0, -1, 0}) *
-		Math::Rotate(M_PI / 2.0, {-1, 0, 0}) *
-		Math::Translate({0, -0.58, -1.48});*/
-
 	GetArmMatrix(
 		{0, -0.58, 1.48},
 		_rArm,
 		1.42,
 		0.77,
-		{-1, 0, 0},
+		_rArmDir,
 		{0, -1, 0},
 		ModelParams.InnerMatrix[1],
 		ModelParams.InnerMatrix[3]);
@@ -179,7 +168,7 @@ void Player::Tick(double time)
 		_lArm,
 		1.42,
 		0.77,
-		{-1, 0, 0},
+		_lArmDir,
 		{0, 1, 0},
 		ModelParams.InnerMatrix[2],
 		ModelParams.InnerMatrix[4]);
@@ -609,6 +598,33 @@ void Player::ProcessDash(double surfaceHeight)
 	_z = 1.4 + surfaceHeight + sin(_roll / 2.0);
 }
 
+void Player::ProcessBlock()
+{
+	double blockStep = 0.1;
+
+	if (_block) {
+		Math::Vec<3> diff = Math::Vec<3>({-1, -1, 0}) - _rArmDir;
+
+		if (diff.Length() > blockStep) {
+			_rArmDir += diff.Normalize() * blockStep;
+		} else {
+			_rArmDir = {-1, -1, 0};
+		}
+
+		_lArmDir = {-1, 0, 0};
+	} else {
+		Math::Vec<3> diff = Math::Vec<3>({-1, 0, 0}) - _rArmDir;
+
+		if (diff.Length() > blockStep) {
+			_rArmDir += diff.Normalize() * blockStep;
+		} else {
+			_rArmDir = {-1, 0, 0};
+		}
+
+		_lArmDir = {-1, 0, 0};
+	}
+}
+
 void Player::Key(int key, int scancode, int action, int mods)
 {
 	if (_gameGlobal->Paused) {
@@ -689,12 +705,16 @@ bool Player::MouseButton(int button, int action, int mods)
 		return false;
 	}
 
-	if (action != GLFW_PRESS) {
-		return false;
-	}
-
 	if (button == GLFW_MOUSE_BUTTON_4) {
-		_dash = true;
+		if (action == GLFW_PRESS) {
+			++_dash;
+		}
+	} else if (button == GLFW_MOUSE_BUTTON_2) {
+		if (action == GLFW_PRESS) {
+			_block = true;
+		} else if (action == GLFW_RELEASE) {
+			_block = false;
+		}
 	}
 
 	return true;

@@ -46,14 +46,18 @@ private:
 	bool _jump;
 	Math::Vec<2> _dashDir;
 
+	bool _block;
+
 	double _cameraDist;
 
-	Light* _light[4];
+	Light* _light[2];
 
 	Math::Vec<3> _rLeg;
 	Math::Vec<3> _lLeg;
 	Math::Vec<3> _rArm;
 	Math::Vec<3> _lArm;
+	Math::Vec<3> _rArmDir;
+	Math::Vec<3> _lArmDir;
 
 	std::function<void(double, double)> _positionCallback;
 
@@ -69,6 +73,8 @@ private:
 	void ProcessRun(double surfaceHeight);
 
 	void ProcessDash(double surfaceHeight);
+
+	void ProcessBlock();
 };
 
 #endif
