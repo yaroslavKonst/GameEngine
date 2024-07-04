@@ -70,7 +70,7 @@ uint32_t TextureHandler::AddTexture(
 	VkImageCreateFlagBits flags,
 	uint32_t layerCount)
 {
-	_texAddMutex.lock();
+	_texAddMutex.Lock();
 	uint32_t index = _lastIndex + 1;
 
 	while (_usedDescriptors.find(index) != _usedDescriptors.end()) {
@@ -79,7 +79,7 @@ uint32_t TextureHandler::AddTexture(
 
 	_lastIndex = index;
 	_usedDescriptors.insert(index);
-	_texAddMutex.unlock();
+	_texAddMutex.Unlock();
 
 	Loader::Image* imageData = new Loader::Image();
 	*imageData = image;
@@ -115,9 +115,9 @@ uint32_t TextureHandler::AddTexture(
 void TextureHandler::RemoveTexture(uint32_t index)
 {
 	_removeMessages.Insert({index});
-	_texAddMutex.lock();
+	_texAddMutex.Lock();
 	_usedDescriptors.erase(index);
-	_texAddMutex.unlock();
+	_texAddMutex.Unlock();
 }
 
 TextureHandler::TextureDescriptor TextureHandler::CreateTextureDescriptor(

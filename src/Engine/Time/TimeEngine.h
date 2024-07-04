@@ -3,9 +3,7 @@
 
 #include <set>
 #include <chrono>
-#include <mutex>
 #include <thread>
-#include <atomic>
 
 #include "../Utils/ThreadPool.h"
 #include "../Video/video.h"
@@ -33,12 +31,12 @@ private:
 	Video* _video;
 
 	std::set<Actor*> _actors;
-	std::mutex _actorMutex;
+	Sync::Mutex _actorMutex;
 
 	std::set<PhysicalEngineBase*> _physicalEngines;
-	std::mutex _engineMutex;
+	Sync::Mutex _engineMutex;
 
-	std::atomic<bool> _work;
+	volatile bool _work;
 
 	ThreadPool* _threadPool;
 };

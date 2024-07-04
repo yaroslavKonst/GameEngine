@@ -5,6 +5,7 @@
 
 #include "MemoryManager.h"
 #include "PhysicalDeviceSupport.h"
+#include "../Sync/mutex.h"
 
 class MemorySystem
 {
@@ -57,7 +58,7 @@ private:
 	std::map<uint32_t, Domain> _domains;
 	Domain _managers;
 
-	std::mutex _mutex;
+	Sync::Mutex _mutex;
 
 	size_t _maxAllocatedMemory;
 	size_t _totalAllocatedMemory;

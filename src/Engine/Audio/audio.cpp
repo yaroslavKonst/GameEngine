@@ -98,14 +98,14 @@ void Audio::Submit(Buffer* buffer)
 
 	_inBuffers.Insert(bufferData);
 
-	_mutex.lock();
+	_mutex.Lock();
 
 	while (!_outBuffers.IsEmpty()) {
 		BufferData* buffer = _outBuffers.Get();
 		delete buffer;
 	}
 
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 int Audio::AudioCallback(

@@ -15,32 +15,32 @@ PhysicalEngine::~PhysicalEngine()
 
 void PhysicalEngine::RegisterObject(PhysicalObject* object)
 {
-	_mutex.lock();
+	_mutex.Lock();
 	InitializeObject(object);
 	_objects.insert(object);
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 void PhysicalEngine::RemoveObject(PhysicalObject* object)
 {
-	_mutex.lock();
+	_mutex.Lock();
 	_objects.erase(object);
 	DeinitializeObject(object);
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 void PhysicalEngine::RegisterObject(SoftObject* object)
 {
-	_mutex.lock();
+	_mutex.Lock();
 	_softObjects.insert(object);
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 void PhysicalEngine::RemoveObject(SoftObject* object)
 {
-	_mutex.lock();
+	_mutex.Lock();
 	_softObjects.erase(object);
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 static void ToWorldSpace(
@@ -128,7 +128,7 @@ void PhysicalEngine::DeinitializeObject(PhysicalObject* object)
 
 void PhysicalEngine::Run(ThreadPool* threadPool, double timeStep)
 {
-	_mutex.lock();
+	_mutex.Lock();
 
 	for (PhysicalObject* object : _objects) {
 		if (!object->PhysicalParams.Enabled) {
@@ -187,7 +187,7 @@ void PhysicalEngine::Run(ThreadPool* threadPool, double timeStep)
 
 	_contacts.clear();
 
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 static inline double determinant3(
@@ -342,7 +342,7 @@ void PhysicalEngine::CalculateCollision(
 			contact.Bounciness =
 				object->PhysicalParams.Bounciness;
 
-			_effectMutex.lock();
+			_effectMutex.Lock();
 
 			if (
 				_contacts.find(softObject) ==
@@ -353,7 +353,7 @@ void PhysicalEngine::CalculateCollision(
 			}
 
 			_contacts[softObject].push_back(contact);
-			_effectMutex.unlock();
+			_effectMutex.Unlock();
 		}
 
 		++vertexIndex;
@@ -479,7 +479,7 @@ PhysicalEngine::RayCastResult PhysicalEngine::RayCast(
 	void* userPointer,
 	std::set<PhysicalObject*> ignore)
 {
-	_mutex.lock();
+	_mutex.Lock();
 
 	PhysicalObject* closestObject = nullptr;
 
@@ -518,7 +518,7 @@ PhysicalEngine::RayCastResult PhysicalEngine::RayCast(
 		}
 	}
 
-	_mutex.unlock();
+	_mutex.Unlock();
 
 	RayCastResult res;
 	res.object = closestObject;

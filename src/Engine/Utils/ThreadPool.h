@@ -1,13 +1,13 @@
 #ifndef _THREAD_POOL_H
 #define _THREAD_POOL_H
 
-#include <semaphore>
-#include <mutex>
 #include <functional>
 #include <thread>
 #include <list>
 #include <set>
-#include <atomic>
+
+#include "../Sync/mutex.h"
+#include "../Sync/sem.h"
 
 class ThreadPool
 {
@@ -30,15 +30,15 @@ private:
 
 	std::vector<std::thread*> _threads;
 	std::list<Task> _queue;
-	std::mutex _queueMutex;
-	std::counting_semaphore<> _queueSemaphore;
+	Sync::Mutex _queueMutex;
+	Sync::Semaphore _queueSemaphore;
 
-	std::counting_semaphore<> _resultSemaphore;
+	Sync::Semaphore _resultSemaphore;
 	std::set<uint32_t> _tasksInProgress;
 	uint32_t _taskCount;
 	uint32_t _lastId;
 
-	std::atomic<bool> _work;
+	volatile bool _work;
 	void ThreadFunction();
 
 	void StartThreads(uint32_t threadCount);

@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <unistd.h>
+
 #include "../Engine/Video/video.h"
 #include "../Engine/Video/GUI/button.h"
 #include "../Engine/Logger/logger.h"
@@ -5,6 +8,12 @@
 #include "../Engine/Assets/package.h"
 
 #define INTERPOLATE_GROUP 10000
+
+template<class T, class E>
+bool Contains(const T& container, const E& item)
+{
+	return container.find(item) != container.end();
+}
 
 template<int Dim>
 class CompVec : public Math::Vec<Dim>
@@ -72,7 +81,7 @@ public:
 		std::set<CompVec<3>> uniqueVerticesSet;
 
 		for (auto& vertex : _vertexData.Vertices) {
-			if (!uniqueVerticesSet.contains(vertex)) {
+			if (!Contains(uniqueVerticesSet, vertex)) {
 				uniqueVerticesSet.insert(vertex);
 				_uniqueVertices.push_back(vertex);
 			}
@@ -346,7 +355,7 @@ public:
 	}
 
 private:
-	std::atomic<bool> _work;
+	volatile bool _work;
 
 	Video* _video;
 	Localizer* _localizer;
@@ -479,7 +488,7 @@ private:
 		uint32_t index = 1;
 
 		for (auto& vertex : _uniqueVertices) {
-			if (!vertexIndices.contains(vertex)) {
+			if (!Contains(vertexIndices, vertex)) {
 				vertexIndices[vertex] = index;
 				++index;
 			}
@@ -558,7 +567,7 @@ private:
 		index = 1;
 
 		for (auto& normal : _vertexData.Normals) {
-			if (!normalIndices.contains(normal)) {
+			if (!Contains(normalIndices, normal)) {
 				normalIndices[normal] = index;
 				++index;
 
@@ -572,7 +581,7 @@ private:
 		index = 1;
 
 		for (auto& tex : _vertexData.TexCoords) {
-			if (!textureIndices.contains(tex)) {
+			if (!Contains(textureIndices, tex)) {
 				textureIndices[tex] = index;
 				++index;
 

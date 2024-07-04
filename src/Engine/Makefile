@@ -35,6 +35,10 @@ ASSETS_SOURCES := $(shell ls Assets/*.cpp)
 ASSETS_OBJECTS := $(ASSETS_SOURCES:%.cpp=$(PREFIX)/%.o)
 OBJECTS += $(ASSETS_OBJECTS)
 
+SYNC_SOURCES := $(shell ls Sync/*.cpp)
+SYNC_OBJECTS := $(SYNC_SOURCES:%.cpp=$(PREFIX)/%.o)
+OBJECTS += $(SYNC_OBJECTS)
+
 $(BUILD_DIR)/engine.a: $(OBJECTS) | $(PREFIX)
 	$(AR) $@ $(OBJECTS)
 
@@ -134,6 +138,12 @@ $(PREFIX)/Logger:
 $(ASSETS_OBJECTS): | $(PREFIX)/Assets
 
 $(PREFIX)/Assets:
+	mkdir -p $@
+
+# Sync
+$(SYNC_OBJECTS): | $(PREFIX)/Sync
+
+$(PREFIX)/Sync:
 	mkdir -p $@
 
 # Object build

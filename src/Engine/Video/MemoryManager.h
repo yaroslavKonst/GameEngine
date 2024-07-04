@@ -5,7 +5,6 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <mutex>
 #include <vulkan/vulkan.h>
 
 class IntervalStorage

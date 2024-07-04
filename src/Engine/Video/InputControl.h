@@ -4,10 +4,11 @@
 #include <set>
 #include <list>
 #include <vector>
-#include <mutex>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+#include "../Sync/mutex.h"
 
 class InputHandler
 {
@@ -119,7 +120,7 @@ public:
 private:
 	GLFWwindow* _window;
 
-	std::mutex _mutex;
+	Sync::Mutex _mutex;
 
 	float _x;
 	float _y;

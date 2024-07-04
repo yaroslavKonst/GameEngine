@@ -20,30 +20,30 @@ TimeEngine::~TimeEngine()
 
 void TimeEngine::RegisterActor(Actor* actor)
 {
-	_actorMutex.lock();
+	_actorMutex.Lock();
 	_actors.insert(actor);
-	_actorMutex.unlock();
+	_actorMutex.Unlock();
 }
 
 void TimeEngine::RemoveActor(Actor* actor)
 {
-	_actorMutex.lock();
+	_actorMutex.Lock();
 	_actors.erase(actor);
-	_actorMutex.unlock();
+	_actorMutex.Unlock();
 }
 
 void TimeEngine::RegisterPhysicalEngine(PhysicalEngineBase* engine)
 {
-	_engineMutex.lock();
+	_engineMutex.Lock();
 	_physicalEngines.insert(engine);
-	_engineMutex.unlock();
+	_engineMutex.Unlock();
 }
 
 void TimeEngine::RemovePhysicalEngine(PhysicalEngineBase* engine)
 {
-	_engineMutex.lock();
+	_engineMutex.Lock();
 	_physicalEngines.erase(engine);
-	_engineMutex.unlock();
+	_engineMutex.Unlock();
 }
 
 void TimeEngine::MainLoop()
@@ -56,9 +56,9 @@ void TimeEngine::MainLoop()
 
 		double time = (double)_tickDelayMS / 1000.0;
 
-		_actorMutex.lock();
+		_actorMutex.Lock();
 		std::set<Actor*> actors = _actors;
-		_actorMutex.unlock();
+		_actorMutex.Unlock();
 
 		for (Actor* actor : actors) {
 			_threadPool->Enqueue(
@@ -70,12 +70,12 @@ void TimeEngine::MainLoop()
 
 		_threadPool->WaitAll();
 
-		_engineMutex.lock();
+		_engineMutex.Lock();
 		for (PhysicalEngineBase* engine : _physicalEngines) {
 			engine->Run(_threadPool, time);
 		}
 
-		_engineMutex.unlock();
+		_engineMutex.Unlock();
 
 		for (Actor* actor : actors) {
 			_threadPool->Enqueue(

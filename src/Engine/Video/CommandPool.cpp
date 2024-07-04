@@ -94,9 +94,9 @@ void CommandPool::EndOneTimeBuffer(
 
 	vkResetFences(_device, 1, &_fence);
 
-	graphicsQueue->Mutex.lock();
+	graphicsQueue->Mutex.Lock();
 	vkQueueSubmit(graphicsQueue->Queue, 1, &submitInfo, _fence);
-	graphicsQueue->Mutex.unlock();
+	graphicsQueue->Mutex.Unlock();
 
 	vkWaitForFences(_device, 1, &_fence, VK_TRUE, UINT64_MAX);
 

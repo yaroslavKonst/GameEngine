@@ -2,11 +2,10 @@
 #define _AUDIO_H
 
 #include <vector>
-#include <mutex>
-#include <atomic>
 #include <portaudio.h>
 
 #include "../Utils/RingBuffer.h"
+#include "../Sync/mutex.h"
 
 class Audio
 {
@@ -17,7 +16,7 @@ public:
 	{
 		std::vector<float> Data;
 		float Multiplier;
-		std::atomic<bool> Finished;
+		volatile bool Finished;
 		bool Active;
 		bool Discard;
 
@@ -57,7 +56,7 @@ private:
 
 	RingBuffer<BufferData*> _inBuffers;
 	RingBuffer<BufferData*, false> _outBuffers;
-	std::mutex _mutex;
+	Sync::Mutex _mutex;
 
 	static int AudioCallback(
 		const void* inputBuffer,

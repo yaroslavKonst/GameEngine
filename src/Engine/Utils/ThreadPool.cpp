@@ -33,7 +33,7 @@ ThreadPool::~ThreadPool()
 	_work = false;
 
 	for (size_t i = 0; i < _threads.size(); ++i) {
-		_queueSemaphore.release();
+		_queueSemaphore.Up();
 	}
 
 	for (size_t i = 0; i < _threads.size(); ++i) {
@@ -66,7 +66,7 @@ uint32_t ThreadPool::Enqueue(std::function<void()> action, bool waitable)
 	task.Action = action;
 	task.Wait = waitable;
 
-	_queueMutex.lock();
+	_queueMutex.Lock();
 
 	uint32_t id = 0;
 
@@ -86,8 +86,8 @@ uint32_t ThreadPool::Enqueue(std::function<void()> action, bool waitable)
 
 	task.Id = id;
 	_queue.push_front(task);
-	_queueMutex.unlock();
-	_queueSemaphore.release();
+	_queueMutex.Unlock();
+	_queueSemaphore.Up();
 
 	return id;
 }
@@ -97,48 +97,48 @@ void ThreadPool::Wait(uint32_t id)
 	bool taskUnfinished = true;
 
 	while (taskUnfinished) {
-		_resultSemaphore.acquire();
-		_queueMutex.lock();
+		_resultSemaphore.Down();
+		_queueMutex.Lock();
 
 		if (_tasksInProgress.find(id) == _tasksInProgress.end()) {
 			taskUnfinished = false;
 		}
 
-		_queueMutex.unlock();
+		_queueMutex.Unlock();
 	}
 }
 
 void ThreadPool::WaitAll()
 {
 	while (_taskCount > 0) {
-		_resultSemaphore.acquire();
+		_resultSemaphore.Down();
 	}
 }
 
 void ThreadPool::ThreadFunction()
 {
 	while (true) {
-		_queueSemaphore.acquire();
+		_queueSemaphore.Down();
 
 		if (!_work) {
 			break;
 		}
 
-		_queueMutex.lock();
+		_queueMutex.Lock();
 		auto task = _queue.back();
 		_queue.pop_back();
-		_queueMutex.unlock();
+		_queueMutex.Unlock();
 
 		task.Action();
 
 		if (task.Wait)
 		{
-			_queueMutex.lock();
+			_queueMutex.Lock();
 			_tasksInProgress.erase(task.Id);
 			--_taskCount;
-			_queueMutex.unlock();
+			_queueMutex.Unlock();
 
-			_resultSemaphore.release();
+			_resultSemaphore.Up();
 		}
 	}
 }

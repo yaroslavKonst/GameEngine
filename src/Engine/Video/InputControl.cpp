@@ -37,16 +37,16 @@ InputControl::~InputControl()
 
 void InputControl::Subscribe(InputHandler* handler)
 {
-	_mutex.lock();
+	_mutex.Lock();
 	_handlers.insert(handler);
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 void InputControl::Unsubscribe(InputHandler* handler)
 {
-	_mutex.lock();
+	_mutex.Lock();
 	_handlers.erase(handler);
-	_mutex.unlock();
+	_mutex.Unlock();
 }
 
 void InputControl::ToggleRawMouseInput()

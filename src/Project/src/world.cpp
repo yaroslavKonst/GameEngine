@@ -1,5 +1,8 @@
 #include "world.h"
 
+#include <unistd.h>
+#include <algorithm>
+
 #include "../../Engine/Utils/loader.h"
 #include "../../Engine/Utils/Text.h"
 #include "../../Engine/Utils/TextFileParser.h"
@@ -124,6 +127,8 @@ void World::Unload()
 	for (auto& region : _map) {
 		delete region.second;
 	}
+
+	_map.clear();
 }
 
 void World::Tick(double time)
@@ -201,6 +206,7 @@ void World::LoaderThread()
 				lod = std::clamp<int>(lod, 0, 6);
 
 				_map[{x, y}]->Load(lod);
+				Logger::Verbose() << "Loaded segment";
 			}
 		}
 	}

@@ -2,7 +2,6 @@
 #define _DATA_BRIDGE_H
 
 #include <set>
-#include <mutex>
 
 #include "model.h"
 #include "ModelDescriptor.h"
@@ -86,8 +85,8 @@ struct DataBridge
 	TextureHandler* Textures;
 	UniformBufferStorage* UniformBuffers;
 
-	std::mutex SceneMutex;
-	std::mutex ExtModMutex;
+	Sync::Mutex SceneMutex;
+	Sync::Mutex ExtModMutex;
 
 	std::list<ModelDescriptor> DeletedModelDescriptors;
 
@@ -102,8 +101,8 @@ struct DataBridge
 
 	void Submit()
 	{
-		ExtModMutex.lock();
-		SceneMutex.lock();
+		ExtModMutex.Lock();
+		SceneMutex.Lock();
 
 		SubmittedScene.FOV = StagedScene.FOV;
 		SubmittedScene.CameraPosition = {
@@ -186,18 +185,18 @@ struct DataBridge
 		SubmittedScene.RemovedModels = StagedScene.RemovedModels;
 		StagedScene.RemovedModels.clear();
 
-		SceneMutex.unlock();
-		ExtModMutex.unlock();
+		SceneMutex.Unlock();
+		ExtModMutex.Unlock();
 
 		inputControl->PollEvents();
 	}
 
 	void LoadToDrawn()
 	{
-		SceneMutex.lock();
+		SceneMutex.Lock();
 		DrawnScene = SubmittedScene;
 		SubmittedScene.RemovedModels.clear();
-		SceneMutex.unlock();
+		SceneMutex.Unlock();
 
 		while (!LoadModelMessages.IsEmpty()) {
 			auto msg = LoadModelMessages.Get();

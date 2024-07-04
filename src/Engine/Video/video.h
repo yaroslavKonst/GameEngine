@@ -196,7 +196,7 @@ private:
 
 	DataBridge _dataBridge;
 	void RemoveAllModels();
-	std::mutex _modelLoadMutex;
+	Sync::Mutex _modelLoadMutex;
 
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();

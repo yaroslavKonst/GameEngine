@@ -2191,13 +2191,13 @@ void Swapchain::DrawFrame()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	_graphicsQueue->Mutex.lock();
+	_graphicsQueue->Mutex.Lock();
 	res = vkQueueSubmit(
 		_graphicsQueue->Queue,
 		1,
 		&submitInfo,
 		_inFlightFences[_currentFrame]);
-	_graphicsQueue->Mutex.unlock();
+	_graphicsQueue->Mutex.Unlock();
 
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error(

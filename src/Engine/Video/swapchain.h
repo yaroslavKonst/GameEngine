@@ -6,7 +6,6 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <stdexcept>
-#include <atomic>
 
 #include "PhysicalDeviceSupport.h"
 #include "CommandPool.h"
@@ -152,7 +151,7 @@ private:
 		MVP mvp,
 		Pipeline* pipeline);
 
-	std::atomic<bool> _work;
+	volatile bool _work;
 
 	void DrawFrame();
 	uint32_t _currentFrame;

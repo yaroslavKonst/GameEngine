@@ -1,5 +1,7 @@
 #include "player.h"
 
+#include <algorithm>
+
 #include "../../Engine/Math/vec.h"
 #include "../../Engine/Math/transform.h"
 #include "../../Engine/Logger/logger.h"

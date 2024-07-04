@@ -4,6 +4,21 @@
 
 #include "../Logger/logger.h"
 
+static bool StartsWith(const std::string& str, const std::string& start)
+{
+	if (start.size() > str.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < start.size(); ++i) {
+		if (str[i] != start[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 CommandLineParser::Args CommandLineParser::Parse(
 	int argc,
 	char** argv,
@@ -25,7 +40,7 @@ CommandLineParser::Args CommandLineParser::Parse(
 			result.Keys[key] = item;
 			keyActive = false;
 		} else {
-			if (item.starts_with("--")) {
+			if (StartsWith(item, "--")) {
 				keyActive = true;
 				key = item.substr(2);
 			} else {

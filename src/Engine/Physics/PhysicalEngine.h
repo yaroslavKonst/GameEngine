@@ -58,10 +58,10 @@ private:
 	std::map<PhysicalObject*, ObjectDescriptor*> _objectDescriptors;
 	std::set<SoftObject*> _softObjects;
 
-	std::mutex _mutex;
+	Sync::Mutex _mutex;
 
 	std::map<SoftObject*, std::vector<Contact>> _contacts;
-	std::mutex _effectMutex;
+	Sync::Mutex _effectMutex;
 
 	void InitializeObject(PhysicalObject* object);
 	void DeinitializeObject(PhysicalObject* object);

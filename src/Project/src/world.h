@@ -57,7 +57,7 @@ private:
 
 	Player* _player;
 
-	std::atomic<bool> _loaded;
+	volatile bool _loaded;
 
 	void LoadResources();
 	void UnloadResources();
@@ -79,7 +79,7 @@ private:
 
 	void SetPlayerPosition(double x, double y);
 
-	std::atomic<bool> _threadWork;
+	volatile bool _threadWork;
 	std::thread* _loaderThread;
 	void LoaderThread();
 };

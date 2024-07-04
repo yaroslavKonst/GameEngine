@@ -39,7 +39,7 @@ MemorySystem::Allocation MemorySystem::Allocate(
 	AllocationProperties properties,
 	uint32_t domain)
 {
-	_mutex.lock();
+	_mutex.Lock();
 
 	Domain* managers = &_managers;
 
@@ -83,14 +83,14 @@ MemorySystem::Allocation MemorySystem::Allocate(
 		_maxAllocatedMemory = _totalAllocatedMemory;
 	}
 
-	_mutex.unlock();
+	_mutex.Unlock();
 
 	return allocation;
 }
 
 void MemorySystem::Free(Allocation allocation, uint32_t domain)
 {
-	_mutex.lock();
+	_mutex.Lock();
 
 	Domain* managers = &_managers;
 
@@ -107,5 +107,5 @@ void MemorySystem::Free(Allocation allocation, uint32_t domain)
 
 	_totalAllocatedMemory -= alloc.Size;
 
-	_mutex.unlock();
+	_mutex.Unlock();
 }

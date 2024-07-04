@@ -13,6 +13,21 @@
 #include "../Engine/Math/ComplexMath.h"
 #include "../Engine/Assets/package.h"
 
+static bool StartsWith(const std::string& str, const std::string& start)
+{
+	if (start.size() > str.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < start.size(); ++i) {
+		if (str[i] != start[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 float Wave(float x)
 {
 	x = sin(x);
@@ -446,9 +461,9 @@ std::vector<float> ProcessTimeNotation(std::string filename)
 			currentTime += 1.0 / nps;
 		} else {
 			// Process command.
-			if (word.starts_with("nps")) {
+			if (StartsWith(word, "nps")) {
 				nps = std::stof(word.substr(4));
-			} else if (word.starts_with("npm")) {
+			} else if (StartsWith(word, "npm")) {
 				nps = std::stof(word.substr(4)) / 60.0;
 			}
 		}
