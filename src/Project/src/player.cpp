@@ -27,17 +27,27 @@ Player::Player(
 	_camAngleV = -M_PI / 4.0;
 	_block = false;
 
+	_speed = {0, 0, 0};
+
 	_go = 0;
 	_strafe = 0;
 	_sprint = false;
 	_dash = 0;
 	_inDash = false;
 	_jump = false;
+	_dashDir = {0, 0};
 
 	_legTime = 0;
 	_legStep = 0.2;
 
 	_cameraDist = 4.0;
+
+	_rLeg = {0, 0, 0};
+	_lLeg = {0, 0, 0};
+	_rArm = {0, 0, 0};
+	_lArm = {0, 0, 0};
+	_rArmDir = {0, 0, 0};
+	_lArmDir = {0, 0, 0};
 
 	SetInputLayer(9);
 
