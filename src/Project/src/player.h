@@ -58,11 +58,21 @@ private:
 	Math::Vec<3> _lArm;
 	Math::Vec<3> _rArmDir;
 	Math::Vec<3> _lArmDir;
+	float _animationSpeed;
+
+	Math::Vec<3> _rLegT;
+	Math::Vec<3> _lLegT;
+	Math::Vec<3> _rArmT;
+	Math::Vec<3> _lArmT;
+	Math::Vec<3> _rArmDirT;
+	Math::Vec<3> _lArmDirT;
 
 	std::function<void(double, double)> _positionCallback;
 
 	void SetCameraParams();
 	void SetAngleH();
+
+	void ProcessAnimation();
 
 	void ProcessIdle(double surfaceHeight);
 

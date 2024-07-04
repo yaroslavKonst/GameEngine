@@ -49,6 +49,15 @@ Player::Player(
 	_rArmDir = {0, 0, 0};
 	_lArmDir = {0, 0, 0};
 
+	_animationSpeed = 0.1;
+
+	_rLegT = {0, 0, 0};
+	_lLegT = {0, 0, 0};
+	_rArmT = {0, 0, 0};
+	_lArmT = {0, 0, 0};
+	_rArmDirT = {0, 0, 0};
+	_lArmDirT = {0, 0, 0};
+
 	SetInputLayer(9);
 
 	auto modelData = Loader::LoadModel("Player/Player.obj");
@@ -123,6 +132,8 @@ void Player::Tick(double time)
 	}
 
 	ProcessBlock();
+
+	ProcessAnimation();
 
 	SetAngleH();
 	SetCameraParams();
@@ -256,49 +267,66 @@ void Player::SetAngleH()
 	}
 }
 
+void Player::ProcessAnimation()
+{
+	Math::Vec<3> diff = _rArmT - _rArm;
+
+	if (diff.Length() <= _animationSpeed) {
+		_rArm = _rArmT;
+	} else {
+		_rArm += diff.Normalize() * _animationSpeed;
+	}
+
+	diff = _lArmT - _lArm;
+
+	if (diff.Length() <= _animationSpeed) {
+		_lArm = _lArmT;
+	} else {
+		_lArm += diff.Normalize() * _animationSpeed;
+	}
+
+	diff = _rLegT - _rLeg;
+
+	if (diff.Length() <= _animationSpeed) {
+		_rLeg = _rLegT;
+	} else {
+		_rLeg += diff.Normalize() * _animationSpeed;
+	}
+
+	diff = _lLegT - _lLeg;
+
+	if (diff.Length() <= _animationSpeed) {
+		_lLeg = _lLegT;
+	} else {
+		_lLeg += diff.Normalize() * _animationSpeed;
+	}
+
+	diff = _rArmDirT - _rArmDir;
+
+	if (diff.Length() <= _animationSpeed) {
+		_rArmDir = _rArmDirT;
+	} else {
+		_rArmDir += diff.Normalize() * _animationSpeed;
+	}
+
+	diff = _lArmDirT - _lArmDir;
+
+	if (diff.Length() <= _animationSpeed) {
+		_lArmDir = _lArmDirT;
+	} else {
+		_lArmDir += diff.Normalize() * _animationSpeed;
+	}
+}
+
 void Player::ProcessIdle(double surfaceHeight)
 {
-	double armStep = 0.05;
+	_animationSpeed = 0.05;
 
-	Math::Vec<3> rArmT = {0, -0.58, 0.07};
-	Math::Vec<3> lArmT = {0, 0.58, 0.07};
+	_rArmT = {0, -0.58, 0.07};
+	_lArmT = {0, 0.58, 0.07};
 
-	Math::Vec<3> diff = rArmT - _rArm;
-
-	if (diff.Length() <= armStep) {
-		_rArm = rArmT;
-	} else {
-		_rArm += diff.Normalize() * armStep;
-	}
-
-	diff = lArmT - _lArm;
-
-	if (diff.Length() <= armStep) {
-		_lArm = lArmT;
-	} else {
-		_lArm += diff.Normalize() * armStep;
-	}
-
-	Math::Vec<3> rLegT = {0, -0.2, -1.37};
-	Math::Vec<3> lLegT = {0, 0.2, -1.37};
-
-	double legStep = 0.05;
-
-	diff = rLegT - _rLeg;
-
-	if (diff.Length() <= legStep) {
-		_rLeg = rLegT;
-	} else {
-		_rLeg += diff.Normalize() * legStep;
-	}
-
-	diff = lLegT - _lLeg;
-
-	if (diff.Length() <= legStep) {
-		_lLeg = lLegT;
-	} else {
-		_lLeg += diff.Normalize() * legStep;
-	}
+	_rLegT = {0, -0.2, -1.37};
+	_lLegT = {0, 0.2, -1.37};
 
 	_z = 1.37 + surfaceHeight;
 
@@ -333,65 +361,31 @@ void Player::ProcessWalk(double surfaceHeight)
 		_tAngleH = M_PI * 2.0 - _tAngleH;
 	}
 
-	double armStep = 0.05;
+	_animationSpeed = 0.1;
 
-	Math::Vec<3> rArmT = {
+	_rArmT = {
 		sin(sin(_legTime + M_PI) * M_PI / 8.0) * 1.41,
 		-0.58,
 		1.48 - cos(sin(_legTime + M_PI) * M_PI / 8.0) * 1.41
 	};
 
-	Math::Vec<3> lArmT = {
+	_lArmT = {
 		sin(sin(_legTime) * M_PI / 8.0) * 1.41,
 		0.58,
 		1.48 - cos(sin(_legTime) * M_PI / 8.0) * 1.41
 	};
 
-	Math::Vec<3> diff = rArmT - _rArm;
-
-	if (diff.Length() <= armStep) {
-		_rArm = rArmT;
-	} else {
-		_rArm += diff.Normalize() * armStep;
-	}
-
-	diff = lArmT - _lArm;
-
-	if (diff.Length() <= armStep) {
-		_lArm = lArmT;
-	} else {
-		_lArm += diff.Normalize() * armStep;
-	}
-
-	Math::Vec<3> rLegT = {
+	_rLegT = {
 		sin(_legTime) * 0.27,
 		-0.2,
 		std::max(-1.37 + cos(_legTime) * 0.4, -1.37)
 	};
 
-	Math::Vec<3> lLegT = {
+	_lLegT = {
 		sin(_legTime + M_PI) * 0.27,
 		0.2,
 		std::max(-1.37 + cos(_legTime + M_PI) * 0.4, -1.37)
 	};
-
-	double legStep = 0.1;
-
-	diff = rLegT - _rLeg;
-
-	if (diff.Length() <= legStep) {
-		_rLeg = rLegT;
-	} else {
-		_rLeg += diff.Normalize() * legStep;
-	}
-
-	diff = lLegT - _lLeg;
-
-	if (diff.Length() <= legStep) {
-		_lLeg = lLegT;
-	} else {
-		_lLeg += diff.Normalize() * legStep;
-	}
 
 	if (speed.Length() > 0) {
 		_legTime += _legStep;
@@ -435,68 +429,34 @@ void Player::ProcessRun(double surfaceHeight)
 		_tAngleH = M_PI * 2.0 - _tAngleH;
 	}
 
-	double armStep = 0.5;
+	_animationSpeed = 0.5;
 
-	Math::Vec<3> rArmT = {
+	_rArmT = {
 		sin(_legTime + M_PI) * 0.5 + 0.6,
 		-0.58,
 		0.9 + sin(_legTime + M_PI) * 0.5
 	};
 
-	Math::Vec<3> lArmT = {
+	_lArmT = {
 		sin(_legTime) * 0.5 + 0.6,
 		0.58,
 		0.9 + sin(_legTime) * 0.5
 	};
 
-	Math::Vec<3> diff = rArmT - _rArm;
-
-	if (diff.Length() <= armStep) {
-		_rArm = rArmT;
-	} else {
-		_rArm += diff.Normalize() * armStep;
-	}
-
-	diff = lArmT - _lArm;
-
-	if (diff.Length() <= armStep) {
-		_lArm = lArmT;
-	} else {
-		_lArm += diff.Normalize() * armStep;
-	}
-
-	Math::Vec<3> rLegT = {
+	_rLegT = {
 		sin(_legTime) * 0.8 + 0.5,
 		-0.2,
 		-1.1 + cos(_legTime) * 0.4
 	};
 
-	Math::Vec<3> lLegT = {
+	_lLegT = {
 		sin(_legTime + M_PI) * 0.8 + 0.5,
 		0.2,
 		-1.1 + cos(_legTime + M_PI) * 0.4
 	};
 
-	rLegT[2] = std::max(rLegT[2], -1.1 + rLegT[0] * 0.5);
-	lLegT[2] = std::max(lLegT[2], -1.1 + lLegT[0] * 0.5);
-
-	double legStep = 0.5;
-
-	diff = rLegT - _rLeg;
-
-	if (diff.Length() <= legStep) {
-		_rLeg = rLegT;
-	} else {
-		_rLeg += diff.Normalize() * legStep;
-	}
-
-	diff = lLegT - _lLeg;
-
-	if (diff.Length() <= legStep) {
-		_lLeg = lLegT;
-	} else {
-		_lLeg += diff.Normalize() * legStep;
-	}
+	_rLegT[2] = std::max(_rLegT[2], -1.1 + _rLegT[0] * 0.5);
+	_lLegT[2] = std::max(_lLegT[2], -1.1 + _lLegT[0] * 0.5);
 
 	if (speed.Length() > 0) {
 		_legTime += _legStep * 2.0;
@@ -541,56 +501,22 @@ void Player::ProcessDash(double surfaceHeight)
 		_tAngleH = M_PI * 2.0 - _tAngleH;
 	}
 
-	double armStep = 0.5;
+	_animationSpeed = 0.5;
 
-	Math::Vec<3> rArmT = {0.6, -0.58, 0.9};
-	Math::Vec<3> lArmT = {0.6, 0.58, 0.9};
+	_rArmT = {0.6, -0.58, 0.9};
+	_lArmT = {0.6, 0.58, 0.9};
 
-	Math::Vec<3> diff = rArmT - _rArm;
-
-	if (diff.Length() <= armStep) {
-		_rArm = rArmT;
-	} else {
-		_rArm += diff.Normalize() * armStep;
-	}
-
-	diff = lArmT - _lArm;
-
-	if (diff.Length() <= armStep) {
-		_lArm = lArmT;
-	} else {
-		_lArm += diff.Normalize() * armStep;
-	}
-
-	Math::Vec<3> rLegT = {
+	_rLegT = {
 		0.2,
 		-0.2,
 		-0.4
 	};
 
-	Math::Vec<3> lLegT = {
+	_lLegT = {
 		0.2,
 		0.2,
 		-0.4
 	};
-
-	double legStep = 0.05;
-
-	diff = rLegT - _rLeg;
-
-	if (diff.Length() <= legStep) {
-		_rLeg = rLegT;
-	} else {
-		_rLeg += diff.Normalize() * legStep;
-	}
-
-	diff = lLegT - _lLeg;
-
-	if (diff.Length() <= legStep) {
-		_lLeg = lLegT;
-	} else {
-		_lLeg += diff.Normalize() * legStep;
-	}
 
 	if (!_inDash) {
 		_inDash = true;
@@ -612,28 +538,13 @@ void Player::ProcessDash(double surfaceHeight)
 
 void Player::ProcessBlock()
 {
-	double blockStep = 0.1;
-
 	if (_block) {
-		Math::Vec<3> diff = Math::Vec<3>({-1, -1, 0}) - _rArmDir;
-
-		if (diff.Length() > blockStep) {
-			_rArmDir += diff.Normalize() * blockStep;
-		} else {
-			_rArmDir = {-1, -1, 0};
-		}
-
-		_lArmDir = {-1, 0, 0};
+		_rArmDirT = {1, -1, -0.5};
+		_rArmT = {0.9, 0.1, 1.5};
+		_lArmDirT = {-1, 0, 0};
 	} else {
-		Math::Vec<3> diff = Math::Vec<3>({-1, 0, 0}) - _rArmDir;
-
-		if (diff.Length() > blockStep) {
-			_rArmDir += diff.Normalize() * blockStep;
-		} else {
-			_rArmDir = {-1, 0, 0};
-		}
-
-		_lArmDir = {-1, 0, 0};
+		_rArmDirT = {-1, 0, 0};
+		_lArmDirT = {-1, 0, 0};
 	}
 }
 
