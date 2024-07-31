@@ -162,7 +162,7 @@ void World::SetPlayerPosition(double x, double y)
 
 void World::LoaderThread()
 {
-	const int lim = 7;
+	const int lim = 5;
 
 	while (_threadWork) {
 		if (_playerX == _newX && _playerY == _newY) {
@@ -192,20 +192,22 @@ void World::LoaderThread()
 
 		for (int x = _playerX - lim; x <= _playerX + lim; ++x) {
 			for (int y = _playerY - lim; y <= _playerY + lim; ++y) {
-				if (_map.find({x, y}) == _map.end()) {
-					_map[{x, y}] = new WorldRegion(
-						_engine,
-						x,
-						y);
-				}
-
 				int lod = std::max<int>(
 					abs(x - _playerX),
 					abs(y - _playerY)) - 1;
 
 				lod = std::clamp<int>(lod, 0, 6);
 
-				_map[{x, y}]->Load(lod);
+				if (_map.find({x, y}) == _map.end()) {
+					_map[{x, y}] = new WorldRegion(
+						_engine,
+						x,
+						y);
+					_map[{x, y}]->Load(lod);
+				}
+
+
+				_map[{x, y}]->SetLod(lod);
 				Logger::Verbose() << "Loaded segment";
 			}
 		}

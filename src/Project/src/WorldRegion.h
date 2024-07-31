@@ -13,6 +13,8 @@ public:
 	void Load(int lod);
 	void Unload();
 
+	void SetLod(int lod);
+
 private:
 	double _cellSize;
 	int _cellCount;
@@ -25,7 +27,9 @@ private:
 
 	int _lod;
 
-	void BuildSurface();
+	Loader::VertexData* BuildSurface();
+
+	std::map<int, uint32_t> _lodCache;
 };
 
 #endif

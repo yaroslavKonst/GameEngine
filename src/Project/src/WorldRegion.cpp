@@ -9,6 +9,8 @@ WorldRegion::WorldRegion(Engine* engine, int x, int y)
 	_x = x;
 	_y = y;
 
+	_lod = -100;
+
 	_loaded = false;
 }
 
@@ -19,28 +21,14 @@ WorldRegion::~WorldRegion()
 
 static int Pow2(int e)
 {
-	int res = 1;
-
-	while (e > 0) {
-		res *= 2;
-		--e;
-	}
-
-	return res;
+	return pow(2.0, e);
 }
 
 void WorldRegion::Load(int lod)
 {
-	if (_loaded && (_lod == lod || _lod == lod / 2)) {
+	if (_loaded && (_lod == lod || _lod == lod - 1)) {
 		return;
 	}
-
-	_lod = lod;
-
-	lod = Pow2(_lod);
-
-	_cellCount = 128 / lod;
-	_cellSize = 0.5 * lod;
 
 	if (_loaded) {
 		Unload();
@@ -49,13 +37,7 @@ void WorldRegion::Load(int lod)
 	auto textureData = Loader::LoadImage("World/Textures/Grass.png");
 	TextureParams.SetAll(_engine->video->LoadTexture(textureData));
 
-	BuildSurface();
-
-	ModelParams.Matrix = Math::Translate({
-		(_x * _cellCount - (double)_cellCount / 2.0) * _cellSize,
-		(_y * _cellCount - (double)_cellCount / 2.0) * _cellSize,
-		0.0
-	});
+	SetLod(lod);
 
 	_engine->video->RegisterModel(this);
 	DrawParams.Enabled = true;
@@ -70,17 +52,50 @@ void WorldRegion::Unload()
 	}
 
 	_engine->video->RemoveModel(this);
-	_engine->video->UnloadModel(ModelParams.Model);
 	_engine->video->UnloadTexture(TextureParams.Diffuse);
+
+	for (auto& item : _lodCache) {
+		_engine->video->UnloadModel(item.second);
+	}
+
+	_lod = -100;
 
 	_loaded = false;
 }
 
-void WorldRegion::BuildSurface()
+void WorldRegion::SetLod(int lod)
 {
-	Loader::VertexData geometry;
+	if (_lod == lod || _lod == lod - 1) {
+		return;
+	}
 
-	geometry.Instances = {Math::Mat<4>(1.0)};
+	_lod = lod;
+
+	lod = Pow2(_lod);
+
+	_cellCount = 128 / lod;
+	_cellSize = 0.5 * lod;
+
+	if (_lodCache.find(_lod) == _lodCache.end()) {
+		Loader::VertexData* geometry = BuildSurface();
+		_lodCache[_lod] = _engine->video->LoadModel(*geometry);
+		delete geometry;
+	}
+
+	ModelParams.Model = _lodCache[_lod];
+
+	ModelParams.Matrix = Math::Translate({
+		(_x * _cellCount - (double)_cellCount / 2.0) * _cellSize,
+		(_y * _cellCount - (double)_cellCount / 2.0) * _cellSize,
+		0.0
+	});
+}
+
+Loader::VertexData* WorldRegion::BuildSurface()
+{
+	Loader::VertexData* geometry = new Loader::VertexData();
+
+	geometry->Instances = {Math::Mat<4>(1.0)};
 
 	for (int vy = 0; vy <= _cellCount; ++vy) {
 		for (int vx = 0; vx <= _cellCount; ++vx) {
@@ -130,10 +145,10 @@ void WorldRegion::BuildSurface()
 			matIdx.Coeff[0] = 1.0;
 			matIdx.Coeff[1] = 0.0;
 
-			geometry.Vertices.push_back(vertex);
-			geometry.Normals.push_back(normal);
-			geometry.TexCoords.push_back(texCoord);
-			geometry.MatrixIndices.push_back(matIdx);
+			geometry->Vertices.push_back(vertex);
+			geometry->Normals.push_back(normal);
+			geometry->TexCoords.push_back(texCoord);
+			geometry->MatrixIndices.push_back(matIdx);
 		}
 	}
 
@@ -143,19 +158,19 @@ void WorldRegion::BuildSurface()
 			uint32_t i1 = vy * (_cellCount + 1) + vx + 1;
 			uint32_t i2 = (vy + 1) * (_cellCount + 1) + vx;
 
-			geometry.Indices.push_back(i0);
-			geometry.Indices.push_back(i1);
-			geometry.Indices.push_back(i2);
+			geometry->Indices.push_back(i0);
+			geometry->Indices.push_back(i1);
+			geometry->Indices.push_back(i2);
 
 			i0 = (vy + 1) * (_cellCount + 1) + vx;
 			i1 = vy * (_cellCount + 1) + vx + 1;
 			i2 = (vy + 1) * (_cellCount + 1) + vx + 1;
 
-			geometry.Indices.push_back(i0);
-			geometry.Indices.push_back(i1);
-			geometry.Indices.push_back(i2);
+			geometry->Indices.push_back(i0);
+			geometry->Indices.push_back(i1);
+			geometry->Indices.push_back(i2);
 		}
 	}
 
-	ModelParams.Model = _engine->video->LoadModel(geometry);
+	return geometry;
 }
