@@ -21,6 +21,8 @@ Video::Video(
 		_settingsValid = false;
 	}
 
+	LoadScaling();
+
 	_loaderThreadPool = new ThreadPool(1);
 
 	VkInstanceHandler::SetApplicationName(applicationName);
@@ -74,6 +76,17 @@ Video::~Video()
 	DestroySurface();
 
 	VkInstanceHandler::DecRef();
+}
+
+void Video::LoadScaling()
+{
+	if (!_settingsValid) {
+		_scaling = 1;
+	} else {
+		_scaling = _settings.Scaling;
+	}
+
+	Logger::Verbose() << "Scaling: " << _scaling;
 }
 
 void Video::CreateSurface()
@@ -397,6 +410,7 @@ void Video::CreateSwapchain()
 		&_deviceSupport,
 		_memorySystem,
 		_msaaSamples,
+		_scaling,
 		&_graphicsQueue,
 		_presentQueue,
 		&_dataBridge,

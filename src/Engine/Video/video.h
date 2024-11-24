@@ -23,6 +23,7 @@ public:
 	struct GraphicsSettings
 	{
 		uint32_t MsaaLimit;
+		double Scaling;
 	};
 
 	Video(
@@ -172,6 +173,7 @@ private:
 
 	VkPhysicalDevice _physicalDevice;
 	VkSampleCountFlagBits _msaaSamples;
+	double _scaling;
 	std::vector<const char*> _deviceExtensions;
 	void SelectPhysicalDevice();
 	bool IsDeviceSuitable(VkPhysicalDevice device);
@@ -201,6 +203,8 @@ private:
 	VkDescriptorSetLayout _descriptorSetLayout;
 	void CreateDescriptorSetLayout();
 	void DestroyDescriptorSetLayout();
+
+	void LoadScaling();
 
 	class ResizeHandler : public InputHandler
 	{

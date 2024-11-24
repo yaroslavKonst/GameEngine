@@ -93,9 +93,7 @@ vec3 GetBlur(vec2 texCoords, float thresMin, float thresMax)
 
 void CorrectExposure(float exposure)
 {
-	vec2 texSize = textureSize(texSampler[0], 0);
-
-	if (ivec2(gl_FragCoord.xy) == ivec2(texSize / 2)) {
+	if (ivec2(gl_FragCoord.xy) == ivec2(0, 0)) {
 		vec3 avgLight = vec3(0.0f);
 
 		float coords[9] = float[] (

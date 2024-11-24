@@ -28,6 +28,7 @@ public:
 		PhysicalDeviceSupport* deviceSupport,
 		MemorySystem* memorySystem,
 		VkSampleCountFlagBits msaaSamples,
+		double scaling,
 		VkQueueObject* graphicsQueue,
 		VkQueue presentQueue,
 		DataBridge* dataBridge,
@@ -58,9 +59,11 @@ private:
 
 	VkDevice _device;
 	VkExtent2D _extent;
+	VkExtent2D _scaledExtent;
 	VkSurfaceKHR _surface;
 	GLFWwindow* _window;
 	VkSampleCountFlagBits _msaaSamples;
+	double _scaling;
 
 	PhysicalDeviceSupport* _deviceSupport;
 	MemorySystem* _memorySystem;

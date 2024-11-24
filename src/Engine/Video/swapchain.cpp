@@ -60,6 +60,7 @@ Swapchain::Swapchain(
 	PhysicalDeviceSupport* deviceSupport,
 	MemorySystem* memorySystem,
 	VkSampleCountFlagBits msaaSamples,
+	double scaling,
 	VkQueueObject* graphicsQueue,
 	VkQueue presentQueue,
 	DataBridge* dataBridge,
@@ -73,6 +74,7 @@ Swapchain::Swapchain(
 	_deviceSupport = deviceSupport;
 	_memorySystem = memorySystem;
 	_msaaSamples = msaaSamples;
+	_scaling = scaling;
 	_graphicsQueue = graphicsQueue;
 	_presentQueue = presentQueue;
 	_dataBridge = dataBridge;
@@ -116,10 +118,12 @@ VkPresentModeKHR Swapchain::ChoosePresentMode(
 {
 	for (const auto& presentMode : presentModes) {
 		if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			Logger::Verbose() << "Present mode: mailbox.";
 			return presentMode;
 		}
 	}
 
+	Logger::Verbose() << "Present mode: FIFO.";
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
@@ -171,8 +175,14 @@ void Swapchain::Create()
 
 	_extent = ChooseExtent(supportDetails.capabilities);
 
+	_scaledExtent.width = _extent.width * _scaling;
+	_scaledExtent.height = _extent.height * _scaling;
+
 	Logger::Verbose() <<
 		"Extent: " << _extent.width << "x" << _extent.height;
+	Logger::Verbose() <<
+		"Scaled extent: " << _scaledExtent.width << "x" <<
+		_scaledExtent.height;
 
 	_transferCommandPool = new CommandPool(
 		_device,
@@ -296,17 +306,17 @@ void Swapchain::CreateRenderingImages()
 
 	_colorImage = ImageHelper::CreateImage(
 		_device,
-		_extent.width,
-                _extent.height,
-                1,
-                _msaaSamples,
-                _hdrImageFormat,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                _memorySystem,
-                _deviceSupport);
+		_scaledExtent.width,
+		_scaledExtent.height,
+		1,
+		_msaaSamples,
+		_hdrImageFormat,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		_memorySystem,
+		_deviceSupport);
 
 	_colorImageView = ImageHelper::CreateImageView(
 		_device,
@@ -327,16 +337,16 @@ void Swapchain::CreateRenderingImages()
 
 	_depthImage = ImageHelper::CreateImage(
 		_device,
-		_extent.width,
-                _extent.height,
-                1,
-                _msaaSamples,
-                depthFormat,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                _memorySystem,
-                _deviceSupport);
+		_scaledExtent.width,
+		_scaledExtent.height,
+		1,
+		_msaaSamples,
+		depthFormat,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		_memorySystem,
+		_deviceSupport);
 
 	_depthImageView = ImageHelper::CreateImageView(
 		_device,
@@ -464,8 +474,8 @@ void Swapchain::CreateHDRResources()
 	for (uint32_t i = 0; i < _hdrImageCount; ++i) {
 		_hdrImages[i] = ImageHelper::CreateImage(
 			_device,
-			_extent.width,
-			_extent.height,
+			_scaledExtent.width,
+			_scaledExtent.height,
 			1,
 			VK_SAMPLE_COUNT_1_BIT,
 			_hdrImageFormat,
@@ -695,7 +705,7 @@ void Swapchain::CreatePipelines()
 
 	// Object pipeline
 	initInfo.Device = _device;
-	initInfo.Extent = _extent;
+	initInfo.Extent = _scaledExtent;
 	initInfo.ColorAttachmentFormat = _hdrImageFormat;
 	initInfo.DepthAttachmentFormat = _depthImage.Format;
 	initInfo.DescriptorSetLayouts = {
@@ -1223,14 +1233,27 @@ void Swapchain::RecordCommandBuffer(
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(_extent.width);
-	viewport.height = static_cast<float>(_extent.height);
+	viewport.width = static_cast<float>(_scaledExtent.width);
+	viewport.height = static_cast<float>(_scaledExtent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor{};
 	scissor.offset = {0, 0};
-	scissor.extent = _extent;
+	scissor.extent = _scaledExtent;
+
+	VkViewport origViewport{};
+	VkRect2D origScissor{};
+
+	origViewport.x = 0.0f;
+	origViewport.y = 0.0f;
+	origViewport.width = static_cast<float>(_extent.width);
+	origViewport.height = static_cast<float>(_extent.height);
+	origViewport.minDepth = 0.0f;
+	origViewport.maxDepth = 1.0f;
+
+	origScissor.offset = {0, 0};
+	origScissor.extent = _extent;
 
 	// Skybox pipeline.
 	_skyboxPipeline->RecordCommandBuffer(commandBuffer, 0);
@@ -1896,8 +1919,8 @@ void Swapchain::RecordCommandBuffer(
 	// Postprocessing pipeline
 	_postprocessingPipeline->RecordCommandBuffer(commandBuffer, imageIndex);
 
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	vkCmdSetViewport(commandBuffer, 0, 1, &origViewport);
+	vkCmdSetScissor(commandBuffer, 0, 1, &origScissor);
 
 	float exposure[2];
 	exposure[0] = 0.3;
