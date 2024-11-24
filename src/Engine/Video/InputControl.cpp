@@ -134,20 +134,24 @@ void InputControl::KeyCallback(
 	InputControl* control = reinterpret_cast<InputControl*>(
 		glfwGetWindowUserPointer(window));
 
-	std::set<InputHandler*> activeHandlers;
+	std::map<float, InputHandler*> orderedHandlers;
 
 	for (auto handler : control->_handlers) {
 		if (handler->IsInputEnabled()) {
-			activeHandlers.insert(handler);
+			orderedHandlers[handler->GetInputLayer()] = handler;
 		}
 	}
 
-	for (auto handler : activeHandlers) {
-		handler->Key(
+	for (auto handler : orderedHandlers) {
+		bool processed = handler.second->Key(
 			key,
 			scancode,
 			action,
 			mods);
+
+		if (processed) {
+			break;
+		}
 	}
 }
 

@@ -17,7 +17,7 @@ public:
 
 	void Tick(double time) override;
 
-	void Key(int key, int scancode, int action, int mods) override;
+	bool Key(int key, int scancode, int action, int mods) override;
 	bool MouseMoveRaw(double xoffset, double yoffset) override;
 	bool Scroll(double xoffset, double yoffset) override;
 	bool MouseButton(int button, int action, int mods) override;

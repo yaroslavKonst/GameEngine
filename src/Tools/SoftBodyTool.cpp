@@ -183,17 +183,17 @@ public:
 		return true;
 	}
 
-	void Key(int key, int scancode, int action, int mods) override
+	bool Key(int key, int scancode, int action, int mods) override
 	{
 		if (action != GLFW_PRESS) {
-			return;
+			return false;
 		}
 
 		if (key == GLFW_KEY_N) {
 			if (_setGroupMode) {
 				Logger::Warning() <<
 					"Set group " << _setGroupMode;
-				return;
+				return false;
 			}
 
 			++_currentVertex;
@@ -201,7 +201,7 @@ public:
 			if (_currentVertex >= _vertexGroups.size()) {
 				Logger::Warning() << "Last vertex processed.";
 				--_currentVertex;
-				return;
+				return false;
 			}
 
 			if (!_vertexSprites[_currentVertex]) {
@@ -230,12 +230,12 @@ public:
 			if (_setGroupMode) {
 				Logger::Warning() <<
 					"Set group " << _setGroupMode;
-				return;
+				return false;
 			}
 
 			if (_currentVertex == 0) {
 				Logger::Warning() << "First vertex is reached.";
-				return;
+				return false;
 			}
 
 			--_currentVertex;
@@ -297,6 +297,8 @@ public:
 		} else if (key == GLFW_KEY_I) {
 			SetVertexGroup(_currentVertex, INTERPOLATE_GROUP);
 		}
+
+		return false;
 	}
 
 	bool MouseButton(int button, int action, int mods) override

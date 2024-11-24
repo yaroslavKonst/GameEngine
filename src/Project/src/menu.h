@@ -16,7 +16,7 @@ public:
 		return true;
 	}
 
-	void Key(int key, int scancode, int action, int mods) override;
+	bool Key(int key, int scancode, int action, int mods) override;
 	void ProcessEscape();
 	bool WindowClose() override;
 

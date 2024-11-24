@@ -52,12 +52,13 @@ public:
 		_layer = layer;
 	}
 
-	virtual void Key(
+	virtual bool Key(
 		int key,
 		int scancode,
 		int action,
 		int mods)
 	{
+		return false;
 	}
 
 	virtual bool MouseMove(

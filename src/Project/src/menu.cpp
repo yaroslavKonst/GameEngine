@@ -20,7 +20,7 @@ Menu::Menu(Engine* engine)
 
 	LoadButtons();
 
-	SetInputLayer(10);
+	SetInputLayer(0);
 	_engine->video->Subscribe(this);
 	SetInputEnabled(true);
 
@@ -189,13 +189,16 @@ void Menu::ExitToMenuButtonPressed()
 	_inPause = false;
 }
 
-void Menu::Key(int key, int scancode, int action, int mods)
+bool Menu::Key(int key, int scancode, int action, int mods)
 {
 	bool escPressed = key == GLFW_KEY_ESCAPE && action == GLFW_PRESS;
 
 	if (escPressed) {
 		ProcessEscape();
+		return true;
 	}
+
+	return false;
 }
 
 bool Menu::WindowClose()

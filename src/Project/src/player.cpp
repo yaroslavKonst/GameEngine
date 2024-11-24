@@ -548,10 +548,10 @@ void Player::ProcessBlock()
 	}
 }
 
-void Player::Key(int key, int scancode, int action, int mods)
+bool Player::Key(int key, int scancode, int action, int mods)
 {
 	if (_gameGlobal->Paused) {
-		return;
+		return false;
 	}
 
 	if (key == GLFW_KEY_W) {
@@ -585,6 +585,8 @@ void Player::Key(int key, int scancode, int action, int mods)
 			_sprint = false;
 		}
 	}
+
+	return true;
 }
 
 bool Player::MouseMoveRaw(double xoffset, double yoffset)
