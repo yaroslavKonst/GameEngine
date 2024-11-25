@@ -214,6 +214,12 @@ namespace Math
 		{
 			return *this / Length();
 		}
+
+		Vec Project(const Vec& vec) const
+		{
+			Vec normVec = vec.Normalize();
+			return normVec * Dot(normVec);
+		}
 	};
 }
 

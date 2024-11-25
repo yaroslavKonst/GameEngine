@@ -176,7 +176,18 @@ void Player::Tick(double time)
 	_x += _speed[0] * time;
 	_y += _speed[1] * time;
 
-	GetArmMatrix(
+	ArmMatrix(
+		{0, -0.58, 1.48},
+		{0, -1, 0},
+		{-1, 0, 0},
+		1.42,
+		0.77,
+		_rArm,
+		_rArmDir,
+		ModelParams.InnerMatrix[1],
+		ModelParams.InnerMatrix[3]);
+
+	/*GetArmMatrix(
 		{0, -0.58, 1.48},
 		_rArm,
 		1.42,
@@ -184,15 +195,16 @@ void Player::Tick(double time)
 		_rArmDir,
 		{0, -1, 0},
 		ModelParams.InnerMatrix[1],
-		ModelParams.InnerMatrix[3]);
+		ModelParams.InnerMatrix[3]);*/
 
-	GetArmMatrix(
+	ArmMatrix(
 		{0, 0.58, 1.48},
-		_lArm,
+		{0, 1, 0},
+		{-1, 0, 0},
 		1.42,
 		0.77,
+		_lArm,
 		_lArmDir,
-		{0, 1, 0},
 		ModelParams.InnerMatrix[2],
 		ModelParams.InnerMatrix[4]);
 
@@ -539,7 +551,7 @@ void Player::ProcessDash(double surfaceHeight)
 void Player::ProcessBlock()
 {
 	if (_block) {
-		_rArmDirT = {1, -1, -0.5};
+		_rArmDirT = {1, -1, -2};
 		_rArmT = {0.9, 0.1, 1.5};
 		_lArmDirT = {-1, 0, 0};
 	} else {

@@ -4,6 +4,8 @@
 #include <string>
 #include <cstdint>
 
+#include "../Math/vec.h"
+
 namespace Logger
 {
 	enum class Level
@@ -27,6 +29,7 @@ namespace Logger
 		Logger& operator<<(uint64_t message);
 		Logger& operator<<(float message);
 		Logger& operator<<(double message);
+		Logger& operator<<(const Math::Vec<3>& message);
 
 	private:
 		Level _level;

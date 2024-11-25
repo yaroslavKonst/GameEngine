@@ -164,6 +164,17 @@ namespace Logger
 		return *this;
 	}
 
+	Logger& Logger::operator<<(const Math::Vec<3>& message)
+	{
+		if (_logLevel >= _level) {
+			std::cout << message[0] << ' ' <<
+				message[1] << ' ' <<
+				message[2];
+		}
+
+		return *this;
+	}
+
 	void SetLevel(Level level)
 	{
 		_logLevel = level;
