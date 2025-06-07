@@ -46,11 +46,28 @@ void Menu::LoadResources()
 	auto buttonBackgroundImage = Loader::LoadImage(
 		"Menu/ButtonBackground.png");
 	_buttonBackground = _engine->video->LoadTexture(buttonBackgroundImage);
+
+	auto menuBackgroundImage = Loader::LoadImage(
+		"Menu/MenuBackground.png");
+	_menuBackground = _engine->video->LoadTexture(menuBackgroundImage);
+
+	_backgroundImage = new Rectangle;
+	_backgroundImage->RectangleParams.Texture = _menuBackground;
+	_backgroundImage->RectangleParams.Depth = -100;
+	_backgroundImage->RectangleParams.Position = {-1.0, -1.0, 1.0, 1.0};
+	_backgroundImage->RectangleParams.ScaleX = false;
+	_backgroundImage->RectangleParams.ScaleY = true;
+
+	_engine->video->RegisterRectangle(_backgroundImage);
 }
 
 void Menu::UnloadResources()
 {
+	_engine->video->RemoveRectangle(_backgroundImage);
+	delete _backgroundImage;
+
 	_engine->video->UnloadTexture(_buttonBackground);
+	_engine->video->UnloadTexture(_menuBackground);
 }
 
 void Menu::LoadButtons()
@@ -134,12 +151,14 @@ void Menu::ShowMainMenu()
 	_exitButton->Activate();
 	_playButton->Enable();
 	_exitButton->Enable();
+	_backgroundImage->DrawParams.Enabled = true;
 }
 
 void Menu::HideMainMenu()
 {
 	_playButton->Deactivate();
 	_exitButton->Deactivate();
+	_backgroundImage->DrawParams.Enabled = false;
 }
 
 void Menu::ShowPauseMenu()

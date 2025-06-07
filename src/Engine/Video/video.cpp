@@ -190,12 +190,12 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 			!swapchainSupport.presentModes.empty();
 	}
 
-	/*bool discreteGpu = deviceProperties.deviceType ==
+	bool discreteGpu = deviceProperties.deviceType ==
 		VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 
 	if (!discreteGpu) {
 		Logger::Error() << "Not a discrete GPU.";
-	}*/
+	}
 
 	if (!extensionsSupported) {
 		Logger::Error() << "Unsupported extensions.";
@@ -227,7 +227,7 @@ bool Video::IsDeviceSuitable(VkPhysicalDevice device)
 	}
 
 	bool res =
-		//discreteGpu &&
+		discreteGpu &&
 		extensionsSupported &&
 		swapchainAdequate &&
 		deviceFeatures.geometryShader &&

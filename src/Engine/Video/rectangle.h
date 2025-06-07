@@ -15,6 +15,8 @@ public:
 		glm::vec4 Position;
 		glm::vec4 TexCoords;
 		float Depth;
+		bool ScaleX;
+		bool ScaleY;
 	};
 
 	RectangleValues RectangleParams;
@@ -22,6 +24,8 @@ public:
 	Rectangle()
 	{
 		RectangleParams.TexCoords = {0, 0, 1, 1};
+		RectangleParams.ScaleX = true;
+		RectangleParams.ScaleY = false;
 	}
 };
 

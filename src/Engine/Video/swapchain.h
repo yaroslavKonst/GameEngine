@@ -114,6 +114,7 @@ private:
 	VkImageView _colorImageView;
 	ImageHelper::Image _depthImage;
 	VkImageView _depthImageView;
+	VkSampler _depthImageSampler;
 	std::vector<ImageHelper::Image> _shadowMapImages;
 	std::vector<VkImageView> _shadowMapCubeImageViews;
 	std::vector<VkImageView> _shadowMap2DImageViews;

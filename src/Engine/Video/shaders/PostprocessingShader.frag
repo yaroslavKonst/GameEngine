@@ -4,7 +4,7 @@ layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 0) uniform sampler2D texSampler[2];
+layout(binding = 0) uniform sampler2D texSampler[3];
 
 layout(binding = 1) buffer ExposureBuffer {
 	float Values[2];
@@ -89,6 +89,57 @@ vec3 GetBlur(vec2 texCoords, float thresMin, float thresMax)
 	}
 
 	return result;
+}
+
+bool GetEdge(vec2 texCoords)
+{
+	//vec2 texOffset = 1.0 / textureSize(texSampler[2], 0);
+	vec2 texOffset = vec2(0.0004, 0.0004);
+
+	float center = texture(texSampler[2], texCoords).r;
+	float maxDiff = 0;
+
+	for(int i = 1; i < 2; ++i) {
+		for (int j = 1; j < 2; ++j) {
+			maxDiff = max(
+				maxDiff,
+				abs(texture(
+					texSampler[2],
+					texCoords +
+					vec2(texOffset.x * i, 0.0) +
+					vec2(0.0, texOffset.y * j)).r -
+				center));
+
+			maxDiff = max(
+				maxDiff,
+				abs(texture(
+					texSampler[2],
+					texCoords +
+					vec2(texOffset.x * i, 0.0) -
+					vec2(0.0, texOffset.y * j)).r -
+				center));
+
+			maxDiff = max(
+				maxDiff,
+				abs(texture(
+					texSampler[2],
+					texCoords -
+					vec2(texOffset.x * i, 0.0) +
+					vec2(0.0, texOffset.y * j)).r -
+				center));
+
+			maxDiff = max(
+				maxDiff,
+				abs(texture(
+					texSampler[2],
+					texCoords -
+					vec2(texOffset.x * i, 0.0) -
+					vec2(0.0, texOffset.y * j)).r -
+				center));
+		}
+	}
+
+	return maxDiff > 0.0001;
 }
 
 void CorrectExposure(float exposure)
@@ -187,6 +238,12 @@ void main()
 	const float gamma = 2.2;
 	vec3 hdrColor = texture(texSampler[0], texCoord).rgb;
 	vec4 hdrInterface = texture(texSampler[1], texCoord);
+
+	const float depth = texture(texSampler[2], texCoord).r;
+
+	if (GetEdge(texCoord)) {
+		hdrColor = vec3(0, 0, 0);
+	}
 
 	hdrColor += GetBlur(texCoord, 3.0f, 5.0f);
 

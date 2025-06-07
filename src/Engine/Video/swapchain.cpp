@@ -333,7 +333,8 @@ void Swapchain::CreateRenderingImages()
 		},
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
-		VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
+		VK_FORMAT_FEATURE_TRANSFER_DST_BIT |
+		VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
 
 	_depthImage = ImageHelper::CreateImage(
 		_device,
@@ -343,7 +344,8 @@ void Swapchain::CreateRenderingImages()
 		_msaaSamples,
 		depthFormat,
 		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+		VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		_memorySystem,
 		_deviceSupport);
@@ -362,6 +364,14 @@ void Swapchain::CreateRenderingImages()
 		1,
 		_transferCommandPool,
 		_graphicsQueue);
+
+	_depthImageSampler = ImageHelper::CreateImageSampler(
+		_device,
+		_deviceSupport->GetPhysicalDevice(),
+		1,
+		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 
 	// Shadow maps.
 	_shadowMapImages.resize(_maxLightCount);
@@ -431,6 +441,10 @@ void Swapchain::CreateRenderingImages()
 
 void Swapchain::DestroyRenderingImages()
 {
+	ImageHelper::DestroyImageSampler(
+		_device,
+		_depthImageSampler);
+
 	ImageHelper::DestroyImageView(_device, _depthImageView);
 	ImageHelper::DestroyImageView(_device, _colorImageView);
 
@@ -515,7 +529,7 @@ void Swapchain::CreateHDRResources()
 
 	VkDescriptorSetLayoutBinding hdrSamplerLayoutBinding{};
 	hdrSamplerLayoutBinding.binding = 0;
-	hdrSamplerLayoutBinding.descriptorCount = _hdrImageCount;
+	hdrSamplerLayoutBinding.descriptorCount = _hdrImageCount + 1;
 	hdrSamplerLayoutBinding.descriptorType =
 		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	hdrSamplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -552,7 +566,7 @@ void Swapchain::CreateHDRResources()
 
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize.descriptorCount = _hdrImageCount;
+	poolSize.descriptorCount = _hdrImageCount + 1;
 
 	VkDescriptorPoolSize bufferPoolSize{};
 	bufferPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -609,6 +623,14 @@ void Swapchain::CreateHDRResources()
 
 		imageInfos.push_back(imageInfo);
 	}
+
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout =
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = _depthImageView;
+	imageInfo.sampler = _depthImageSampler;
+
+	imageInfos.push_back(imageInfo);
 
 	VkWriteDescriptorSet descriptorSamplerWrite{};
 	descriptorSamplerWrite.sType =
@@ -791,6 +813,8 @@ void Swapchain::CreatePipelines()
 	initInfo.ClearDepthImage = false;
 	initInfo.ColorImageFinalLayout =
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	initInfo.DepthImageFinalLayout =
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	initInfo.PushConstantRangeCount = 2;
 	pushConstants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -806,6 +830,9 @@ void Swapchain::CreatePipelines()
 		{_colorImageView},
 		{_depthImageView});
 
+	initInfo.DepthImageFinalLayout =
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 	// Rectangle pipeline
 	initInfo.DepthTestEnabled = VK_FALSE;
 	initInfo.DepthWriteEnabled = VK_TRUE;
@@ -820,7 +847,7 @@ void Swapchain::CreatePipelines()
 		_descriptorSetLayout
 	};
 	initInfo.ClearColorImage = true;
-	initInfo.ClearDepthImage = true;
+	initInfo.ClearDepthImage = false;
 	initInfo.ColorImageFinalLayout =
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
@@ -1876,8 +1903,15 @@ void Swapchain::RecordCommandBuffer(
 		rectData[0] = rectangle->RectangleParams.Position;
 		rectData[1] = rectangle->RectangleParams.TexCoords;
 
-		rectData[0][0] /= screenRatio;
-		rectData[0][2] /= screenRatio;
+		if (rectangle->RectangleParams.ScaleX) {
+			rectData[0][0] /= screenRatio;
+			rectData[0][2] /= screenRatio;
+		}
+
+		if (rectangle->RectangleParams.ScaleY) {
+			rectData[0][1] *= screenRatio;
+			rectData[0][3] *= screenRatio;
+		}
 
 		vkCmdPushConstants(
 			commandBuffer,

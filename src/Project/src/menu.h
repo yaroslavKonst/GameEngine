@@ -24,6 +24,7 @@ private:
 	Engine* _engine;
 
 	uint32_t _buttonBackground;
+	uint32_t _menuBackground;
 
 	void LoadResources();
 	void UnloadResources();
@@ -34,6 +35,7 @@ private:
 	// Main menu
 	Button* _playButton;
 	Button* _exitButton;
+	Rectangle* _backgroundImage;
 	void ShowMainMenu();
 	void HideMainMenu();
 	void PlayButtonPressed();

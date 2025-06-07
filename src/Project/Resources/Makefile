@@ -2,6 +2,7 @@ ENTRIES=\
 	Fonts/DroidSans.ttf \
 	Locale/en \
 	Menu/ButtonBackground.png \
+	Menu/MenuBackground.png \
 	Player/Player.obj \
 	Player/Player.png \
 	World/Textures/Grass.png \

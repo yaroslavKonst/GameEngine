@@ -14,7 +14,7 @@ Program::Program()
 {
 	Video::GraphicsSettings videoSettings{};
 	videoSettings.MsaaLimit = 1;
-	videoSettings.Scaling = 1;
+	videoSettings.Scaling = 1.5;
 
 	_engine.video = new Video(1400, 1000, "Game", "Game", &videoSettings);
 	_engine.audio = new Audio;
